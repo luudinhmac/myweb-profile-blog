@@ -1,0 +1,30 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import cookieParser from 'cookie-parser';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
+  // Set Global Prefix
+  app.setGlobalPrefix('api');
+
+  // Use Cookie Parser
+  app.use(cookieParser());
+
+  // Enable CORS
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
+    ],
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  });
+
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`Backend is running at http://localhost:${port}/api`);
+}
+bootstrap();

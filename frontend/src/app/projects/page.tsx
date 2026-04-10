@@ -1,0 +1,177 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { ExternalLink, Github, Code2, Layers, Cpu, Globe } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const projects = [
+  {
+    title: 'Hệ thống SQL Server Failover Cluster (FCI)',
+    description: 'Thiết lập cụm băm lỗi (Failover Cluster) cho SQL Server trên Windows Server 2022, đảm bảo tính sẵn sàng cao cho cơ sở dữ liệu doanh nghiệp.',
+    tech: ['Windows Server', 'SQL Server', 'Failover Cluster', 'Active Directory'],
+    category: 'High Availability',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Layers
+  },
+  {
+    title: 'Hạ tầng Private Cloud & CEPH Storage',
+    description: 'Triển khai và vận hành hệ thống OpenStack, cụm Proxmox và giải pháp lưu trữ phân tán CEPH cho hạ tầng đám mây nội bộ.',
+    tech: ['OpenStack', 'CEPH', 'Proxmox', 'Kolla-Ansible'],
+    category: 'Cloud',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Globe
+  },
+  {
+    title: 'Quản lý Lưu trữ HPE MSA 2060',
+    description: 'Cấu hình iSCSI Direct Attach, MPIO và Storage Tiering trên HPE MSA 2060 để tối ưu hóa hiệu suất và khả năng mở rộng.',
+    tech: ['HPE MSA', 'iSCSI', 'SAN Storage', 'Storage Tiering'],
+    category: 'Storage',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Database
+  },
+  {
+    title: 'Hạ tầng AI/ML & GPU Computing',
+    description: 'Cài đặt và cấu hình môi trường tính toán hiệu năng cao với CUDA drivers, TensorFlow và PyTorch hỗ trợ GPU cho các workload AI.',
+    tech: ['CUDA', 'TensorFlow', 'PyTorch', 'GPU Acceleration'],
+    category: 'AI Infrastructure',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Cpu
+  },
+  {
+    title: 'Private Cloud & Nextcloud (SSO ADFS)',
+    description: 'Xây dựng giải pháp Private Cloud bằng Nextcloud tích hợp xác thực một lần (SSO) qua ADFS và hệ thống lưu trữ phân tán.',
+    tech: ['Nextcloud', 'ADFS', 'SSO', 'Private Cloud'],
+    category: 'Cloud',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Globe
+  },
+  {
+    title: 'Cụm MariaDB Galera Cluster (HA)',
+    description: 'Triển khai cụm cơ sở dữ liệu MariaDB sẵn sàng cao sử dụng Galera Cluster cho các ứng dụng trọng yếu như Zabbix, Nextcloud và Web Services.',
+    tech: ['MariaDB', 'Galera Cluster', 'HAProxy', 'Keepalived'],
+    category: 'High Availability',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Database
+  },
+  {
+    title: 'VMWare vSphere Cluster & vSAN',
+    description: 'Thiết lập cụm máy chủ ảo hóa VMware vSphere Cluster tích hợp giải pháp lưu trữ hội tụ vSAN cho môi trường doanh nghiệp.',
+    tech: ['VMware ESXi', 'vCenter', 'vSAN', 'HA/DRS'],
+    category: 'Virtualization',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Layers
+  },
+  {
+    title: 'Bảo trì & Xử lý sự cố SAN & Server Hardware',
+    description: 'Thiết lập RAID cho các dòng SAN IBM (v3700, v7000, v9000), thay thế controller (3PAR, MSA), linh kiện máy chủ (HPE, DELL, IBM, Lenovo, Fujitsu) và chuẩn đoán lỗi, thay thế phần cứng HPE Tape Autoloader.',
+    tech: ['RAID Configuration', 'HPE Tape Autoloader', 'SAN Maintenance', 'Hardware Troubleshooting'],
+    category: 'Infrastructure',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Database
+  },
+  {
+    title: 'Quản trị & Tối ưu hóa Enterprise Linux',
+    description: 'Vận hành và bảo mật các bản phân phối Linux (Ubuntu, CentOS, Debian) cho hạ tầng production. Tự động hóa tác vụ và triển khai giám sát hệ thống tập trung.',
+    tech: ['Linux Server', 'Security Patching', 'Bash Scripting', 'Performance Tuning'],
+    category: 'Infrastructure',
+    link: '#',
+    github: 'https://github.com/luudinhmac',
+    icon: Globe
+  }
+];
+
+function Database(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+  );
+}
+
+export default function ProjectsPage() {
+  const [activeFilter, setActiveFilter] = useState('All');
+  const filters = ['All', 'High Availability', 'Virtualization', 'Cloud', 'Storage', 'Infrastructure'];
+
+  const filteredProjects = activeFilter === 'All' 
+    ? projects 
+    : projects.filter(p => p.category === activeFilter);
+
+  return (
+    <div className="pt-32 pb-20 px-4 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 dark:text-white mb-6">
+            Dự án <span className="text-gradient">Thực tế</span>
+          </h1>
+          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+            Tổng hợp các sản phẩm tiêu biểu tôi đã từng tham gia phát triển, từ nền tảng web phức tạp đến các giải pháp phần cứng thông minh.
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap justify-center gap-3 mb-12">
+          {filters.map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={cn(
+                "px-6 py-2.5 rounded-full text-sm font-medium transition-all shadow-sm",
+                activeFilter === filter 
+                  ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                  : "bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+              )}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
+        {/* Projects Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredProjects.map((project, i) => (
+            <div 
+              key={i}
+              className="group glass rounded-[2.5rem] p-8 hover-lift flex flex-col h-full"
+            >
+              <div className="mb-6 flex items-start justify-between">
+                <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+                  <project.icon size={32} />
+                </div>
+                <div className="flex space-x-2">
+                  <Link href={project.github} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <Github size={20} />
+                  </Link>
+                  <Link href={project.link} className="p-2 text-slate-400 hover:text-primary transition-colors">
+                    <ExternalLink size={20} />
+                  </Link>
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 group-hover:text-primary transition-colors">
+                {project.title}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 flex-grow leading-relaxed">
+                {project.description}
+              </p>
+
+              <div className="flex flex-wrap gap-2 pt-6 border-t border-slate-100 dark:border-slate-800">
+                {project.tech.map((t) => (
+                  <span key={t} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
