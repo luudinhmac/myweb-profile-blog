@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  created_at DateTime @default(now())
+  Post       Post[]
+}
+
+model Comment {
+  id           Int      @id @default(autoincrement())
+  post_id      Int?
+  author_name  String?  @db.Text
+  author_email String?  @db.Text
+  content      String?  @db.Text
+  created_at   DateTime @default(now())
+  Post         Post?    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@index([post_id], map: "Comment_post_id_fkey")
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.Text
+  content     String?    @db.Text
+  series      String?    @db.Text
+  is_pinned   Boolean    @default(false)
+  views       Int        @default(0)
+  likes       Int        @default(0)
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @default(now())
+  category_id Int?
+  author_id   Int?
+  Comment     Comment[]
+  User        User?      @relation(fields: [author_id], references: [id])
+  Category    Category?  @relation(fields: [category_id], references: [id])
+  PostLike    PostLike[]
+  Tag         Tag[]      @relation("PostTags")
+
+  @@index([author_id], map: "Post_author_id_fkey")
+  @@index([category_id], map: "Post_category_id_fkey")
+}
+
+model PostLike {
+  id         Int      @id @default(autoincrement())
+  post_id    Int
+  user_id    Int
+  created_at DateTime @default(now())
+  Post       Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  User       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@index([post_id], map: "PostLike_post_id_fkey")
+}
+
+model Tag {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique @db.VarChar(50)
+  created_at DateTime @default(now())
+  Post       Post[]   @relation("PostTags")
+}
+
+model User {
+  id                 Int        @id @default(autoincrement())
+  username           String     @unique
+  email              String?
+  fullname           String?
+  avatar             String?    @db.VarChar(500)
+  profession         String?    @default("Người dùng mới")
+  password           String
+  role               String?    @default("editor")
+  phone              String?    @db.VarChar(20)
+  birthday           String?    @db.VarChar(50)
+  address            String?    @db.Text
+  google_id          String?    @unique
+  facebook_id        String?    @unique
+  apple_id           String?    @unique
+  reset_token        String?
+  reset_token_expiry DateTime?
+  created_at         DateTime   @default(now())
+  Post               Post[]
+  PostLike           PostLike[]
+}
