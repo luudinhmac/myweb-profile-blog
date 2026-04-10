@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+.next/
+out/
+
+# Env & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.vault_pass
+ansible/group_vars/all/vault.yml
+backend/.env
+frontend/.env
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.agent/
+.gemini/
+.vscode/
+.idea/
+
+# Project Specific
+CV-Eng.md
+CV-Vi.md
+info_connect.md
+pnpm-lock.yaml
