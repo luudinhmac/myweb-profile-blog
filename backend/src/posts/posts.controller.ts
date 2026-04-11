@@ -50,14 +50,12 @@ export class PostsController {
   @Patch(':id/toggle-pin')
   @UseGuards(AuthGuard('jwt'))
   togglePin(@Param('id') id: string, @Req() req: any) {
-    if (req.user.role !== 'admin') throw new Error('Unauthorized');
-    return this.postsService.togglePin(+id);
+    return this.postsService.togglePin(+id, req.user);
   }
 
   @Patch(':id/toggle-publish')
   @UseGuards(AuthGuard('jwt'))
   togglePublish(@Param('id') id: string, @Req() req: any) {
-    if (req.user.role !== 'admin') throw new Error('Unauthorized');
-    return this.postsService.togglePublish(+id);
+    return this.postsService.togglePublish(+id, req.user);
   }
 }

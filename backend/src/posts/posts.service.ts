@@ -106,8 +106,9 @@ export class PostsService {
   async update(id: number, user: any, data: any) {
     const post = await this.prisma.post.findUnique({ where: { id } });
     if (!post) throw new NotFoundException('Post not found');
-    if (user.role !== 'admin' && post.author_id !== user.id) {
-      throw new ForbiddenException('Bạn không có quyền sửa bài viết này.');
+    // KHÔNG cho phép Admin sửa bài của người khác (theo yêu cầu người dùng)
+    if (post.author_id !== user.id) {
+      throw new ForbiddenException('Bạn chỉ có thể chỉnh sửa bài viết của chính mình.');
     }
 
     const { tags, ...postData } = data;
@@ -139,9 +140,15 @@ export class PostsService {
     return this.prisma.post.delete({ where: { id } });
   }
 
-  async togglePin(id: number) {
+  async togglePin(id: number, user: any) {
     const post = await this.prisma.post.findUnique({ where: { id } });
     if (!post) throw new NotFoundException('Post not found');
+    
+    // Cho phép Admin hoặc Chủ bài viết
+    if (user.role !== 'admin' && post.author_id !== user.id) {
+      throw new ForbiddenException('Bạn không có quyền ghim bài viết này.');
+    }
+
     return this.prisma.post.update({
       where: { id },
       data: { is_pinned: !post.is_pinned }
@@ -169,9 +176,15 @@ export class PostsService {
     }
   }
 
-  async togglePublish(id: number) {
+  async togglePublish(id: number, user: any) {
     const post = await this.prisma.post.findUnique({ where: { id } });
     if (!post) throw new NotFoundException('Post not found');
+
+    // Cho phép Admin hoặc Chủ bài viết
+    if (user.role !== 'admin' && post.author_id !== user.id) {
+      throw new ForbiddenException('Bạn không có quyền thay đổi trạng thái hiển thị của bài viết này.');
+    }
+
     return this.prisma.post.update({
       where: { id },
       data: { is_published: !post.is_published }
