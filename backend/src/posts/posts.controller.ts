@@ -17,10 +17,18 @@ export class PostsController {
     return this.postsService.findAll(req.user, true);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string, @Query('action') action: string) {
+  @Get(':idOrSlug')
+  findOne(@Param('idOrSlug') idOrSlug: string, @Query('action') action: string) {
     const isView = action === 'view';
-    return this.postsService.findOne(+id, isView);
+    return this.postsService.findOne(idOrSlug, isView);
+  }
+
+  @Get(':id/like-status')
+  @UseGuards(AuthGuard('jwt'))
+  checkLikeStatus(@Param('id') id: string, @Req() req: any) {
+    // Call a new service method or just query directly if we injected Prisma.
+    // Let's add checkLikeStatus in service.
+    return this.postsService.checkLikeStatus(+id, req.user.id);
   }
 
   @Post(':id/like')
