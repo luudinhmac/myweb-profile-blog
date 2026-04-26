@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Mail, User, Eye, EyeOff, Loader2, ArrowLeft, Phone, Calendar, Briefcase, UserPlus } from 'lucide-react';
+import { Lock, Mail, User, Eye, EyeOff, ArrowLeft, Phone, Calendar, Briefcase } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 
 // Modular Services
@@ -75,10 +75,10 @@ export default function RegisterPage() {
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full -translate-y-1/2 -translate-x-1/2 pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-      <div className="max-w-2xl w-full relative z-10 flex flex-col items-center">
+      <div className="max-w-[550px] w-full relative z-10 flex flex-col items-center">
         <Link
           href="/"
-          className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-primary transition-all mb-4 group"
+          className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-primary transition-all mb-6 group"
         >
           <ArrowLeft size={14} className="mr-2 group-hover:-translate-x-1 transition-transform" />
           Quay lại TRANG CHỦ
@@ -87,9 +87,9 @@ export default function RegisterPage() {
         <div className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] border border-slate-200/50 dark:border-slate-800/50 shadow-2xl relative overflow-hidden ring-1 ring-black/5">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
-          <div className="text-center mb-4">
+          <div className="text-center mb-6">
             <h1 className="text-lg font-display font-black text-slate-900 dark:text-white tracking-[0.2em] uppercase">
-              Đăng ký thành viên
+              Tham gia cộng đồng
             </h1>
           </div>
 
@@ -291,5 +291,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-
