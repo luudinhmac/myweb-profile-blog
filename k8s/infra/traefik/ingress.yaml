@@ -6,7 +6,6 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: portfolio-strip-api-prefix@kubernetescrd
 spec:
   rules:
   - host: staging.local
