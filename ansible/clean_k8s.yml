@@ -1,0 +1,35 @@
+---
+- name: Kubernetes Resources Cleanup (App Level)
+  hosts: staging_k8s, production
+  become: yes
+  tasks:
+    - name: Uninstall Traefik Helm Release
+      become_user: macld
+      command: helm uninstall traefik -n infra
+      ignore_errors: yes
+
+    - name: Delete Namespaces (portfolio, infra)
+      become_user: macld
+      shell: |
+        kubectl delete namespace portfolio --timeout=60s
+        kubectl delete namespace infra --timeout=60s
+      ignore_errors: yes
+
+    - name: Delete Global PVs
+      become_user: macld
+      shell: |
+        kubectl delete pv postgres-pv uploads-pv --ignore-not-found
+      ignore_errors: yes
+
+    - name: Cleanup App Data Directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /data/k8s/postgres
+        - /data/k8s/uploads
+      tags: ["dangerous"]
+
+    - name: Cleanup Done
+      debug:
+        msg: "Kubernetes resources cleaned. Ready for app redeployment."

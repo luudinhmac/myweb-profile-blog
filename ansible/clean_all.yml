@@ -1,0 +1,43 @@
+---
+- name: Full Infrastructure Cleanup (Nuclear Option)
+  hosts: staging_k8s, production
+  become: yes
+  tasks:
+    - name: 1. Reset Kubernetes Cluster (kubeadm reset)
+      shell: |
+        kubeadm reset --force
+        rm -rf /etc/cni/net.d
+        rm -rf $HOME/.kube/config
+        rm -rf /etc/kubernetes
+        rm -rf /var/lib/kubelet
+        rm -rf /var/lib/etcd
+      ignore_errors: yes
+
+    - name: 2. Flush IPTables & Networking
+      shell: |
+        iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+        ip link delete cilium_host || true
+        ip link delete cilium_net || true
+        ip link delete cilium_vxlan || true
+      ignore_errors: yes
+
+    - name: 3. Remove ALL Data Directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /data/k8s
+        - /var/lib/containerd/io.containerd.grpc.v1.cri/containers
+      tags: ["dangerous"]
+
+    - name: 4. Recreate Base Directory
+      file:
+        path: /data/k8s
+        state: directory
+        owner: macld
+        group: macld
+        mode: '0775'
+
+    - name: Full Reset Complete
+      debug:
+        msg: "VM is now clean. All infrastructure and data removed."
