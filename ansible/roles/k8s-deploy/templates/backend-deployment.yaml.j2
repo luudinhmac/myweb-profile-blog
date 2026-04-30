@@ -13,8 +13,13 @@ spec:
       labels:
         app: "{{ project_name }}-backend"
     spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: backend
+        securityContext:
+          runAsUser: 1001
         image: "{{ backend_image_tag | default('luudinhmac/portfolio-backend:latest') }}"
         livenessProbe:
           httpGet:
