@@ -1,6 +1,6 @@
 ---
 - name: Configure Server Security
-  hosts: staging
+  hosts: staging_k8s
   become: yes
   roles:
     - security
