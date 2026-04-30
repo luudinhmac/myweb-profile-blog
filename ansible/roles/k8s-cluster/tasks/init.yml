@@ -5,7 +5,6 @@
   register: k8s_init
 
 - name: Initialize k8s cluster
-  # Initialize the Kubernetes control plane. Cilium manages its own pod network.
   command: kubeadm init
   when: not k8s_init.stat.exists
 
@@ -25,6 +24,13 @@
     owner: macld
     group: macld
     mode: '0600'
+
+- name: Fetch admin.conf to ansible-node (localhost)
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    flat: yes
+  become: yes
 
 - name: Install Cilium CLI
   shell: |
