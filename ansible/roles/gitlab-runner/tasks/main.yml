@@ -70,26 +70,26 @@
   when: "'production' in group_names"
   block:
     - name: Add GitLab Helm repository
-      become_user: macld
+      become_user: "{{ ansible_operator_user }}"
       command: helm repo add gitlab https://charts.gitlab.io
 
     - name: Update Helm repositories
-      become_user: macld
+      become_user: "{{ ansible_operator_user }}"
       command: helm repo update
 
     - name: Check if GitLab Runner is already deployed
-      become_user: macld
+      become_user: "{{ ansible_operator_user }}"
       command: helm list -n gitlab-runner
       register: helm_list
       changed_when: false
 
     - name: Create gitlab-runner namespace
-      become_user: macld
+      become_user: "{{ ansible_operator_user }}"
       command: kubectl create namespace gitlab-runner
       ignore_errors: yes
 
     - name: Deploy GitLab Runner via Helm
-      become_user: macld
+      become_user: "{{ ansible_operator_user }}"
       command: |
         helm upgrade --install gitlab-runner gitlab/gitlab-runner \
         --namespace gitlab-runner \

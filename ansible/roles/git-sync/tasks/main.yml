@@ -1,26 +1,16 @@
 ---
-- name: Ensure the Portfolio directory is a Git repository
-  shell: |
-    if [ ! -d .git ]; then
-      git init
-      git remote add origin git@gitlab.com:portfolio-macld/portfolio-infratructure.git
-      git fetch origin
-      git checkout -f main || git checkout -f master
-    fi
-  args:
-    chdir: /home/macld/Portfolio
+- name: Ensure Portfolio directory exists
+  file:
+    path: "{{ user_home }}/{{ project_name | capitalize }}"
+    state: directory
+    owner: "{{ ansible_operator_user }}"
+    group: "{{ ansible_operator_user }}"
 
-- name: Pull latest changes from GitLab
+- name: Sync Infrastructure repository
   git:
-    repo: git@gitlab.com:portfolio-macld/portfolio-infratructure.git
-    dest: /home/macld/Portfolio
+    repo: "git@gitlab.com:portfolio-macld/portfolio-infratructure.git" # You can parameterize the URL too if needed
+    dest: "{{ user_home }}/{{ project_name | capitalize }}"
     version: main
-    key_file: /home/macld/.ssh/id_ed25519_gitlab
     accept_hostkey: yes
-    force: yes
-  register: git_pull_status
-
-- name: Notify about code update
-  debug:
-    msg: "Code updated to version: {{ git_pull_status.after }}"
-  when: git_pull_status.changed
+    key_file: "{{ user_home }}/.ssh/id_ed25519_gitlab"
+  become_user: "{{ ansible_operator_user }}"

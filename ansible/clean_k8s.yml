@@ -1,35 +1,19 @@
 ---
-- name: Kubernetes Resources Cleanup (App Level)
-  hosts: staging_k8s, production
+- name: Clean Kubernetes Resources
+  hosts: staging_k8s
   become: yes
   tasks:
-    - name: Uninstall Traefik Helm Release
-      become_user: macld
-      command: helm uninstall traefik -n infra
+    - name: Remove all deployments in project namespace
+      become_user: "{{ ansible_operator_user }}"
+      command: "kubectl delete deployments --all -n {{ k8s_namespace }}"
       ignore_errors: yes
 
-    - name: Delete Namespaces (portfolio, infra)
-      become_user: macld
-      shell: |
-        kubectl delete namespace portfolio --timeout=60s
-        kubectl delete namespace infra --timeout=60s
+    - name: Remove all services in project namespace
+      become_user: "{{ ansible_operator_user }}"
+      command: "kubectl delete services --all -n {{ k8s_namespace }}"
       ignore_errors: yes
 
-    - name: Delete Global PVs
-      become_user: macld
-      shell: |
-        kubectl delete pv postgres-pv uploads-pv --ignore-not-found
+    - name: Remove all ingresses in project namespace
+      become_user: "{{ ansible_operator_user }}"
+      command: "kubectl delete ingress --all -n {{ k8s_namespace }}"
       ignore_errors: yes
-
-    - name: Cleanup App Data Directories
-      file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /data/k8s/postgres
-        - /data/k8s/uploads
-      tags: ["dangerous"]
-
-    - name: Cleanup Done
-      debug:
-        msg: "Kubernetes resources cleaned. Ready for app redeployment."

@@ -34,8 +34,8 @@
       file:
         path: /data/k8s
         state: directory
-        owner: macld
-        group: macld
+        owner: "{{ ansible_operator_user }}"
+        group: "{{ ansible_operator_user }}"
         mode: '0775'
 
     - name: Full Reset Complete

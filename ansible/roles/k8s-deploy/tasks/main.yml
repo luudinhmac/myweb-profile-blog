@@ -5,9 +5,15 @@
     dest: "{{ user_home }}/{{ item }}"
   loop:
     - frontend-deployment.yaml
+    - backend-deployment.yaml
+    - ingress.yaml
+    - postgres.yaml
 
 - name: Apply Kubernetes manifests
   become_user: "{{ ansible_operator_user }}"
   command: kubectl apply -f "{{ user_home }}/{{ item }}"
   loop:
     - frontend-deployment.yaml
+    - backend-deployment.yaml
+    - ingress.yaml
+    - postgres.yaml

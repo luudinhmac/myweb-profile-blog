@@ -4,14 +4,17 @@
     path: "{{ item }}"
     state: directory
     mode: '0775'
-    owner: macld
-    group: macld
+    owner: "{{ ansible_operator_user }}"
+    group: "{{ ansible_operator_user }}"
   loop:
     - /data/k8s
-    - /data/k8s/manifests
+    - "{{ manifest_dest_base }}"
 
 - name: Sync k8s manifests from ansible-node to remote
   delegate_to: localhost
   become: no
-  command: rsync -avz -e "ssh -i /home/macld/.ssh/id_ed25519_ansible -o StrictHostKeyChecking=no" /home/macld/Portfolio/k8s/ macld@{{ ansible_host }}:/data/k8s/manifests/
+  command: >
+    rsync -avz -e "ssh -i {{ ansible_ssh_key_path }} -o StrictHostKeyChecking=no" 
+    {{ manifest_src_path }} 
+    {{ ansible_operator_user }}@{{ ansible_host }}:{{ manifest_dest_base }}/
   changed_when: true

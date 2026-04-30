@@ -1,62 +1,38 @@
 ---
-- name: Install Helm
-  shell: |
-    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-  args:
-    creates: /usr/local/bin/helm
+- name: Add Traefik Helm repo
+  become_user: "{{ ansible_operator_user }}"
+  kubernetes.core.helm_repository:
+    name: traefik
+    repo_url: "https://traefik.github.io/charts"
 
-- name: Create Kubernetes Namespaces
-  become_user: macld
-  shell: |
-    kubectl create namespace {{ item }} --dry-run=client -o yaml | kubectl apply -f -
-  loop:
-    - infra
-    - portfolio
-    - monitoring
-
-- name: Add Traefik Helm repository and update
-  become_user: macld
-  shell: |
-    helm repo add traefik https://traefik.github.io/charts
-    helm repo update
+- name: Create Traefik namespace
+  become_user: "{{ ansible_operator_user }}"
+  kubernetes.core.k8s:
+    name: traefik
+    kind: Namespace
+    state: present
 
 - name: Deploy Traefik Ingress Controller
-  become_user: macld
-  shell: |
-    helm upgrade --install traefik traefik/traefik \
-      --namespace infra \
-      --set hostNetwork=true \
-      --set ports.web.port=80 \
-      --set ports.websecure.port=443 \
-      --set service.type=ClusterIP \
-      --set deployment.podSecurityContext.runAsUser=0 \
-      --set deployment.podSecurityContext.runAsGroup=0 \
-      --set deployment.podSecurityContext.runAsNonRoot=false \
-      --set securityContext.runAsUser=0 \
-      --set securityContext.runAsGroup=0 \
-      --set securityContext.runAsNonRoot=false \
-      --set securityContext.capabilities.add={NET_BIND_SERVICE} \
-      --set securityContext.readOnlyRootFilesystem=false \
-      --set providers.kubernetesIngress.publishedService.enabled=true \
-      --set providers.kubernetesIngress.allowExternalNameServices=true \
-      --set deployment.strategy.type=Recreate \
-      --wait
+  become_user: "{{ ansible_operator_user }}"
+  kubernetes.core.helm:
+    name: traefik
+    chart_ref: traefik/traefik
+    release_namespace: traefik
+    values:
+      ports:
+        web:
+          nodePort: 32080
+        websecure:
+          nodePort: 32443
+      service:
+        type: NodePort
 
-- name: Apply Global Storage (PVs)
-  command: kubectl apply -f /data/k8s/manifests/base/storage.yaml
-  become_user: macld
-  changed_when: true
+- name: Install Metrics Server
+  become_user: "{{ ansible_operator_user }}"
+  command: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
-- name: Deploy Postgres StatefulSet
-  command: kubectl apply -f /data/k8s/manifests/infra/postgres/
-  become_user: macld
-  changed_when: true
-
-- name: Create PostgreSQL Secret in infra namespace
-  become_user: macld
-  shell: |
-    kubectl create secret generic postgres-secret \
-    --from-literal=POSTGRES_PASSWORD=admin \
-    --from-literal=POSTGRES_USER=staging_user \
-    --from-literal=POSTGRES_DB=portfolio_staging \
-    -n infra --dry-run=client -o yaml | kubectl apply -f -
+- name: Patch Metrics Server for self-signed certificates
+  become_user: "{{ ansible_operator_user }}"
+  command: >
+    kubectl patch deployment metrics-server -n kube-system --type='json' 
+    -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'

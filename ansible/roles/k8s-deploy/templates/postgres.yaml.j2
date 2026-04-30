@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ project_name }}-postgres"
+  namespace: "{{ infra_namespace | default('infra') }}"
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: "{{ project_name }}-postgres"
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ project_name }}-postgres"
+  namespace: "{{ infra_namespace | default('infra') }}"
+spec:
+  serviceName: "{{ project_name }}-postgres"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ project_name }}-postgres"
+  template:
+    metadata:
+      labels:
+        app: "{{ project_name }}-postgres"
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: manual
+        volumeName: postgres-pv
+        resources:
+          requests:
+            storage: 10Gi
