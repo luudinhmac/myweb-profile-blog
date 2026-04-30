@@ -1,6 +1,7 @@
 ---
 - name: Verify that ports 80 and 443 are not occupied by non-K8s processes
   shell: |
+    {% raw %}
     # Check port 80
     P80=$(lsof -i :80 -t)
     if [ ! -z "$P80" ]; then
@@ -21,6 +22,7 @@
         exit 1
       fi
     fi
+    {% endraw %}
   register: port_check
   failed_when: port_check.rc != 0
   changed_when: false
