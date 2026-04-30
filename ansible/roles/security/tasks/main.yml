@@ -18,6 +18,7 @@
   ufw:
     rule: allow
     interface: lo
+    direction: in
 
 - name: Allow SSH (Port 22)
   ufw:
