@@ -45,3 +45,10 @@ spec:
           value: "{{ backend_port }}"
         ports:
         - containerPort: {{ backend_port }}
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /app/uploads
+      volumes:
+      - name: uploads-storage
+        persistentVolumeClaim:
+          claimName: "{{ project_name }}-backend-pvc"
