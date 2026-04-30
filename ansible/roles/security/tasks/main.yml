@@ -41,12 +41,12 @@
 - name: Allow all traffic from internal subnet
   ufw:
     rule: allow
-    src: 192.168.157.0/24
+    src: "{{ internal_subnet }}"
 
 - name: Allow all traffic from Pod network (Service range)
   ufw:
     rule: allow
-    src: 10.96.0.0/12
+    src: "{{ service_network_cidr }}"
 
 - name: Allow traffic on Flannel interface
   shell: ufw allow in on flannel.1

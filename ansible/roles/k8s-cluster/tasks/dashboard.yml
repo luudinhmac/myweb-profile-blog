@@ -1,40 +1,40 @@
 ---
 - name: Install Kubernetes Dashboard
-  become_user: macld
+  become_user: "{{ ansible_operator_user }}"
   command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 
 - name: Create Dashboard Service Account
-  become_user: macld
+  become_user: "{{ ansible_operator_user }}"
   copy:
     content: |
       apiVersion: v1
       kind: ServiceAccount
       metadata:
-        name: admin-user
-        namespace: kubernetes-dashboard
-    dest: /home/macld/dashboard-admin-sa.yaml
+        name: "{{ dashboard_admin_user }}"
+        namespace: "{{ dashboard_namespace }}"
+    dest: "{{ user_home }}/dashboard-admin-sa.yaml"
 
 - name: Create ClusterRoleBinding for Dashboard Admin
-  become_user: macld
+  become_user: "{{ ansible_operator_user }}"
   copy:
     content: |
       apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRoleBinding
       metadata:
-        name: admin-user
+        name: "{{ dashboard_admin_user }}"
       roleRef:
         apiGroup: rbac.authorization.k8s.io
         kind: ClusterRole
         name: cluster-admin
       subjects:
       - kind: ServiceAccount
-        name: admin-user
-        namespace: kubernetes-dashboard
-    dest: /home/macld/dashboard-admin-crb.yaml
+        name: "{{ dashboard_admin_user }}"
+        namespace: "{{ dashboard_namespace }}"
+    dest: "{{ user_home }}/dashboard-admin-crb.yaml"
 
 - name: Apply Dashboard Admin configs
-  become_user: macld
-  command: kubectl apply -f /home/macld/{{ item }}
+  become_user: "{{ ansible_operator_user }}"
+  command: kubectl apply -f "{{ user_home }}/{{ item }}"
   loop:
     - dashboard-admin-sa.yaml
     - dashboard-admin-crb.yaml

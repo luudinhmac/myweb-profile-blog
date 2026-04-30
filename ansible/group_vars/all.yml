@@ -1,0 +1,21 @@
+---
+# Project Configuration
+project_name: portfolio
+k8s_namespace: portfolio
+
+# System Configuration
+ansible_operator_user: macld
+user_home: "/home/{{ ansible_operator_user }}"
+
+# Kubernetes Dashboard Configuration
+dashboard_namespace: kubernetes-dashboard
+dashboard_admin_user: admin-user
+
+# Port Configuration
+backend_port: 3001
+frontend_port: 3000
+
+# Infrastructure Configuration
+internal_subnet: 192.168.157.0/24
+pod_network_cidr: 10.244.0.0/16
+service_network_cidr: 10.96.0.0/12
