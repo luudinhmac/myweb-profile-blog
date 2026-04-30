@@ -53,4 +53,6 @@
 - name: Remove taint from control-plane node (allow running pods on master)
   become_user: macld
   command: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+  failed_when: false
+  changed_when: false
   ignore_errors: yes

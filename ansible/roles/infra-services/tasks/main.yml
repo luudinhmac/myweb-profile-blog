@@ -39,7 +39,6 @@
       --set securityContext.readOnlyRootFilesystem=false \
       --set providers.kubernetesIngress.publishedService.enabled=true \
       --set providers.kubernetesIngress.allowExternalNameServices=true \
-      --set providers.kubernetesingress.allowExternalNameServices=true \
       --set deployment.strategy.type=Recreate \
       --wait
 
