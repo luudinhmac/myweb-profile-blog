@@ -1,0 +1,48 @@
+---
+- name: Install Helm
+  shell: |
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    creates: /usr/local/bin/helm
+
+- name: Create Kubernetes Namespaces
+  become_user: macld
+  shell: |
+    kubectl create namespace {{ item }} --dry-run=client -o yaml | kubectl apply -f -
+  loop:
+    - infra
+    - portfolio
+    - monitoring
+
+- name: Add Traefik Helm repository and update
+  become_user: macld
+  shell: |
+    helm repo add traefik https://traefik.github.io/charts
+    helm repo update
+
+- name: Deploy Traefik Ingress Controller
+  become_user: macld
+  shell: |
+    helm upgrade --install traefik traefik/traefik \
+      --namespace infra \
+      --set ports.web.exposedPort=80 \
+      --set ports.websecure.exposedPort=443 \
+      --set service.type=NodePort
+
+- name: Create Storage Directory for PostgreSQL
+  file:
+    path: /data/k8s/postgres-infra
+    state: directory
+    mode: '0777'
+    owner: macld
+    group: macld
+    recurse: yes
+
+- name: Create PostgreSQL Secret in infra namespace
+  become_user: macld
+  shell: |
+    kubectl create secret generic postgres-secret \
+    --from-literal=POSTGRES_PASSWORD=admin \
+    --from-literal=POSTGRES_USER=staging_user \
+    --from-literal=POSTGRES_DB=portfolio_staging \
+    -n infra --dry-run=client -o yaml | kubectl apply -f -

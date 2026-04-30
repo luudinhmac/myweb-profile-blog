@@ -1,0 +1,67 @@
+---
+- name: Create base data directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0775'
+    owner: macld
+    group: macld
+  loop:
+    - /data/k8s
+    - /data/k8s/uploads
+    - /data/k8s/manifests
+
+- name: Sync k8s manifests
+  become_user: macld
+  synchronize:
+    src: "{{ playbook_dir }}/../../k8s/"
+    dest: /data/k8s/manifests/
+
+- name: Apply Global Storage
+  become_user: macld
+  command: kubectl apply -f /data/k8s/manifests/base/storage.yaml
+
+- name: Create Portfolio Secrets
+  become_user: macld
+  shell: |
+    # Get existing secret if available to persist JWT_SECRET
+    EXISTING_JWT=$(kubectl get secret portfolio-secrets -n portfolio -o jsonpath='{.data.JWT_SECRET}' | base64 -d || echo "")
+    if [ -z "$EXISTING_JWT" ]; then
+      JWT_SECRET=$(openssl rand -base64 32)
+    else
+      JWT_SECRET=$EXISTING_JWT
+    fi
+    
+    kubectl create secret generic portfolio-secrets \
+    --from-literal=DATABASE_URL="postgresql://staging_user:admin@portfolio-postgres.infra:5432/portfolio_staging" \
+    --from-literal=JWT_SECRET="$JWT_SECRET" \
+    -n portfolio --dry-run=client -o yaml | kubectl apply -f -
+
+- name: Apply Infrastructure Manifests
+  become_user: macld
+  command: kubectl apply -f /data/k8s/manifests/infra/{{ item }}
+  loop:
+    - postgres/statefulset.yaml
+    - traefik/ingress.yaml
+
+- name: Apply Backend Manifests
+  become_user: macld
+  command: kubectl apply -f /data/k8s/manifests/backend/
+
+- name: Apply Frontend Manifests
+  become_user: macld
+  command: kubectl apply -f /data/k8s/manifests/frontend/
+
+- name: Wait for services to be ready
+  become_user: macld
+  shell: |
+    kubectl wait --for=condition=Ready pod -l app=portfolio-postgres -n infra --timeout=120s
+    kubectl wait --for=condition=available --timeout=120s deployment/portfolio-backend -n portfolio
+    kubectl wait --for=condition=available --timeout=120s deployment/portfolio-frontend -n portfolio
+
+- name: Run Prisma DB Push (Backend CI/CD Task)
+  # Keeping it here for initial setup
+  become_user: macld
+  shell: |
+    BACKEND_POD=$(kubectl get pods -n portfolio -l app=portfolio-backend -o jsonpath='{.items[0].metadata.name}')
+    kubectl exec -n portfolio $BACKEND_POD -- npx prisma db push --accept-data-loss

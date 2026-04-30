@@ -1,0 +1,6 @@
+---
+- name: Deploy Portfolio Application to Kubernetes
+  hosts: k8s_server
+  become: yes
+  roles:
+    - k8s-deploy

@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portfolio-ingress
+  namespace: infra
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+  - host: staging.local
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: portfolio-backend
+            port:
+              number: 3001
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: portfolio-frontend
+            port:
+              number: 3000
+---
+# We need ExternalName services in infra namespace to point to other namespaces
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-backend
+  namespace: infra
+spec:
+  type: ExternalName
+  externalName: portfolio-backend.portfolio.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-frontend
+  namespace: infra
+spec:
+  type: ExternalName
+  externalName: portfolio-frontend.portfolio.svc.cluster.local
