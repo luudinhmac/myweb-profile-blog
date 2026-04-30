@@ -35,5 +35,8 @@
   pre_tasks:
     - name: Load secrets
       include_vars: vars/secrets.yml
+    - name: Debug variables
+      debug:
+        msg: "database_url is {{ database_url | default('NOT DEFINED') }}"
   roles:
     - { role: k8s-deploy, tags: ["deploy"] }
