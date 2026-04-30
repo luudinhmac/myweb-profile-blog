@@ -19,6 +19,13 @@ spec:
             name: portfolio-backend
             port:
               number: 3001
+      - path: /uploads
+        pathType: Prefix
+        backend:
+          service:
+            name: portfolio-backend
+            port:
+              number: 3001
       - path: /
         pathType: Prefix
         backend:
