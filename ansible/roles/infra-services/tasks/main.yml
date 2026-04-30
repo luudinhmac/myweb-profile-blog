@@ -22,6 +22,7 @@
     --set ports.websecure.hostPort=443
     --set service.type=NodePort
     --set deployment.kind=DaemonSet
+    --set hostNetwork=true
 
 - name: Install Metrics Server
   become_user: "{{ ansible_operator_user }}"
