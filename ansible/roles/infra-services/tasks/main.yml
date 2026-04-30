@@ -8,16 +8,16 @@
   become_user: "{{ ansible_operator_user }}"
   command: helm repo update
 
-- name: Create Traefik namespace
+- name: Create Infra namespace
   become_user: "{{ ansible_operator_user }}"
-  command: kubectl create namespace traefik
+  command: kubectl create namespace infra
   ignore_errors: yes
 
 - name: Deploy Traefik Ingress Controller
   become_user: "{{ ansible_operator_user }}"
   command: >
     helm upgrade --install traefik traefik/traefik
-    --namespace traefik
+    --namespace infra
     --set ports.web.nodePort=32080
     --set ports.websecure.nodePort=32443
     --set service.type=NodePort
