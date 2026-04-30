@@ -1,15 +1,15 @@
 ---
 - name: Create base data directories
   file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: directory
-    mode: '0775'
+    mode: "{{ item.mode }}"
     owner: macld
     group: macld
   loop:
-    - /data/k8s
-    - /data/k8s/uploads
-    - /data/k8s/manifests
+    - { path: '/data/k8s', mode: '0775' }
+    - { path: '/data/k8s/uploads', mode: '0777' }
+    - { path: '/data/k8s/manifests', mode: '0775' }
 
 - name: Apply Global Storage (PVs)
   become_user: macld
