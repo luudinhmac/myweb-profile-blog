@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ project_name }}-backend"
+  namespace: "{{ k8s_namespace }}"
+spec:
+  selector:
+    app: "{{ project_name }}-backend"
+  ports:
+  - protocol: TCP
+    port: {{ backend_port }}
+    targetPort: {{ backend_port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ project_name }}-frontend"
+  namespace: "{{ k8s_namespace }}"
+spec:
+  selector:
+    app: "{{ project_name }}-frontend"
+  ports:
+  - protocol: TCP
+    port: {{ frontend_port }}
+    targetPort: {{ frontend_port }}

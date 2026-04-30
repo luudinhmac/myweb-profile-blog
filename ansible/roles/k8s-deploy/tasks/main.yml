@@ -9,6 +9,7 @@
     - postgres.yaml
     - backend-deployment.yaml
     - frontend-deployment.yaml
+    - services.yaml
     - ingress.yaml
     - middleware.yaml
 
@@ -21,5 +22,6 @@
     - postgres.yaml
     - backend-deployment.yaml
     - frontend-deployment.yaml
+    - services.yaml
     - ingress.yaml
     - middleware.yaml
