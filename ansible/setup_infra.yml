@@ -11,6 +11,7 @@
   become: yes
   roles:
     - { role: common, tags: ["common"] }
+    - { role: manifest-sync, tags: ["sync"] }
     - { role: docker, tags: ["docker"] }
 
 - name: Kubernetes Cluster Setup

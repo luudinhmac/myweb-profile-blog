@@ -1,0 +1,17 @@
+---
+- name: Ensure base directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0775'
+    owner: macld
+    group: macld
+  loop:
+    - /data/k8s
+    - /data/k8s/manifests
+
+- name: Sync k8s manifests from ansible-node to remote
+  delegate_to: localhost
+  become: no
+  command: rsync -avz -e "ssh -i /home/macld/.ssh/id_ed25519_ansible -o StrictHostKeyChecking=no" /home/macld/Portfolio/k8s/ macld@{{ ansible_host }}:/data/k8s/manifests/
+  changed_when: true

@@ -11,12 +11,6 @@
     - /data/k8s/uploads
     - /data/k8s/manifests
 
-- name: Sync k8s manifests (manual rsync)
-  delegate_to: localhost
-  command: rsync -avz -e "ssh -i /home/macld/.ssh/id_ed25519_ansible -o StrictHostKeyChecking=no" /home/macld/Portfolio/k8s/ macld@{{ ansible_host }}:/data/k8s/manifests/
-  changed_when: true
-  become: no
-
 - name: Apply Global Storage (PVs)
   become_user: macld
   command: kubectl apply -f /data/k8s/manifests/base/storage.yaml
