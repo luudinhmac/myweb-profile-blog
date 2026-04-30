@@ -1,0 +1,53 @@
+---
+- name: Infrastructure Cleanup (Hard Reset)
+  hosts: staging_k8s, production
+  become: yes
+  vars:
+    ansible_become_pass: "{{ SUDO_PASSWORD | default('') }}"
+  tasks:
+    - name: Uninstall Traefik Helm Release
+      become_user: macld
+      command: helm uninstall traefik -n infra
+      ignore_errors: yes
+
+    - name: Delete Namespaces (This will delete all pods, svc, pvc)
+      become_user: macld
+      shell: |
+        kubectl delete namespace portfolio --timeout=60s
+        kubectl delete namespace infra --timeout=60s
+      ignore_errors: yes
+
+    - name: Delete Global PVs
+      become_user: macld
+      shell: |
+        kubectl delete pv postgres-pv uploads-pv --ignore-not-found
+      ignore_errors: yes
+
+    - name: Force delete stuck namespaces (optional)
+      become_user: macld
+      shell: |
+        kubectl patch ns portfolio -p '{"spec":{"finalizers":[]}}' --type=merge || true
+        kubectl patch ns infra -p '{"spec":{"finalizers":[]}}' --type=merge || true
+      ignore_errors: yes
+
+    - name: Cleanup Data Directories on Host
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /data/k8s/postgres
+        - /data/k8s/uploads
+        - /data/k8s/manifests
+      tags: ["dangerous"]
+
+    - name: Recreate Base Manifests Directory
+      file:
+        path: /data/k8s/manifests
+        state: directory
+        owner: macld
+        group: macld
+        mode: '0775'
+
+    - name: Final Cleanup Confirmation
+      debug:
+        msg: "Infrastructure cleaned. Ready for fresh deployment."
