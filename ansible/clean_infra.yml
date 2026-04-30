@@ -30,6 +30,23 @@
         kubectl patch ns infra -p '{"spec":{"finalizers":[]}}' --type=merge || true
       ignore_errors: yes
 
+    - name: Deep Cluster Reset (kubeadm reset)
+      shell: |
+        kubeadm reset --force
+        rm -rf /etc/cni/net.d
+        rm -rf $HOME/.kube/config
+        rm -rf /etc/kubernetes
+        rm -rf /var/lib/kubelet
+        rm -rf /var/lib/etcd
+      tags: ["never", "deep-clean"]
+      ignore_errors: yes
+
+    - name: Flush IPTables
+      shell: |
+        iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+      tags: ["never", "deep-clean"]
+      ignore_errors: yes
+
     - name: Cleanup Data Directories on Host
       file:
         path: "{{ item }}"
@@ -38,7 +55,7 @@
         - /data/k8s/postgres
         - /data/k8s/uploads
         - /data/k8s/manifests
-      tags: ["dangerous"]
+      tags: ["dangerous", "deep-clean"]
 
     - name: Recreate Base Manifests Directory
       file:
@@ -47,6 +64,7 @@
         owner: macld
         group: macld
         mode: '0775'
+      tags: ["deep-clean"]
 
     - name: Final Cleanup Confirmation
       debug:
