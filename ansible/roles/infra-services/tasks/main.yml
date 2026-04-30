@@ -23,7 +23,7 @@
     --set service.type=NodePort
     --set deployment.kind=DaemonSet
     --set hostNetwork=true
-    --set deployment.rollingUpdate.maxUnavailable=1
+    --set updateStrategy.rollingUpdate.maxUnavailable=1
 
 - name: Install Metrics Server
   become_user: "{{ ansible_operator_user }}"
