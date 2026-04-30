@@ -26,6 +26,7 @@
     --set deployment.kind=DaemonSet
     --set hostNetwork=true
     --set updateStrategy.rollingUpdate.maxUnavailable=1
+    --set updateStrategy.rollingUpdate.maxSurge=0
 
 - name: Install Metrics Server
   become_user: "{{ ansible_operator_user }}"
