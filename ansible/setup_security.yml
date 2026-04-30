@@ -1,0 +1,6 @@
+---
+- name: Configure Server Security
+  hosts: staging
+  become: yes
+  roles:
+    - security
