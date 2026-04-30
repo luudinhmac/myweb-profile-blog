@@ -6,6 +6,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ k8s_namespace }}-{{ project_name }}-strip-prefix@kubernetescrd"
 spec:
   rules:
   - host: staging.local # You might want to parameterize this too
