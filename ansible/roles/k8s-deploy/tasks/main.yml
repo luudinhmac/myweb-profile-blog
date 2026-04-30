@@ -11,15 +11,21 @@
     - /data/k8s/uploads
     - /data/k8s/manifests
 
-- name: Sync k8s manifests
-  become_user: macld
-  synchronize:
-    src: "{{ playbook_dir }}/../../k8s/"
-    dest: /data/k8s/manifests/
+- name: Sync k8s manifests (manual rsync)
+  shell: rsync -avz -e "ssh -i /home/macld/.ssh/id_ed25519_ansible -o StrictHostKeyChecking=no" /home/macld/Portfolio/infra/k8s/ macld@192.168.157.110:/data/k8s/manifests/
+  delegate_to: localhost
+  become: no
 
-- name: Apply Global Storage
+- name: Apply Global Storage (PVs)
   become_user: macld
   command: kubectl apply -f /data/k8s/manifests/base/storage.yaml
+
+- name: Wait for PVs to be Available
+  become_user: macld
+  shell: |
+    for pv in postgres-pv uploads-pv; do
+      kubectl wait --for=jsonpath='{.status.phase}'=Available pv/$pv --timeout=60s
+    done
 
 - name: Create Portfolio Secrets
   become_user: macld
@@ -36,6 +42,12 @@
     --from-literal=DATABASE_URL="postgresql://staging_user:admin@portfolio-postgres.infra:5432/portfolio_staging" \
     --from-literal=JWT_SECRET="$JWT_SECRET" \
     -n portfolio --dry-run=client -o yaml | kubectl apply -f -
+
+- name: Cleanup legacy resources (Infra namespace)
+  become_user: macld
+  shell: |
+    kubectl delete ingress portfolio-ingress -n infra --ignore-not-found
+    kubectl delete svc portfolio-backend portfolio-frontend -n infra --ignore-not-found
 
 - name: Apply Infrastructure Manifests
   become_user: macld
@@ -59,9 +71,16 @@
     kubectl wait --for=condition=available --timeout=120s deployment/portfolio-backend -n portfolio
     kubectl wait --for=condition=available --timeout=120s deployment/portfolio-frontend -n portfolio
 
-- name: Run Prisma DB Push (Backend CI/CD Task)
-  # Keeping it here for initial setup
+- name: Database Seeding (Initial Setup)
   become_user: macld
   shell: |
     BACKEND_POD=$(kubectl get pods -n portfolio -l app=portfolio-backend -o jsonpath='{.items[0].metadata.name}')
+    # Run prisma push and seed
     kubectl exec -n portfolio $BACKEND_POD -- npx prisma db push --accept-data-loss
+    kubectl exec -n portfolio $BACKEND_POD -- node scripts/seed.js
+  register: seed_output
+  ignore_errors: yes
+
+- name: Display Seed Output
+  debug:
+    var: seed_output.stdout_lines

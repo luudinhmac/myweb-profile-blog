@@ -38,11 +38,17 @@
   args:
     creates: /usr/local/bin/cilium
 
+- name: Check Cilium status
+  become_user: macld
+  command: cilium status
+  register: cilium_status
+  failed_when: false
+  changed_when: false
+
 - name: Install Cilium CNI
   become_user: macld
   command: cilium install
-  register: cilium_install
-  changed_when: "'installed' in cilium_install.stdout"
+  when: cilium_status.rc != 0
 
 - name: Remove taint from control-plane node (allow running pods on master)
   become_user: macld

@@ -42,6 +42,8 @@ spec:
         name: postgres-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: manual
+        volumeName: postgres-pv
         resources:
           requests:
-            storage: 5Gi
+            storage: 10Gi

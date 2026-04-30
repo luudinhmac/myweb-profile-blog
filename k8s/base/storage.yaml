@@ -8,6 +8,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
   hostPath:
     path: /data/k8s/uploads
 ---
@@ -21,5 +22,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
   hostPath:
     path: /data/k8s/postgres-infra

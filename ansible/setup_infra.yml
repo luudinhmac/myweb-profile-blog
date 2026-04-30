@@ -1,3 +1,11 @@
+---
+- name: Sync latest code from GitLab
+  hosts: localhost
+  connection: local
+  become: no
+  roles:
+    - { role: git-sync, tags: ["sync"] }
+
 - name: Infrastructure Setup (Build, Staging, Production)
   hosts: build, staging_k8s, production
   become: yes
@@ -10,13 +18,13 @@
   become: yes
   roles:
     - { role: k8s-cluster, tags: ["k8s"] }
+    - { role: infra-services, tags: ["infra-services"] }
 
 - name: GitLab Runner Setup
   hosts: build, production
   become: yes
-  vars:
-    GITLAB_RUNNER_TOKEN_PROD: "{{ lookup('env', 'GITLAB_RUNNER_TOKEN_PROD') }}"
-    RUNNER_TOKEN_STAGING: "{{ lookup('env', 'RUNNER_TOKEN_STAGING') }}"
+  vars_files:
+    - vars/secrets.yml
   roles:
     - { role: gitlab-runner, tags: ["runner"] }
 
