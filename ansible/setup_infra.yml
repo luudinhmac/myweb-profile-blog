@@ -32,7 +32,8 @@
 - name: Application Deployment (Staging)
   hosts: staging_k8s
   become: yes
-  vars_files:
-    - vars/secrets.yml
+  pre_tasks:
+    - name: Load secrets
+      include_vars: vars/secrets.yml
   roles:
     - { role: k8s-deploy, tags: ["deploy"] }
