@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: "{{ project_name }}-backend-pv"
+spec:
+  capacity:
+    storage: {{ backend_storage_size | default('5Gi') }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /data/k8s/storage/backend-uploads
+    type: DirectoryOrCreate
+  storageClassName: ""
