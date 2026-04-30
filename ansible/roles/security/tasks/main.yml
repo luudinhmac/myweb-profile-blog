@@ -48,6 +48,11 @@
     rule: allow
     src: "{{ service_network_cidr }}"
 
+- name: Allow all traffic from Pod network (Pod range)
+  ufw:
+    rule: allow
+    src: "{{ pod_network_cidr }}"
+
 - name: Allow traffic on Flannel interface
   shell: ufw allow in on flannel.1
   ignore_errors: yes
