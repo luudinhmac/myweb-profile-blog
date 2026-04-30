@@ -42,14 +42,15 @@
       --set deployment.strategy.type=Recreate \
       --wait
 
-- name: Create Storage Directory for PostgreSQL
-  file:
-    path: /data/k8s/postgres-infra
-    state: directory
-    mode: '0777'
-    owner: macld
-    group: macld
-    recurse: yes
+- name: Apply Global Storage (PVs)
+  command: kubectl apply -f /home/macld/Portfolio/k8s/base/storage.yaml
+  become_user: macld
+  changed_when: true
+
+- name: Deploy Postgres StatefulSet
+  command: kubectl apply -f /home/macld/Portfolio/k8s/infra/postgres/
+  become_user: macld
+  changed_when: true
 
 - name: Create PostgreSQL Secret in infra namespace
   become_user: macld
