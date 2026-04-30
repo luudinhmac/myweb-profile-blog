@@ -18,9 +18,10 @@
   command: >
     helm upgrade --install traefik traefik/traefik
     --namespace infra
-    --set ports.web.nodePort=32080
-    --set ports.websecure.nodePort=32443
+    --set ports.web.hostPort=80
+    --set ports.websecure.hostPort=443
     --set service.type=NodePort
+    --set deployment.kind=DaemonSet
 
 - name: Install Metrics Server
   become_user: "{{ ansible_operator_user }}"
