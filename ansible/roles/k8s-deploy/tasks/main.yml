@@ -4,16 +4,22 @@
     src: "{{ item }}.j2"
     dest: "{{ user_home }}/{{ item }}"
   loop:
-    - frontend-deployment.yaml
-    - backend-deployment.yaml
-    - ingress.yaml
+    - backend-secrets.yaml
+    - backend-pvc.yaml
     - postgres.yaml
+    - backend-deployment.yaml
+    - frontend-deployment.yaml
+    - ingress.yaml
+    - middleware.yaml
 
 - name: Apply Kubernetes manifests
   become_user: "{{ ansible_operator_user }}"
   command: kubectl apply -f "{{ user_home }}/{{ item }}"
   loop:
-    - frontend-deployment.yaml
-    - backend-deployment.yaml
-    - ingress.yaml
+    - backend-secrets.yaml
+    - backend-pvc.yaml
     - postgres.yaml
+    - backend-deployment.yaml
+    - frontend-deployment.yaml
+    - ingress.yaml
+    - middleware.yaml
