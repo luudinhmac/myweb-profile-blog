@@ -1,31 +1,26 @@
 ---
 - name: Add Traefik Helm repo
   become_user: "{{ ansible_operator_user }}"
-  kubernetes.core.helm_repository:
-    name: traefik
-    repo_url: "https://traefik.github.io/charts"
+  command: helm repo add traefik https://traefik.github.io/charts
+  ignore_errors: yes
+
+- name: Update Helm repos
+  become_user: "{{ ansible_operator_user }}"
+  command: helm repo update
 
 - name: Create Traefik namespace
   become_user: "{{ ansible_operator_user }}"
-  kubernetes.core.k8s:
-    name: traefik
-    kind: Namespace
-    state: present
+  command: kubectl create namespace traefik
+  ignore_errors: yes
 
 - name: Deploy Traefik Ingress Controller
   become_user: "{{ ansible_operator_user }}"
-  kubernetes.core.helm:
-    name: traefik
-    chart_ref: traefik/traefik
-    release_namespace: traefik
-    values:
-      ports:
-        web:
-          nodePort: 32080
-        websecure:
-          nodePort: 32443
-      service:
-        type: NodePort
+  command: >
+    helm upgrade --install traefik traefik/traefik
+    --namespace traefik
+    --set ports.web.nodePort=32080
+    --set ports.websecure.nodePort=32443
+    --set service.type=NodePort
 
 - name: Install Metrics Server
   become_user: "{{ ansible_operator_user }}"

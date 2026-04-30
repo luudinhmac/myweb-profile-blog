@@ -36,9 +36,5 @@
     - name: Load secrets
       include_vars: vars/secrets.yml
       tags: ["deploy"]
-    - name: Debug variables
-      debug:
-        msg: "database_url is {{ database_url | default('NOT DEFINED') }}"
-      tags: ["deploy"]
   roles:
     - { role: k8s-deploy, tags: ["deploy"] }
