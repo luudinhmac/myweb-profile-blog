@@ -37,6 +37,8 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 5
         env:
+        - name: TZ
+          value: "Asia/Ho_Chi_Minh"
         - name: INTERNAL_API_URL
           value: "http://portfolio-backend:3001"
         - name: NEXT_PUBLIC_API_URL
