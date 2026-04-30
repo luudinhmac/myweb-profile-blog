@@ -45,6 +45,13 @@
         --maintenance-note "Managed by Ansible"
       when: runner_check.rc != 0
 
+    - name: Schedule daily Docker cleanup
+      cron:
+        name: "Daily Docker Cleanup"
+        minute: "0"
+        hour: "3"
+        job: "docker system prune -af --volumes"
+
 - name: Install Helm on K8s Nodes
   when: "'staging_k8s' in group_names or 'production' in group_names"
   block:
