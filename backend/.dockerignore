@@ -1,0 +1,9 @@
+**/node_modules
+dist
+src/generated
+*.log
+.git
+.env
+Dockerfile
+Dockerfile.*
+scratch

@@ -1,13 +1,24 @@
 import { Module } from '@nestjs/common';
-import { PostsService } from './posts.service';
-import { PostsController } from './posts.controller';
+import { PostsController } from './controllers/posts.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { UploadModule } from '../upload/upload.module';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { NotificationsModule } from '../notifications/presentation/notifications.module';
 import { AdminAlertModule } from '../admin-alert/admin-alert.module';
-import { PostsRepository } from './repositories/post.repository';
-import { I_POSTS_REPOSITORY } from './repositories/post.repository.interface';
+import { PrismaPostRepository } from './repositories/prisma-post.repository';
+import { I_POST_REPOSITORY } from './domain/post.repository.interface';
 import { StorageModule } from '../../infrastructure/storage/storage.module';
+
+// Use Cases
+import { GetPostsUseCase } from './services/get-posts.use-case';
+import { GetPostUseCase } from './services/get-post.use-case';
+import { CreatePostUseCase } from './services/create-post.use-case';
+import { UpdatePostUseCase } from './services/update-post.use-case';
+import { DeletePostUseCase } from './services/delete-post.use-case';
+import { TogglePinPostUseCase } from './services/toggle-pin-post.use-case';
+import { TogglePublishPostUseCase } from './services/toggle-publish-post.use-case';
+import { ToggleLikePostUseCase } from './services/toggle-like-post.use-case';
+import { GetLikeStatusUseCase } from './services/get-like-status.use-case';
+
 
 @Module({
   imports: [
@@ -19,12 +30,24 @@ import { StorageModule } from '../../infrastructure/storage/storage.module';
   ],
   controllers: [PostsController],
   providers: [
-    PostsService,
     {
-      provide: I_POSTS_REPOSITORY,
-      useClass: PostsRepository,
+      provide: I_POST_REPOSITORY,
+      useClass: PrismaPostRepository,
     },
+    GetPostsUseCase,
+    GetPostUseCase,
+    CreatePostUseCase,
+    UpdatePostUseCase,
+    DeletePostUseCase,
+    TogglePinPostUseCase,
+    TogglePublishPostUseCase,
+    ToggleLikePostUseCase,
+    GetLikeStatusUseCase,
   ],
-  exports: [PostsService, I_POSTS_REPOSITORY],
+  exports: [
+    I_POST_REPOSITORY,
+    GetPostsUseCase,
+    GetPostUseCase,
+  ],
 })
 export class PostsModule {}

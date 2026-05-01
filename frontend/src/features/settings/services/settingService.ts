@@ -1,7 +1,15 @@
 import api from '@/lib/axios';
 import axios from 'axios';
 
-const getBaseUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001/api';
+const getBaseUrl = () => {
+  const isServer = typeof window === 'undefined';
+  const defaultBase = isServer 
+    ? (process.env.NODE_ENV === 'production' ? 'http://portfolio-backend:3001/api' : 'http://127.0.0.1:3002/api')
+    : '/api';
+  
+  const base = process.env.NEXT_PUBLIC_API_URL || defaultBase;
+  return base.endsWith('/v1') ? base : `${base}/v1`;
+};
 
 export interface SettingItem {
   key: string;

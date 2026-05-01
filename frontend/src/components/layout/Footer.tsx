@@ -5,18 +5,21 @@ import { Github, Linkedin, Mail, Users, BarChart3 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
+import { useAuth } from '@/context/AuthContext';
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const pathname = usePathname();
+  const { user, isAuthenticated } = useAuth();
   const [stats, setStats] = useState<{ onlineCount: number; totalVisits: number } | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
-    if (pathname.startsWith('/admin') || pathname === '/maintenance') return;
+    if (pathname.startsWith('/portal-dashboard') || pathname === '/maintenance') return;
 
     const fetchStats = async () => {
       try {
-        const res = await fetch(`/api/stats/counters`);
+        const res = await fetch(`/api/v1/stats/counters`);
         if (res.ok) {
           const data = await res.json();
           setStats(data);
@@ -34,7 +37,7 @@ export default function Footer() {
     return () => clearInterval(interval);
   }, [pathname]);
 
-  if (pathname.startsWith('/admin') || pathname === '/maintenance') {
+  if (pathname.startsWith('/portal-dashboard') || pathname === '/maintenance') {
     return null;
   }
 
@@ -87,12 +90,16 @@ export default function Footer() {
               Quản trị
             </h3>
             <ul className="mt-4 space-y-2">
-              <li>
-                <Link href="/admin" className="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">Dashboard</Link>
-              </li>
-              <li>
-                <Link href="/login" className="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">Đăng nhập</Link>
-              </li>
+              {isAuthenticated && user && ['admin', 'superadmin'].includes(user.role) && (
+                <li>
+                  <Link href="/portal-dashboard" className="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">Dashboard</Link>
+                </li>
+              )}
+              {!isAuthenticated && (
+                <li>
+                  <Link href="/login" className="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">Đăng nhập</Link>
+                </li>
+              )}
             </ul>
           </div>
         </div>

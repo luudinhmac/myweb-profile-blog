@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma-client"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -66,7 +66,7 @@ model Post {
   Author       User?      @relation("PostAuthor", fields: [author_id], references: [id])
   BlockedBy    User?      @relation("PostBlocker", fields: [blocked_by_id], references: [id])
   Category     Category?  @relation(fields: [category_id], references: [id])
-  Series       Series?    @relation(fields: [series_id], references: [id])
+  Series       Series?    @relation(fields: [series_id], references: [id], onDelete: SetNull)
   PostLike     PostLike[]
   Tag          Tag[]      @relation("PostTags")
 
@@ -147,6 +147,30 @@ model Setting {
   group      String   @default("general")
   is_public  Boolean  @default(true)
   updated_at DateTime @default(now()) @updatedAt
+}
+
+model Media {
+  id         Int          @id @default(autoincrement())
+  hash       String       @unique
+  path       String       @unique // e.g., "123456.webp"
+  mime_type  String?
+  size       Int?
+  created_at DateTime     @default(now())
+  Usage      MediaUsage[]
+
+  @@index([hash])
+}
+
+model MediaUsage {
+  id          Int    @id @default(autoincrement())
+  media_id    Int
+  entity_type String // 'USER', 'POST', 'SETTING'
+  entity_id   Int
+  field       String // 'avatar', 'cover', 'content'
+  Media       Media  @relation(fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@unique([media_id, entity_type, entity_id, field])
+  @@index([entity_type, entity_id])
 }
 
 model MaintenanceCode {
