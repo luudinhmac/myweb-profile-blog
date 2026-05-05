@@ -21,25 +21,25 @@ deploy_apps:
   script:
     - apk add --no-cache curl jq
     - |
-      # Tự động lấy Tag mới nhất của Backend
-      BACKEND_TAG=$(curl -s "https://hub.docker.com/v2/repositories/luudinhmac/portfolio-backend/tags/?page_size=1" | jq -r '.results[0].name')
-      # Tự động lấy Tag mới nhất của Frontend
-      FRONTEND_TAG=$(curl -s "https://hub.docker.com/v2/repositories/luudinhmac/portfolio-frontend/tags/?page_size=1" | jq -r '.results[0].name')
+      echo "Fetching latest tags from Docker Hub..."
+      BACKEND_TAG=$(curl -s "https://hub.docker.com/v2/repositories/luudinhmac/portfolio-backend/tags/?page_size=2" | jq -r '.results | map(select(.name != "latest")) | .[0].name')
+      FRONTEND_TAG=$(curl -s "https://hub.docker.com/v2/repositories/luudinhmac/portfolio-frontend/tags/?page_size=2" | jq -r '.results | map(select(.name != "latest")) | .[0].name')
       
-      echo "Latest Backend Tag found: $BACKEND_TAG"
-      echo "Latest Frontend Tag found: $FRONTEND_TAG"
+      echo "Backend Tag: $BACKEND_TAG"
+      echo "Frontend Tag: $FRONTEND_TAG"
       
       # Triển khai Backend
       helm upgrade --install portfolio-backend ./helm/backend \
         --namespace portfolio \
-        --set image.tag=luudinhmac/portfolio-backend:$BACKEND_TAG \
+        --set image.tag=$BACKEND_TAG \
         --kube-insecure-skip-tls-verify
       
       # Triển khai Frontend
       helm upgrade --install portfolio-frontend ./helm/frontend \
         --namespace portfolio \
-        --set image.tag=luudinhmac/portfolio-frontend:$FRONTEND_TAG \
+        --set image.tag=$FRONTEND_TAG \
         --kube-insecure-skip-tls-verify
   rules:
     - if: $CI_PIPELINE_SOURCE == "pipeline"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+    - if: $CI_PIPELINE_SOURCE == "web" # Cho phép chạy thủ công từ giao diện
