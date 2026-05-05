@@ -1,42 +1,37 @@
-# Infrastructure Management
+# Portfolio Infrastructure
 
-This repository contains the infrastructure code for the Portfolio project, including Ansible playbooks for server provisioning and Kubernetes manifests.
+Dự án quản lý hạ tầng Kubernetes cho hệ thống Portfolio sử dụng **Ansible** để khởi tạo cụm và **Helm** để quản lý ứng dụng.
 
-## Kubernetes Installation (Staging)
+## 1. Khởi tạo Cluster (Ansible)
+Sử dụng Ansible node (`192.168.157.50`) để cài đặt K8s v1.31, Cilium CNI và Traefik Ingress.
 
-### 1. Chuẩn bị (GitOps Flow)
-Sau khi push code từ máy local lên GitLab, thực hiện kéo code mới nhất về Ansible node (192.168.157.50):
 ```powershell
-# Trên máy local hoặc truy cập vào ansible node để pull
-ssh macld@192.168.157.50 "cd /home/macld/portfolio-infratructure && git pull origin feature/k8s-staging-setup"
-```
-
-### 2. Execution
-Run the playbook from the Ansible node:
-```powershell
-# Run playbook (sudo password: admin)
+# Chạy playbook từ Ansible node
 ssh macld@192.168.157.50 "cd /home/macld/portfolio-infratructure/ansible && ansible-playbook -i inventory.ini playbooks/setup_cluster.yml --extra-vars 'ansible_become_pass=admin'"
 ```
 
-### 3. Triển khai Database (PostgreSQL)
-Chuẩn bị thư mục dữ liệu trên node staging và triển khai manifests:
-```powershell
-# Tạo thư mục hostPath trên staging node
-ssh macld@192.168.157.50 "ssh -i /home/macld/.ssh/id_ed25519_ansible macld@192.168.157.110 'echo admin | sudo -S mkdir -p /data/k8s/postgres-infra && echo admin | sudo -S chmod 777 /data/k8s/postgres-infra'"
+## 2. Quản lý Ứng dụng (Helm)
 
-# Deploy Postgres từ Ansible node
-ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && /usr/local/bin/kubectl apply -k /home/macld/portfolio-infratructure/k8s/base/postgres"
+### Triển khai Database (PostgreSQL)
+```powershell
+# Từ Ansible node
+ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm upgrade --install postgres /home/macld/portfolio-infratructure/helm/postgres --namespace infra --create-namespace"
 ```
 
-### 4. Kiểm tra trạng thái (Verification)
-Verify the cluster and database status from the Ansible node:
+### Triển khai Backend & Frontend (CI/CD)
+Quy trình triển khai app được thực hiện tự động qua GitLab CI bằng lệnh:
+```bash
+helm upgrade --install portfolio-backend ./helm/backend --namespace portfolio --set image.tag=$IMAGE_TAG
+```
+
+## 3. Kiểm tra trạng thái
 ```powershell
-# Kiểm tra Node Status
-ssh macld@192.168.157.50 "ssh -i /home/macld/.ssh/id_ed25519_ansible macld@192.168.157.110 'kubectl get nodes -o wide'"
+# Xem danh sách các bản phát hành Helm
+ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm list -A"
 
-# Kiểm tra tài nguyên trong namespace infra (Traefik, Postgres)
-ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && kubectl get all -n infra"
-
-# Kiểm tra tất cả các Pod trên Cluster
+# Kiểm tra Pods
 ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && kubectl get pods -A"
 ```
+
+## 4. Cấu hình xác thực (CI/CD)
+Để GitLab CI có thể deploy, hãy đảm bảo biến `KUBE_CONFIG_BASE64` đã được thiết lập trong GitLab CI/CD Variables.

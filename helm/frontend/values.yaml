@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: luudinhmac/portfolio-frontend
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+env:
+  tz: "Asia/Ho_Chi_Minh"
+  internalApiUrl: "http://portfolio-backend:3001"
+
+namespace: portfolio
