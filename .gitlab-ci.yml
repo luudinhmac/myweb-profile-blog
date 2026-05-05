@@ -19,7 +19,8 @@ deploy_app:
     - agent-1
   <<: *k8s_auth
   script:
-    - env | grep APP_TYPE || echo "APP_TYPE not found in env"
+    - echo "Pipeline triggered by $CI_PIPELINE_SOURCE from project $CI_CONFIG_PATH"
+    - echo "APP_TYPE is '$APP_TYPE'"
     - |
       if [ "$APP_TYPE" == "backend" ]; then
         CHART_PATH="./helm/backend"
@@ -28,13 +29,20 @@ deploy_app:
         CHART_PATH="./helm/frontend"
         RELEASE_NAME="portfolio-frontend"
       else
-        echo "Unknown APP_TYPE: '$APP_TYPE'"
+        echo "ERROR: Unknown or missing APP_TYPE: '$APP_TYPE'"
         exit 1
       fi
-      echo "Deploying $APP_TYPE with tag $IMAGE_TAG..."
+      
+      if [ -z "$IMAGE_TAG" ]; then
+        echo "ERROR: IMAGE_TAG is missing"
+        exit 1
+      fi
+      
       helm upgrade --install $RELEASE_NAME $CHART_PATH \
         --namespace $K8S_NAMESPACE \
         --set image.tag=$IMAGE_TAG \
         --kube-insecure-skip-tls-verify
   rules:
-    - if: $CI_PIPELINE_SOURCE
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+    - if: $APP_TYPE # Chạy nếu có biến APP_TYPE (phòng hờ)
