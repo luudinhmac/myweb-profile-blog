@@ -1,0 +1,39 @@
+stages:
+  - deploy
+
+variables:
+  K8S_NAMESPACE: portfolio
+  TZ: Asia/Ho_Chi_Minh
+
+.k8s_auth: &k8s_auth
+  before_script:
+    - echo "$KUBE_CONFIG_BASE64" | base64 -d > kubeconfig
+    - export KUBECONFIG=$PWD/kubeconfig
+
+deploy_app:
+  stage: deploy
+  image:
+    name: alpine/helm:latest
+    entrypoint: [""]
+  tags:
+    - agent-1
+  <<: *k8s_auth
+  script:
+    - |
+      if [ "$APP_TYPE" == "backend" ]; then
+        CHART_PATH="./helm/backend"
+        RELEASE_NAME="portfolio-backend"
+      elif [ "$APP_TYPE" == "frontend" ]; then
+        CHART_PATH="./helm/frontend"
+        RELEASE_NAME="portfolio-frontend"
+      else
+        echo "Unknown APP_TYPE: $APP_TYPE"
+        exit 1
+      fi
+      echo "Deploying $APP_TYPE with tag $IMAGE_TAG..."
+      helm upgrade --install $RELEASE_NAME $CHART_PATH \
+        --namespace $K8S_NAMESPACE \
+        --set image.tag=$IMAGE_TAG \
+        --kube-insecure-skip-tls-verify
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "pipeline"'
