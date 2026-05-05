@@ -1,27 +1,27 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: portfolio-backend-pv
+  name: {{ include "backend.fullname" . }}-pv
 spec:
   capacity:
-    storage: 5Gi
+    storage: {{ .Values.persistence.size }}
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /data/k8s/storage/backend-uploads
+    path: {{ .Values.persistence.path }}
     type: DirectoryOrCreate
   storageClassName: ""
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: portfolio-backend-pvc
+  name: {{ include "backend.fullname" . }}-pvc
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .Values.persistence.size }}
   storageClassName: ""
-  volumeName: portfolio-backend-pv
+  volumeName: {{ include "backend.fullname" . }}-pv
