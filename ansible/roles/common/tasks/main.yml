@@ -42,3 +42,9 @@
     user: "{{ ansible_user }}"
     state: present
     key: "{{ control_node_pub_key['content'] | b64decode }}"
+
+- name: Install Helm
+  shell: |
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    creates: /usr/local/bin/helm
