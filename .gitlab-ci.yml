@@ -36,4 +36,4 @@ deploy_app:
         --set image.tag=$IMAGE_TAG \
         --kube-insecure-skip-tls-verify
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "pipeline"'
+    - if: $CI_PIPELINE_SOURCE
