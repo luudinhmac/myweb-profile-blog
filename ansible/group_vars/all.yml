@@ -20,7 +20,5 @@ internal_subnet: 192.168.157.0/24
 pod_network_cidr: 10.0.0.0/8
 service_network_cidr: 10.96.0.0/12
 
-# Sync Paths
-manifest_src_path: "{{ user_home }}/Portfolio/k8s/"
-manifest_dest_base: "/data/k8s/manifests"
+# SSH Configuration
 ansible_ssh_key_path: "{{ user_home }}/.ssh/id_ed25519_ansible"

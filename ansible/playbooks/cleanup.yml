@@ -1,0 +1,8 @@
+---
+- name: Cleanup Infrastructure
+  hosts: all
+  become: yes
+  tasks:
+    - name: Run cleanup scripts
+      debug:
+        msg: "Add cleanup tasks here"

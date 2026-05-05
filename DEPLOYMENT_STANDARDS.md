@@ -28,9 +28,12 @@ Mọi file `.gitlab-ci.yml` phải sử dụng biến số (Variables) cho các 
 - **Next.js:** Phải sử dụng chế độ `standalone` build.
 - **Prisma:** Lệnh `npx prisma generate` phải được chạy ở stage cuối (`runner`) để đảm bảo client tồn tại trong production.
 
-## 5. Quy chuẩn Hạ tầng (Ansible)
-- **Cấu trúc thư mục:** Ansible roles và K8s manifests phải nằm chung trong repo `infra` để đảm bảo tính đồng bộ (IaC).
-- **Đường dẫn sync:** Ansible sync manifests từ local lên server thông qua đường dẫn tương đối từ playbook.
+## 5. Quy chuẩn Hạ tầng (Ansible & Kustomize)
+- **Kiến trúc 3 lớp:** 
+    1. **Ansible**: Chỉ dùng để setup cluster và các dịch vụ nền (Node, Docker, K8s, Traefik).
+    2. **Kustomize**: Quản lý toàn bộ manifests (Base/Overlays). Tách biệt cấu hình staging/prod.
+    3. **CI/CD**: Thực hiện deploy ứng dụng thông qua `kubectl apply -k`.
+- **Cấu trúc thư mục:** Ansible roles nằm trong `ansible/`, K8s manifests nằm trong `k8s/`.
 - **Dữ liệu:** Toàn bộ dữ liệu bền vững (Persistent Data) được lưu tại `/data/k8s/` trên server.
 
 ## 6. Quy chuẩn Networking

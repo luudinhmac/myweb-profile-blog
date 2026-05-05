@@ -40,7 +40,8 @@
         --token "{{ RUNNER_TOKEN_STAGING }}" \
         --executor "docker" \
         --docker-image "docker:latest" \
-        --docker-volumes "/var/run/docker.sock:/var/run/docker.sock" \
+        --docker-volumes "/var/run/docker.sock:/var/run/docker.sock,/etc/localtime:/etc/localtime:ro" \
+        --env "TZ=Asia/Ho_Chi_Minh" \
         --description "Agent 1 - Build VM" \
         --maintenance-note "Managed by Ansible"
       when: runner_check.rc != 0
@@ -95,5 +96,8 @@
         --namespace gitlab-runner \
         --set gitlabUrl=https://gitlab.com/ \
         --set runnerRegistrationToken={{ GITLAB_RUNNER_TOKEN_PROD }} \
-        --set rbac.create=true
+        --set rbac.create=true \
+        --set envVars[0].name=TZ \
+        --set envVars[0].value=Asia/Ho_Chi_Minh \
+        --set runners.volumes="/etc/localtime:/etc/localtime:ro"
       when: "'gitlab-runner' not in helm_list.stdout"

@@ -1,15 +1,14 @@
-# TEMPLATE FILE - Hướng dẫn thiết lập Inventory
-# Copy file này thành inventory.ini và thay đổi IP tương ứng
-
 [build]
-build-runner ansible_host=192.168.157.120 ansible_user=macld
+build-runner ansible_host=192.168.157.109 ansible_user=macld ansible_ssh_private_key_file=~/.ssh/id_ed25519_ansible
 
 [staging_k8s]
-k8s-staging ansible_host=192.168.157.110 ansible_user=macld
+k8s-staging ansible_host=192.168.157.110 ansible_user=macld ansible_ssh_private_key_file=~/.ssh/id_ed25519_ansible
+
+[k8s_server]
+k8s-staging
 
 [production]
-# k8s-prod-1 ansible_host=xxx.xxx.xxx.xxx ansible_user=macld
+# production_server ansible_host=YOUR_PROD_IP ansible_user=macld ansible_ssh_private_key_file=~/.ssh/id_ed25519_ansible
 
-[all:vars]
-ansible_python_interpreter=/usr/bin/python3
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+[control]
+ansible_node ansible_host=localhost ansible_connection=local

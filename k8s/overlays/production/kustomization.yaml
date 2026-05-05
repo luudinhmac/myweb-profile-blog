@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../../base
+
+namespace: portfolio
+
+images:
+  - name: luudinhmac/portfolio-backend
+    newTag: latest
+  - name: luudinhmac/portfolio-frontend
+    newTag: latest
+
+patches:
+  - target:
+      kind: Ingress
+      name: portfolio-ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: portfolio.macld.id.vn

@@ -1,9 +1,0 @@
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: "{{ project_name }}-strip-prefix"
-  namespace: "{{ k8s_namespace }}"
-spec:
-  stripPrefix:
-    prefixes:
-      - /api

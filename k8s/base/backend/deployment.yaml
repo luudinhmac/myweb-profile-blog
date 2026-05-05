@@ -1,36 +1,45 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ project_name }}-backend"
-  namespace: "{{ k8s_namespace }}"
+  name: portfolio-backend
 spec:
-  replicas: {{ backend_replicas | default(1) }}
+  replicas: 1
   selector:
     matchLabels:
-      app: "{{ project_name }}-backend"
+      app: portfolio-backend
   template:
     metadata:
       labels:
-        app: "{{ project_name }}-backend"
+        app: portfolio-backend
     spec:
       securityContext:
         runAsUser: 1001
         fsGroup: 1001
+      initContainers:
+      - name: prisma-migrate
+        image: luudinhmac/portfolio-backend:latest
+        command: ["npx", "prisma", "migrate", "deploy"]
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: portfolio-secrets
+              key: DATABASE_URL
       containers:
       - name: backend
         securityContext:
           runAsUser: 1001
-        image: "{{ backend_image_tag | default('luudinhmac/portfolio-backend:latest') }}"
+        image: luudinhmac/portfolio-backend:latest
         livenessProbe:
           httpGet:
             path: /api/v1/health
-            port: {{ backend_port }}
+            port: 3001
           initialDelaySeconds: 15
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /api/v1/health
-            port: {{ backend_port }}
+            port: 3001
           initialDelaySeconds: 15
           periodSeconds: 5
         env:
@@ -39,21 +48,21 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: "{{ project_name }}-secrets"
+              name: portfolio-secrets
               key: DATABASE_URL
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: "{{ project_name }}-secrets"
+              name: portfolio-secrets
               key: JWT_SECRET
         - name: PORT
-          value: "{{ backend_port }}"
+          value: "3001"
         ports:
-        - containerPort: {{ backend_port }}
+        - containerPort: 3001
         volumeMounts:
         - name: uploads-storage
           mountPath: /app/uploads
       volumes:
       - name: uploads-storage
         persistentVolumeClaim:
-          claimName: "{{ project_name }}-backend-pvc"
+          claimName: portfolio-backend-pvc
