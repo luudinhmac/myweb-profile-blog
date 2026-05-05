@@ -4,6 +4,11 @@ metadata:
   name: portfolio-backend
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: portfolio-backend
@@ -15,21 +20,19 @@ spec:
       securityContext:
         runAsUser: 1001
         fsGroup: 1001
-      initContainers:
-      - name: prisma-migrate
-        image: luudinhmac/portfolio-backend:latest
-        command: ["npx", "prisma", "migrate", "deploy"]
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: portfolio-secrets
-              key: DATABASE_URL
+        runAsNonRoot: true
       containers:
       - name: backend
         securityContext:
           runAsUser: 1001
         image: luudinhmac/portfolio-backend:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
         livenessProbe:
           httpGet:
             path: /api/v1/health
@@ -42,19 +45,12 @@ spec:
             port: 3001
           initialDelaySeconds: 15
           periodSeconds: 5
+        envFrom:
+        - secretRef:
+            name: portfolio-secrets
         env:
         - name: TZ
           value: "Asia/Ho_Chi_Minh"
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: portfolio-secrets
-              key: DATABASE_URL
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: portfolio-secrets
-              key: JWT_SECRET
         - name: PORT
           value: "3001"
         ports:

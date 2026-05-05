@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prisma-migrate
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: migrate
+        image: luudinhmac/portfolio-backend:latest
+        command: ["npx", "prisma", "migrate", "deploy"]
+        envFrom:
+        - secretRef:
+            name: portfolio-secrets
