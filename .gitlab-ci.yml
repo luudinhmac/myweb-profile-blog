@@ -19,6 +19,7 @@ deploy_app:
     - agent-1
   <<: *k8s_auth
   script:
+    - env | grep APP_TYPE || echo "APP_TYPE not found in env"
     - |
       if [ "$APP_TYPE" == "backend" ]; then
         CHART_PATH="./helm/backend"
@@ -27,7 +28,7 @@ deploy_app:
         CHART_PATH="./helm/frontend"
         RELEASE_NAME="portfolio-frontend"
       else
-        echo "Unknown APP_TYPE: $APP_TYPE"
+        echo "Unknown APP_TYPE: '$APP_TYPE'"
         exit 1
       fi
       echo "Deploying $APP_TYPE with tag $IMAGE_TAG..."
