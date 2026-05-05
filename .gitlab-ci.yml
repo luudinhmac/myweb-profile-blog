@@ -42,4 +42,5 @@ deploy_apps:
   rules:
     - if: $CI_PIPELINE_SOURCE == "pipeline"
     - if: $CI_PIPELINE_SOURCE == "trigger"
-    - if: $CI_PIPELINE_SOURCE == "web" # Cho phép chạy thủ công từ giao diện
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "main"
