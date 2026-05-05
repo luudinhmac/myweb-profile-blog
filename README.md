@@ -4,12 +4,11 @@ This repository contains the infrastructure code for the Portfolio project, incl
 
 ## Kubernetes Installation (Staging)
 
-### 1. Connection & Preparation
-Sync updated roles from local to Ansible node:
+### 1. Chuẩn bị (GitOps Flow)
+Sau khi push code từ máy local lên GitLab, thực hiện kéo code mới nhất về Ansible node (192.168.157.50):
 ```powershell
-# Sync roles to Ansible node (192.168.157.50)
-scp d:\DATA\Portfolio\infra\ansible\roles\common\tasks\main.yml macld@192.168.157.50:/home/macld/portfolio-infratructure/ansible/roles/common/tasks/main.yml
-scp d:\DATA\Portfolio\infra\ansible\roles\k8s-cluster\tasks\init.yml macld@192.168.157.50:/home/macld/portfolio-infratructure/ansible/roles/k8s-cluster/tasks/init.yml
+# Trên máy local hoặc truy cập vào ansible node để pull
+ssh macld@192.168.157.50 "cd /home/macld/portfolio-infratructure && git pull origin feature/k8s-staging-setup"
 ```
 
 ### 2. Execution
