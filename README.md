@@ -24,10 +24,26 @@ Quy trình triển khai app được thực hiện tự động qua GitLab CI b�
 helm upgrade --install portfolio-backend ./helm/backend --namespace portfolio --set image.tag=$IMAGE_TAG
 ```
 
-## 3. Quản lý Secret và Bảo mật
+## 3. Quản lý Secret và SSL
 
-### Giải mã mật khẩu (Base64)
-Trong Kubernetes, các Secret được lưu trữ dưới dạng mã hóa Base64. Nếu bạn thấy một chuỗi như `bWFjbGRAMjAyNg==`, đó không phải là mật khẩu ngẫu nhiên mà là chuỗi mã hóa.
+### Môi trường Staging (Dùng Cert có sẵn)
+Staging sử dụng chứng chỉ SSL đã được cấp phát trước đó (luumac.io.vn).
+**Lệnh tạo Secret (Đã chạy):**
+```bash
+kubectl create secret tls luumac-tls-staging --cert=fullchain.cer --key=luumac.io.vn.key -n portfolio
+```
+
+### Môi trường Production (Dùng Cert-Manager)
+Production sẽ tự động cấp phát Cert qua Let's Encrypt. Bạn cần tạo Secret cấu hình ứng dụng trước khi Deploy:
+```bash
+kubectl create namespace portfolio-prod
+kubectl create secret generic portfolio-secrets -n portfolio-prod \
+  --from-literal=DATABASE_URL="postgresql://portfolio_user:PASSWORD@postgres.infra-prod.svc.cluster.local:5432/portfolio_production" \
+  --from-literal=JWT_SECRET="YOUR_SUPER_SECRET_KEY"
+```
+
+## 4. Giải mã mật khẩu (Base64)
+Trong Kubernetes, các Secret được lưu trữ dưới dạng mã hóa Base64. 
 
 **Lệnh giải mã nhanh (PowerShell):**
 ```powershell
@@ -35,13 +51,7 @@ Trong Kubernetes, các Secret được lưu trữ dưới dạng mã hóa Base64
 # Kết quả: macld@2026
 ```
 
-### Lưu ý về ký tự đặc biệt trong Mật khẩu
-Nếu mật khẩu chứa ký tự `@` (ví dụ: `macld@2026`), nó có thể gây lỗi khi nhập vào giao diện cài đặt (Installer) vì dấu `@` được hiểu là ký tự ngăn cách trong URL:
-- **Lỗi**: `postgresql://user:macld@2026@host` -> Khiến phần `2026@` bị dính vào tên Host.
-- **Khắc phục**: Khi sử dụng trong chuỗi kết nối (`DATABASE_URL`), hãy mã hóa dấu `@` thành `%40`.
-  - Ví dụ: `postgresql://user:macld%402026@host`
-
-## 4. Kiểm tra trạng thái
+## 5. Kiểm tra trạng thái
 ```powershell
 # Xem danh sách các bản phát hành Helm
 ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm list -A"
@@ -50,5 +60,5 @@ ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm
 ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && kubectl get pods -A"
 ```
 
-## 5. Cấu hình xác thực (CI/CD)
+## 6. Cấu hình xác thực (CI/CD)
 Để GitLab CI có thể deploy, hãy đảm bảo biến `KUBE_CONFIG_BASE64` đã được thiết lập trong GitLab CI/CD Variables.
