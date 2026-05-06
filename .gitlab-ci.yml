@@ -25,9 +25,36 @@ variables:
       FRONTEND_TAG=$(get_latest_tag "luudinhmac/portfolio-frontend")
       echo "Deploying Backend: $BACKEND_TAG, Frontend: $FRONTEND_TAG"
       
+      # Tự động tạo/cập nhật Secret từ GitLab Variables
+      kubectl create secret generic portfolio-secrets -n $APP_NAMESPACE \
+        --from-literal=DATABASE_URL="$STAGING_DATABASE_URL" \
+        --from-literal=JWT_SECRET="$STAGING_JWT_SECRET" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
       helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
       helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --create-namespace --set image.tag=$BACKEND_TAG $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
       helm upgrade --install portfolio-frontend ./helm/frontend --namespace $APP_NAMESPACE --create-namespace --set image.tag=$FRONTEND_TAG $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
+
+wipe_staging:
+  stage: deploy_staging
+  image:
+    name: alpine/helm:latest
+    entrypoint: [""]
+  tags:
+    - agent-1
+  script:
+    - echo "$KUBE_CONFIG_BASE64" | base64 -d > kubeconfig
+    - export KUBECONFIG=$PWD/kubeconfig
+    - helm uninstall portfolio-frontend -n portfolio || true
+    - helm uninstall portfolio-backend -n portfolio || true
+    - helm uninstall postgres -n infra || true
+    - kubectl delete pvc --all -n portfolio || true
+    - kubectl delete pvc --all -n infra || true
+    - kubectl delete pv postgres-pv portfolio-backend-pv || true
+    - kubectl delete secret portfolio-secrets -n portfolio || true
+  when: manual
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 deploy_staging:
   stage: deploy_staging
