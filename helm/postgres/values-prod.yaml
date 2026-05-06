@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image:
+  repository: postgres
+  tag: "16.13-alpine"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5432
+
+persistence:
+  size: 10Gi
+  path: /data/k8s/postgres-infra-prod
+
+auth:
+  user: portfolio_user
+  password: change_this_in_prod_manually_or_via_secret
+  database: portfolio_production
+
+namespace: infra-prod

@@ -24,7 +24,24 @@ Quy trình triển khai app được thực hiện tự động qua GitLab CI b�
 helm upgrade --install portfolio-backend ./helm/backend --namespace portfolio --set image.tag=$IMAGE_TAG
 ```
 
-## 3. Kiểm tra trạng thái
+## 3. Quản lý Secret và Bảo mật
+
+### Giải mã mật khẩu (Base64)
+Trong Kubernetes, các Secret được lưu trữ dưới dạng mã hóa Base64. Nếu bạn thấy một chuỗi như `bWFjbGRAMjAyNg==`, đó không phải là mật khẩu ngẫu nhiên mà là chuỗi mã hóa.
+
+**Lệnh giải mã nhanh (PowerShell):**
+```powershell
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("bWFjbGRAMjAyNg=="))
+# Kết quả: macld@2026
+```
+
+### Lưu ý về ký tự đặc biệt trong Mật khẩu
+Nếu mật khẩu chứa ký tự `@` (ví dụ: `macld@2026`), nó có thể gây lỗi khi nhập vào giao diện cài đặt (Installer) vì dấu `@` được hiểu là ký tự ngăn cách trong URL:
+- **Lỗi**: `postgresql://user:macld@2026@host` -> Khiến phần `2026@` bị dính vào tên Host.
+- **Khắc phục**: Khi sử dụng trong chuỗi kết nối (`DATABASE_URL`), hãy mã hóa dấu `@` thành `%40`.
+  - Ví dụ: `postgresql://user:macld%402026@host`
+
+## 4. Kiểm tra trạng thái
 ```powershell
 # Xem danh sách các bản phát hành Helm
 ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm list -A"
@@ -33,5 +50,5 @@ ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm
 ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && kubectl get pods -A"
 ```
 
-## 4. Cấu hình xác thực (CI/CD)
+## 5. Cấu hình xác thực (CI/CD)
 Để GitLab CI có thể deploy, hãy đảm bảo biến `KUBE_CONFIG_BASE64` đã được thiết lập trong GitLab CI/CD Variables.
