@@ -17,7 +17,7 @@ variables:
     - export KUBECONFIG=$PWD/kubeconfig
     - apk add --no-cache curl jq
     - |
-      set -x
+      set -ex
       # Function to get latest tag from Docker Hub using jq
       get_latest_tag() {
         curl -s "https://hub.docker.com/v2/repositories/$1/tags/?page_size=20" | \
