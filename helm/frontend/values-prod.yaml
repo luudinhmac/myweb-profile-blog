@@ -16,5 +16,6 @@ env:
 ingress:
   host: "luumac.io.vn"
   issuer: "letsencrypt-prod"
+  secretName: "luumac-tls-prod"
 
 namespace: portfolio-prod

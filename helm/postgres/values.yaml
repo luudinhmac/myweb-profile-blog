@@ -19,4 +19,4 @@ auth:
   password: macld@2026
   database: portfolio_staging
 
-namespace: infra
+namespace: database

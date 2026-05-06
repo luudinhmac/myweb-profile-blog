@@ -25,11 +25,37 @@ variables:
       FRONTEND_TAG=$(get_latest_tag "luudinhmac/portfolio-frontend")
       echo "Deploying Backend: $BACKEND_TAG, Frontend: $FRONTEND_TAG"
       
-      # Tự động tạo/cập nhật Secret từ GitLab Variables
+      # Tự động tạo/cập nhật Secret dựa trên môi trường
+      if [ "$CI_JOB_NAME" == "deploy_prod" ]; then
+        DB_URL=$PROD_DATABASE_URL
+        JWT_SEC=$PROD_JWT_SECRET
+      else
+        DB_URL=$STAGING_DATABASE_URL
+        JWT_SEC=$STAGING_JWT_SECRET
+      fi
+
       kubectl create secret generic portfolio-secrets -n $APP_NAMESPACE \
-        --from-literal=DATABASE_URL="$STAGING_DATABASE_URL" \
-        --from-literal=JWT_SECRET="$STAGING_JWT_SECRET" \
+        --from-literal=DATABASE_URL="$DB_URL" \
+        --from-literal=JWT_SECRET="$JWT_SEC" \
         --dry-run=client -o yaml | kubectl apply -f -
+
+      # Tạo TLS Secret cho Staging (từ Variables hoặc local certs)
+      if [ "$CI_JOB_NAME" == "deploy_staging" ]; then
+        if [ -n "$STAGING_SSL_CERT" ] && [ -n "$STAGING_SSL_KEY" ]; then
+          echo "$STAGING_SSL_CERT" > staging-cert.pem
+          echo "$STAGING_SSL_KEY" > staging-key.pem
+          kubectl create secret tls luumac-tls-staging -n $APP_NAMESPACE \
+            --cert=staging-cert.pem \
+            --key=staging-key.pem \
+            --dry-run=client -o yaml | kubectl apply -f -
+          rm staging-cert.pem staging-key.pem
+        elif [ -d "certs" ]; then
+          kubectl create secret tls luumac-tls-staging -n $APP_NAMESPACE \
+            --cert=certs/fullchain.pem \
+            --key=certs/privkey.pem \
+            --dry-run=client -o yaml | kubectl apply -f -
+        fi
+      fi
 
       helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
       helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --create-namespace --set image.tag=$BACKEND_TAG $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
@@ -47,35 +73,40 @@ wipe_staging:
     - export KUBECONFIG=$PWD/kubeconfig
     - helm uninstall portfolio-frontend -n portfolio || true
     - helm uninstall portfolio-backend -n portfolio || true
-    - helm uninstall postgres -n infra || true
+    - helm uninstall postgres -n database || true
     - kubectl delete pvc --all -n portfolio || true
-    - kubectl delete pvc --all -n infra || true
+    - kubectl delete pvc --all -n database || true
     - kubectl delete pv postgres-pv portfolio-backend-pv || true
     - kubectl delete secret portfolio-secrets -n portfolio || true
   when: manual
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
 
 deploy_staging:
   stage: deploy_staging
   extends: .deploy_template
   variables:
-    DB_NAMESPACE: "infra"
+    DB_NAMESPACE: "database"
     APP_NAMESPACE: "portfolio"
     HELM_EXTRA_ARGS: ""
   rules:
     - if: '$CI_PIPELINE_SOURCE == "pipeline" || $CI_PIPELINE_SOURCE == "trigger"'
-    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      when: manual
+      allow_failure: true
 
 deploy_prod:
   stage: deploy_prod
   extends: .deploy_template
   variables:
-    DB_NAMESPACE: "infra-prod"
+    DB_NAMESPACE: "database-prod"
     APP_NAMESPACE: "portfolio-prod"
     HELM_EXTRA_ARGS: "-f ./helm/postgres/values-prod.yaml -f ./helm/backend/values-prod.yaml -f ./helm/frontend/values-prod.yaml"
   when: manual
+  allow_failure: false
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - !reference [.deploy_template, script]
+    - helm upgrade --install cert-manager-issuers ./helm/cert-manager-issuers --namespace cert-manager --kube-insecure-skip-tls-verify
