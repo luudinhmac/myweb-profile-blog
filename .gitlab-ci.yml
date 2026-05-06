@@ -10,6 +10,8 @@ variables:
   image:
     name: alpine/helm:latest
     entrypoint: [""]
+  tags:
+    - agent-1
   script:
     - mkdir -p ~/.kube && echo "$KUBE_CONFIG_BASE64" | base64 -d > ~/.kube/config
     - apk add --no-cache curl grep
