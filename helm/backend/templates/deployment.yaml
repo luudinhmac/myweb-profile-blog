@@ -23,6 +23,13 @@ spec:
         runAsUser: 1001
         fsGroup: 1001
         runAsNonRoot: true
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1001:1001 /app/uploads"]
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /app/uploads
       containers:
       - name: {{ .Chart.Name }}
         securityContext:
