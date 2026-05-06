@@ -13,7 +13,8 @@ variables:
   tags:
     - agent-1
   script:
-    - mkdir -p ~/.kube && echo "$KUBE_CONFIG_BASE64" | base64 -d > ~/.kube/config
+    - echo "$KUBE_CONFIG_BASE64" | base64 -d > kubeconfig
+    - export KUBECONFIG=$PWD/kubeconfig
     - apk add --no-cache curl grep
     - |
       # Function to get latest tag from Docker Hub
