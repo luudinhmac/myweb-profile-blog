@@ -11,6 +11,7 @@ metadata:
     cert-manager.io/cluster-issuer: {{ .Values.ingress.issuer | quote }}
     {{- end }}
 spec:
+  ingressClassName: traefik
   tls:
     - hosts:
         - {{ .Values.ingress.host | quote }}
