@@ -5,42 +5,43 @@ variables:
   K8S_NAMESPACE: portfolio
   TZ: Asia/Ho_Chi_Minh
 
-.k8s_auth: &k8s_auth
-  before_script:
-    - echo "$KUBE_CONFIG_BASE64" | base64 -d > kubeconfig
-    - export KUBECONFIG=$PWD/kubeconfig
-
-deploy_apps:
-  stage: deploy
-  image:
-    name: alpine/helm:latest
-    entrypoint: [""]
-  tags:
-    - agent-1
-  <<: *k8s_auth
+.deploy_template:
+  image: alpine/helm:latest
   script:
-    - apk add --no-cache curl jq
+    - mkdir -p ~/.kube && echo "$KUBE_CONFIG_BASE64" | base64 -d > ~/.kube/config
+    - apk add --no-cache curl grep
     - |
-      echo "Fetching latest tags from Docker Hub..."
-      BACKEND_TAG=$(curl -s "https://hub.docker.com/v2/repositories/luudinhmac/portfolio-backend/tags/?page_size=2" | jq -r '.results | map(select(.name != "latest")) | .[0].name')
-      FRONTEND_TAG=$(curl -s "https://hub.docker.com/v2/repositories/luudinhmac/portfolio-frontend/tags/?page_size=2" | jq -r '.results | map(select(.name != "latest")) | .[0].name')
+      # Function to get latest tag from Docker Hub
+      get_latest_tag() {
+        curl -s "https://hub.docker.com/v2/repositories/$1/tags/?page_size=10" | grep -oP '(?<="name":")[^"]*' | grep -v 'latest' | head -n 1
+      }
+      BACKEND_TAG=$(get_latest_tag "luudinhmac/portfolio-backend")
+      FRONTEND_TAG=$(get_latest_tag "luudinhmac/portfolio-frontend")
+      echo "Deploying Backend: $BACKEND_TAG, Frontend: $FRONTEND_TAG"
       
-      echo "Backend Tag: $BACKEND_TAG"
-      echo "Frontend Tag: $FRONTEND_TAG"
-      
-      # Triển khai Backend
-      helm upgrade --install portfolio-backend ./helm/backend \
-        --namespace portfolio \
-        --set image.tag=$BACKEND_TAG \
-        --kube-insecure-skip-tls-verify
-      
-      # Triển khai Frontend
-      helm upgrade --install portfolio-frontend ./helm/frontend \
-        --namespace portfolio \
-        --set image.tag=$FRONTEND_TAG \
-        --kube-insecure-skip-tls-verify
+      helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace $HELM_EXTRA_ARGS
+      helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --create-namespace --set image.tag=$BACKEND_TAG $HELM_EXTRA_ARGS
+      helm upgrade --install portfolio-frontend ./helm/frontend --namespace $APP_NAMESPACE --create-namespace --set image.tag=$FRONTEND_TAG $HELM_EXTRA_ARGS
+
+deploy_staging:
+  stage: deploy_staging
+  extends: .deploy_template
+  variables:
+    DB_NAMESPACE: "infra"
+    APP_NAMESPACE: "portfolio"
+    HELM_EXTRA_ARGS: ""
   rules:
-    - if: $CI_PIPELINE_SOURCE == "pipeline"
-    - if: $CI_PIPELINE_SOURCE == "trigger"
+    - if: '$CI_PIPELINE_SOURCE == "pipeline" || $CI_PIPELINE_SOURCE == "trigger"'
+
+deploy_prod:
+  stage: deploy_prod
+  extends: .deploy_template
+  variables:
+    DB_NAMESPACE: "infra-prod"
+    APP_NAMESPACE: "portfolio-prod"
+    HELM_EXTRA_ARGS: "-f ./helm/postgres/values-prod.yaml -f ./helm/backend/values-prod.yaml -f ./helm/frontend/values-prod.yaml"
+  when: manual
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_COMMIT_BRANCH == "main"

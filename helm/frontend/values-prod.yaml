@@ -1,4 +1,4 @@
-replicaCount: 1
+replicaCount: 2
 
 image:
   repository: luudinhmac/portfolio-frontend
@@ -14,7 +14,7 @@ env:
   internalApiUrl: "http://portfolio-backend:3001"
 
 ingress:
-  host: "staging.luumac.io.vn"
-  secretName: "luumac-tls-staging"
+  host: "luumac.io.vn"
+  issuer: "letsencrypt-prod"
 
-namespace: portfolio
+namespace: portfolio-prod
