@@ -17,12 +17,24 @@ variables:
     - export KUBECONFIG=$PWD/kubeconfig
     - apk add --no-cache curl grep kubectl
     - |
-      # Function to get latest tag from Docker Hub
+      set -e
+      # Function to get latest tag from Docker Hub (Compatible with Alpine)
       get_latest_tag() {
-        curl -s "https://hub.docker.com/v2/repositories/$1/tags/?page_size=10" | grep -oP '(?<="name":")[^"]*' | grep -v 'latest' | head -n 1
+        curl -s "https://hub.docker.com/v2/repositories/$1/tags/?page_size=10" | \
+        grep -o '"name":"[^"]*"' | \
+        grep -v "latest" | \
+        head -n 1 | \
+        sed 's/"name":"//;s/"//g'
       }
+      
       BACKEND_TAG=$(get_latest_tag "luudinhmac/portfolio-backend")
       FRONTEND_TAG=$(get_latest_tag "luudinhmac/portfolio-frontend")
+      
+      if [ -z "$BACKEND_TAG" ] || [ -z "$FRONTEND_TAG" ]; then
+        echo "Error: Could not fetch tags from Docker Hub"
+        exit 1
+      fi
+      
       echo "Deploying Backend: $BACKEND_TAG, Frontend: $FRONTEND_TAG"
       
       # Tự động tạo/cập nhật Secret dựa trên môi trường
