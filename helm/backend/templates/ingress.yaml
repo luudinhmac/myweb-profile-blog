@@ -13,24 +13,25 @@ metadata:
 spec:
   ingressClassName: traefik
   tls:
+    {{- range .Values.ingress.tls }}
     - hosts:
-        - {{ .Values.ingress.host | quote }}
-      secretName: {{ .Values.ingress.secretName | default (printf "%s-tls" (include "backend.fullname" .)) | quote }}
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
   rules:
-    - host: {{ .Values.ingress.host | quote }}
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
       http:
         paths:
-          - path: /api
-            pathType: Prefix
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ include "backend.fullname" . }}
+                name: {{ include "backend.fullname" $ }}
                 port:
-                  number: {{ .Values.service.port }}
-          - path: /v1
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "backend.fullname" . }}
-                port:
-                  number: {{ .Values.service.port }}
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
