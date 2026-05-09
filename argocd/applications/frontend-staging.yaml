@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: portfolio-frontend-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
+    targetRevision: main
+    path: helm/frontend
+    helm:
+      valueFiles:
+        - ../../environments/staging/frontend-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: portfolio
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

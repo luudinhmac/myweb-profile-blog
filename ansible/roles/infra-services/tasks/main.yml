@@ -58,3 +58,20 @@
     --namespace cert-manager
     --create-namespace
     --set installCRDs=true
+
+- name: Add ArgoCD Helm repo
+  become_user: "{{ ansible_operator_user }}"
+  command: helm repo add argo https://argoproj.github.io/argo-helm
+  ignore_errors: yes
+
+- name: Update Helm repos
+  become_user: "{{ ansible_operator_user }}"
+  command: helm repo update
+
+- name: Install ArgoCD
+  become_user: "{{ ansible_operator_user }}"
+  command: >
+    helm upgrade --install argocd argo/argo-cd
+    --namespace argocd
+    --create-namespace
+    --set server.service.type=ClusterIP

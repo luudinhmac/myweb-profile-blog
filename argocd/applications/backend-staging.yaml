@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: portfolio-backend-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
+    targetRevision: main # Hoặc feature/k8s-staging-setup
+    path: helm/backend
+    helm:
+      valueFiles:
+        - ../../environments/staging/backend-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: portfolio
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
