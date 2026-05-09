@@ -32,11 +32,11 @@ Hệ thống được chia làm 2 môi trường chính trong thư mục `enviro
 
 ### Môi trường Staging (Tự động)
 *   **Cấu hình**: `environments/staging/`
-*   **Cách cập nhật**: CI/CD của Backend/Frontend sẽ tự động sửa file `values-app.yaml` trong thư mục này. ArgoCD sẽ tự động Sync sau ~3 phút.
+*   **Cách cập nhật**: CI/CD của Backend/Frontend sẽ thực hiện **Direct Git Push** để sửa trực tiếp file `values-app.yaml` trong thư mục này. ArgoCD sẽ tự động Sync ngay khi thấy commit mới.
 
 ### Môi trường Production (Manual/Approval)
-*   **Cấu hình**: `environments/prod/`
-*   **Cách cập nhật**: Tạo Merge Request vào repo Infra để thay đổi Tag image. Sau khi Merge, nhấn nút **Sync** trên giao diện ArgoCD.
+*   **Cấu hình**: `environments/production/`
+*   **Cách cập nhật**: Đánh Git Tag (`v*`) ở repo App. CI sẽ build image và dừng lại ở bước chờ xác nhận (Manual). Khi nhấn nút Deploy, CI sẽ thực hiện **Direct Git Push** vào thư mục này để cập nhật Tag.
 
 ## 4. Các lệnh hữu ích
 
@@ -120,7 +120,7 @@ kubectl exec -it <pod-backend> -n portfolio -- npx prisma db push
 *   **`PROD_JWT_SECRET`**: Khóa bí mật dùng cho Production.
 
 ### Tại Repo Backend & Frontend (Ứng dụng)
-*   **`INFRA_REPO_WRITE_TOKEN`**: Project Access Token được tạo từ repo **Infra** (cần quyền `write_repository`) để CI của App có thể tự động commit cập nhật Tag vào Infra.
+*   **`GITLAB_API_TOKEN`**: Personal Access Token hoặc Project Access Token của repo **Infra** (cần quyền `write_repository`) để CI của App có thể tự động `clone`, `commit` và `push` cập nhật Tag vào Infra.
 *   **`CI_REGISTRY_USER`** / **`CI_REGISTRY_PASSWORD`**: Tài khoản Docker Hub để push/pull image.
 
 ---
