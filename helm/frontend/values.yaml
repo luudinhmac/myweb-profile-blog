@@ -11,6 +11,7 @@ service:
 
 env:
   tz: "Asia/Ho_Chi_Minh"
+  nodeEnv: "production"
   internalApiUrl: "http://portfolio-backend:3001"
 
 ingress:
