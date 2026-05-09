@@ -1,71 +1,127 @@
-# Portfolio Infrastructure
+# Portfolio Infrastructure (GitOps Mode)
 
-Dự án quản lý hạ tầng Kubernetes cho hệ thống Portfolio sử dụng **Ansible** để khởi tạo cụm và **Helm** để quản lý ứng dụng.
+Dự án quản lý hạ tầng Kubernetes cho hệ thống Portfolio sử dụng mô hình **GitOps** với **ArgoCD**.
 
 ## 1. Khởi tạo Cluster (Ansible)
-Sử dụng Ansible node (`192.168.157.50`) để cài đặt K8s v1.31, Cilium CNI và Traefik Ingress.
+Sử dụng Ansible node (`192.168.157.50`) để cài đặt K8s, Cilium, Traefik, Cert-Manager và ArgoCD.
 
 ```powershell
 # Chạy playbook từ Ansible node
 ssh macld@192.168.157.50 "cd /home/macld/portfolio-infratructure/ansible && ansible-playbook -i inventory.ini playbooks/setup_cluster.yml --extra-vars 'ansible_become_pass=admin'"
 ```
 
+## 2. Quản lý Hạ tầng với ArgoCD
 
-## 2. Quản lý Ứng dụng (Helm)
+### Truy cập Dashboard
+*   **URL**: [https://argocd.luumac.io.vn](https://argocd.luumac.io.vn)
+*   **Username**: `admin`
+*   **Lấy mật khẩu**:
+    ```bash
+    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+    ```
 
-### Triển khai Database (PostgreSQL)
-```powershell
-# Từ Ansible node
-ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm upgrade --install postgres /home/macld/portfolio-infratructure/helm/postgres --namespace database --create-namespace"
-```
-
-### Kiểm tra trạng thái Database
-```powershell
-ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && kubectl get pods -n database"
-# Mong đợi: postgres-0   1/1     Running
-```
-
-### Triển khai Backend & Frontend (CI/CD)
-Quy trình triển khai app được thực hiện tự động qua GitLab CI bằng lệnh:
+### Kích hoạt GitOps (Bootstrap)
+Nếu chưa thấy các ứng dụng hiện trên Dashboard, chạy lệnh sau:
 ```bash
-helm upgrade --install portfolio-backend ./helm/backend --namespace portfolio --set image.tag=$IMAGE_TAG
+kubectl apply -f argocd/applications/
 ```
 
-## 3. Quản lý Secret và SSL
+## 3. Quy trình Triển khai (Workflow)
 
-### Môi trường Staging (Dùng Cert có sẵn)
-Staging sử dụng chứng chỉ SSL đã được cấp phát trước đó (luumac.io.vn).
-**Lệnh tạo Secret (Đã chạy):**
+Hệ thống được chia làm 2 môi trường chính trong thư mục `environments/`:
+
+### Môi trường Staging (Tự động)
+*   **Cấu hình**: `environments/staging/`
+*   **Cách cập nhật**: CI/CD của Backend/Frontend sẽ tự động sửa file `values-app.yaml` trong thư mục này. ArgoCD sẽ tự động Sync sau ~3 phút.
+
+### Môi trường Production (Manual/Approval)
+*   **Cấu hình**: `environments/prod/`
+*   **Cách cập nhật**: Tạo Merge Request vào repo Infra để thay đổi Tag image. Sau khi Merge, nhấn nút **Sync** trên giao diện ArgoCD.
+
+## 4. Các lệnh hữu ích
+
+### Kiểm tra Pods
 ```bash
-kubectl create secret tls luumac-tls-staging --cert=fullchain.cer --key=luumac.io.vn.key -n portfolio
+kubectl get pods -n portfolio      # App Staging
+kubectl get pods -n database       # DB Staging
+kubectl get pods -n argocd         # ArgoCD System
 ```
 
-### Môi trường Production (Dùng Cert-Manager)
-Production sẽ tự động cấp phát Cert qua Let's Encrypt. Bạn cần tạo Secret cấu hình ứng dụng trước khi Deploy:
+### Truy cập Database (psql)
 ```bash
-kubectl create namespace portfolio-prod
-kubectl create secret generic portfolio-secrets -n portfolio-prod \
-  --from-literal=DATABASE_URL="postgresql://portfolio_user:PASSWORD@postgres.infra-prod.svc.cluster.local:5432/portfolio_production" \
-  --from-literal=JWT_SECRET="YOUR_SUPER_SECRET_KEY"
+kubectl exec -it postgres-0 -n database -- psql -U portfolio_user -d portfolio_staging
 ```
 
-## 4. Giải mã mật khẩu (Base64)
-Trong Kubernetes, các Secret được lưu trữ dưới dạng mã hóa Base64. 
+## 5. Xử lý sự cố (Troubleshooting)
 
-**Lệnh giải mã nhanh (PowerShell):**
-```powershell
-[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("bWFjbGRAMjAyNg=="))
-# Kết quả: macld@2026
+### Lỗi ArgoCD Redirect quá nhiều lần (Too many redirects)
+Nếu gặp lỗi này khi vào Dashboard, chạy lệnh sau để chạy ArgoCD ở chế độ insecure (do Traefik đã lo phần TLS):
+```bash
+kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
 ```
 
-## 5. Kiểm tra trạng thái
-```powershell
-# Xem danh sách các bản phát hành Helm
-ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm list -A"
-
-# Kiểm tra Pods
-ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && kubectl get pods -A"
+### Lỗi SSL "Not Secure" trên trình duyệt
+Đảm bảo đã tạo Secret từ chứng chỉ Wildcard của bạn trong namespace `argocd`:
+```bash
+kubectl create secret tls luumac-wildcard-tls --cert=path/to/fullchain.pem --key=path/to/privkey.pem -n argocd
 ```
 
-## 6. Cấu hình xác thực (CI/CD)
-Để GitLab CI có thể deploy, hãy đảm bảo biến `KUBE_CONFIG_BASE64` đã được thiết lập trong GitLab CI/CD Variables.
+### Lỗi Divergent Branches khi Git Pull trên Ansible Node
+Nếu máy Ansible bị lệch code và không thể pull, dùng lệnh reset:
+```bash
+git fetch origin && git reset --hard origin/feature/k8s-staging-setup
+```
+
+### Lỗi `Init:CreateContainerConfigError` (Thiếu Secret)
+Thường do chưa tạo Secret `portfolio-secrets`. Cần tạo thủ công:
+```bash
+kubectl create secret generic portfolio-secrets -n portfolio \
+  --from-literal=DATABASE_URL="postgresql://user:pass@host:5432/db" \
+  --from-literal=JWT_SECRET="your_secret"
+```
+
+### Lỗi `P1001: Can't reach database` (Kết nối DB thất bại)
+1.  **Kiểm tra Hostname**: Đảm bảo dùng đúng tên Service (ví dụ: `postgres-staging.database`).
+2.  **Ký tự đặc biệt**: Nếu mật khẩu có dấu `@`, phải mã hóa thành `%40` trong chuỗi URL.
+
+### Lỗi `The table public.User does not exist` (Chưa chạy Migration)
+Nếu Docker Image không chứa thư mục `migrations`, lệnh `migrate deploy` sẽ không làm gì.
+**Cách fix nhanh cho Staging**: Chạy lệnh `db push` thủ công:
+```bash
+kubectl exec -it <pod-backend> -n portfolio -- npx prisma db push
+```
+
+---
+
+## 6. Quy trình chuẩn về Database Migration (Prisma)
+
+Để hệ thống tự động cập nhật Database một cách an toàn khi có thay đổi code, hãy tuân thủ quy trình sau:
+
+1.  **Tại máy Local**: Sau khi thay đổi file `schema.prisma`, bạn cần tạo file migration bằng lệnh:
+    ```bash
+    npx prisma migrate dev --name <ten_migration_goi_nho>
+    ```
+2.  **Commit lên Git**: Bạn **PHẢI** commit thư mục `prisma/migrations` vào Repo App (Backend).
+3.  **Deploy**: Khi Docker Image được build, nó sẽ mang theo các file SQL này. Khi Pod khởi chạy trên K8s, Init Container sẽ chạy lệnh `prisma migrate deploy` để cập nhật Database mà không làm mất dữ liệu hiện có.
+
+*Lưu ý: Chỉ dùng `db push` cho môi trường Staging/Dev khi muốn thử nghiệm nhanh và không quan tâm đến lịch sử thay đổi của Database.*
+
+---
+
+## 7. Cấu hình GitLab CI/CD Variables
+
+Để các pipeline chạy thông suốt, bạn cần cấu hình các biến sau trên GitLab (**Settings > CI/CD > Variables**):
+
+### Tại Repo Infrastructure (Quản lý chung)
+*   **`KUBECONFIG`** (Type: File): Chứa nội dung file cấu hình truy cập Cluster.
+*   **`STAGING_DATABASE_URL`**: URL kết nối Postgres Staging.
+*   **`STAGING_JWT_SECRET`**: Khóa bí mật dùng cho Staging.
+*   **`PROD_DATABASE_URL`**: URL kết nối Postgres Production.
+*   **`PROD_JWT_SECRET`**: Khóa bí mật dùng cho Production.
+
+### Tại Repo Backend & Frontend (Ứng dụng)
+*   **`INFRA_REPO_WRITE_TOKEN`**: Project Access Token được tạo từ repo **Infra** (cần quyền `write_repository`) để CI của App có thể tự động commit cập nhật Tag vào Infra.
+*   **`CI_REGISTRY_USER`** / **`CI_REGISTRY_PASSWORD`**: Tài khoản Docker Hub để push/pull image.
+
+---
+*Lưu ý: Luôn đảm bảo repo Infra trên máy Ansible node được cập nhật mới nhất bằng lệnh `git pull` trước khi chạy Ansible.*
