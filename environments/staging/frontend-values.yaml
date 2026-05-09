@@ -1,5 +1,5 @@
 image:
-  tag: "latest"
+  tag: "dev-5382180b"
 
 ingress:
   enabled: true
