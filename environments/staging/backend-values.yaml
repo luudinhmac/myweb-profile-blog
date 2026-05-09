@@ -1,0 +1,17 @@
+image:
+  tag: "latest"
+
+ingress:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: api-staging.luumac.io.vn
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: luumac-wildcard-tls
+      hosts:
+        - api-staging.luumac.io.vn
