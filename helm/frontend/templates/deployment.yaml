@@ -23,5 +23,7 @@ spec:
         env:
         - name: TZ
           value: {{ .Values.env.tz | quote }}
+        - name: NODE_ENV
+          value: {{ .Values.env.nodeEnv | quote }}
         - name: INTERNAL_API_URL
           value: {{ .Values.env.internalApiUrl | quote }}
