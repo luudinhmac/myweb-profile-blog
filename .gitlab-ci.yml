@@ -1,101 +1,46 @@
 stages:
-  - deploy_staging
-  - deploy_prod
+  - update_config
 
 variables:
   TZ: Asia/Ho_Chi_Minh
 
-.deploy_setup: &deploy_setup
-  image:
-    name: alpine/helm:latest
-    entrypoint: [""]
+update_image_tag:
+  stage: update_config
+  image: alpine:latest
   tags:
     - agent-1
   before_script:
-    - echo "$KUBE_CONFIG_BASE64" | base64 -d > kubeconfig
-    - export KUBECONFIG=$PWD/kubeconfig
-    - apk add --no-cache curl jq kubectl --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
-
-.get_tags: &get_tags
-  - |
-    set -ex
-    get_latest_tag() {
-      curl -s "https://hub.docker.com/v2/repositories/$1/tags/?page_size=20" | \
-      jq -r '.results[].name' | grep -v "latest" | head -n 1
-    }
-    BACKEND_TAG=$(get_latest_tag "luudinhmac/portfolio-backend")
-    FRONTEND_TAG=$(get_latest_tag "luudinhmac/portfolio-frontend")
-    echo "Backend: $BACKEND_TAG, Frontend: $FRONTEND_TAG"
-
-.create_secrets: &create_secrets
-  - |
-    kubectl create namespace $APP_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-    if [ "$CI_JOB_STAGE" == "deploy_prod" ]; then
-      DB_URL=$PROD_DATABASE_URL; JWT_SEC=$PROD_JWT_SECRET
-    else
-      DB_URL=$STAGING_DATABASE_URL; JWT_SEC=$STAGING_JWT_SECRET
-    fi
-    kubectl create secret generic portfolio-secrets -n $APP_NAMESPACE \
-      --from-literal=DATABASE_URL="$DB_URL" \
-      --from-literal=JWT_SECRET="$JWT_SEC" \
-      --dry-run=client -o yaml | kubectl apply -f -
-
-deploy_backend_staging:
-  stage: deploy_staging
-  <<: *deploy_setup
-  variables:
-    APP_NAMESPACE: "portfolio"
-    DB_NAMESPACE: "database"
+    - apk add --no-cache git sed
+    # Cấu hình Git để có thể commit
+    - git config --global user.email "ci-bot@luumac.io.vn"
+    - git config --global user.name "CI Bot"
+    # Thiết lập Remote URL với Token (giả sử bạn dùng PROJECT_ACCESS_TOKEN)
+    - git remote set-url origin https://oauth2:${PROJECT_ACCESS_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git
   script:
-    - *get_tags
-    - *create_secrets
-    - helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace --kube-insecure-skip-tls-verify
-    - helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --set image.tag=$BACKEND_TAG --kube-insecure-skip-tls-verify
-  rules:
-    - if: '$COMPONENT == "backend"'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "pipeline" || $CI_PIPELINE_SOURCE == "trigger"'
-      when: always
-    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
-      when: manual
-
-deploy_frontend_staging:
-  stage: deploy_staging
-  <<: *deploy_setup
-  variables:
-    APP_NAMESPACE: "portfolio"
-  script:
-    - *get_tags
-    - *create_secrets
     - |
-      if [ -n "$STAGING_SSL_CERT" ] && [ -n "$STAGING_SSL_KEY" ]; then
-        echo "$STAGING_SSL_CERT" | base64 -d > cert.pem
-        echo "$STAGING_SSL_KEY" | base64 -d > key.pem
-        kubectl create secret tls luumac-tls-staging -n $APP_NAMESPACE --cert=cert.pem --key=key.pem --dry-run=client -o yaml | kubectl apply -f -
+      set -e
+      echo "Updating $COMPONENT image tag to $IMAGE_TAG in $ENVIRONMENT environment"
+      
+      # Xác định file cần sửa dựa trên môi trường và component
+      # Cấu trúc: environments/[staging|production]/[frontend|backend]-values.yaml
+      TARGET_FILE="environments/${ENVIRONMENT}/${COMPONENT}-values.yaml"
+      
+      if [ ! -f "$TARGET_FILE" ]; then
+        echo "Error: File $TARGET_FILE not found!"
+        exit 1
       fi
-    - helm upgrade --install portfolio-frontend ./helm/frontend --namespace $APP_NAMESPACE --set image.tag=$FRONTEND_TAG --kube-insecure-skip-tls-verify
-  rules:
-    - if: '$COMPONENT == "frontend"'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "pipeline" || $CI_PIPELINE_SOURCE == "trigger"'
-      when: always
-    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
-      when: manual
 
-deploy_prod:
-  stage: deploy_prod
-  <<: *deploy_setup
-  variables:
-    APP_NAMESPACE: "portfolio-prod"
-    DB_NAMESPACE: "database-prod"
-    HELM_ARGS: "-f ./helm/postgres/values-prod.yaml -f ./helm/backend/values-prod.yaml -f ./helm/frontend/values-prod.yaml"
-  script:
-    - *get_tags
-    - *create_secrets
-    - helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace $HELM_ARGS --kube-insecure-skip-tls-verify
-    - helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --set image.tag=$BACKEND_TAG $HELM_ARGS --kube-insecure-skip-tls-verify
-    - helm upgrade --install portfolio-frontend ./helm/frontend --namespace $APP_NAMESPACE --set image.tag=$FRONTEND_TAG $HELM_ARGS --kube-insecure-skip-tls-verify
-    - helm upgrade --install cert-manager-issuers ./helm/cert-manager-issuers --namespace cert-manager --kube-insecure-skip-tls-verify
+      # Dùng sed để sửa tag trong file yaml
+      # Tìm dòng 'tag:' và thay thế giá trị đằng sau nó
+      sed -i "s/tag: .*/tag: \"$IMAGE_TAG\"/" $TARGET_FILE
+      
+      # Kiểm tra thay đổi
+      git diff $TARGET_FILE
+      
+      # Commit và Push
+      git add $TARGET_FILE
+      git commit -m "chore(deploy): update $COMPONENT image to $IMAGE_TAG for $ENVIRONMENT"
+      git push origin HEAD:main
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      when: manual
+    # Chỉ chạy khi được trigger từ pipeline khác (Frontend/Backend)
+    - if: '$CI_PIPELINE_SOURCE == "pipeline" || $CI_PIPELINE_SOURCE == "trigger"'
