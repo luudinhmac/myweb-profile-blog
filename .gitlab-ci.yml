@@ -3,122 +3,99 @@ stages:
   - deploy_prod
 
 variables:
-  K8S_NAMESPACE: portfolio
   TZ: Asia/Ho_Chi_Minh
 
-.deploy_template:
+.deploy_setup: &deploy_setup
   image:
     name: alpine/helm:latest
     entrypoint: [""]
   tags:
     - agent-1
-  script:
+  before_script:
     - echo "$KUBE_CONFIG_BASE64" | base64 -d > kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
     - apk add --no-cache curl jq kubectl --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
-    - |
-      set -ex
-      # Function to get latest tag from Docker Hub using jq
-      get_latest_tag() {
-        curl -s "https://hub.docker.com/v2/repositories/$1/tags/?page_size=20" | \
-        jq -r '.results[].name' | grep -v "latest" | head -n 1
-      }
-      
-      BACKEND_TAG=$(get_latest_tag "luudinhmac/portfolio-backend")
-      FRONTEND_TAG=$(get_latest_tag "luudinhmac/portfolio-frontend")
-      
-      echo "Backend tag: $BACKEND_TAG"
-      echo "Frontend tag: $FRONTEND_TAG"
-      
-      if [ -z "$BACKEND_TAG" ] || [ "$BACKEND_TAG" == "null" ] || [ -z "$FRONTEND_TAG" ] || [ "$FRONTEND_TAG" == "null" ]; then
-        echo "Error: Could not fetch tags from Docker Hub"
-        exit 1
-      fi
-      
-      echo "Deploying Backend: $BACKEND_TAG, Frontend: $FRONTEND_TAG"
-      
-      # Tự động tạo/cập nhật Secret dựa trên môi trường
-      if [ "$CI_JOB_NAME" == "deploy_prod" ]; then
-        DB_URL=$PROD_DATABASE_URL
-        JWT_SEC=$PROD_JWT_SECRET
-      else
-        DB_URL=$STAGING_DATABASE_URL
-        JWT_SEC=$STAGING_JWT_SECRET
-      fi
 
-      kubectl create secret generic portfolio-secrets -n $APP_NAMESPACE \
-        --from-literal=DATABASE_URL="$DB_URL" \
-        --from-literal=JWT_SECRET="$JWT_SEC" \
-        --dry-run=client -o yaml | kubectl apply -f -
+.get_tags: &get_tags
+  - |
+    set -ex
+    get_latest_tag() {
+      curl -s "https://hub.docker.com/v2/repositories/$1/tags/?page_size=20" | \
+      jq -r '.results[].name' | grep -v "latest" | head -n 1
+    }
+    BACKEND_TAG=$(get_latest_tag "luudinhmac/portfolio-backend")
+    FRONTEND_TAG=$(get_latest_tag "luudinhmac/portfolio-frontend")
+    echo "Backend: $BACKEND_TAG, Frontend: $FRONTEND_TAG"
 
-      # Tạo TLS Secret cho Staging (từ Variables hoặc local certs)
-      if [ "$CI_JOB_NAME" == "deploy_staging" ]; then
-        if [ -n "$STAGING_SSL_CERT" ] && [ -n "$STAGING_SSL_KEY" ]; then
-          echo "$STAGING_SSL_CERT" > staging-cert.pem
-          echo "$STAGING_SSL_KEY" > staging-key.pem
-          kubectl create secret tls luumac-tls-staging -n $APP_NAMESPACE \
-            --cert=staging-cert.pem \
-            --key=staging-key.pem \
-            --dry-run=client -o yaml | kubectl apply -f -
-          rm staging-cert.pem staging-key.pem
-        elif [ -d "certs" ]; then
-          kubectl create secret tls luumac-tls-staging -n $APP_NAMESPACE \
-            --cert=certs/fullchain.pem \
-            --key=certs/privkey.pem \
-            --dry-run=client -o yaml | kubectl apply -f -
-        fi
-      fi
+.create_secrets: &create_secrets
+  - |
+    kubectl create namespace $APP_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+    if [ "$CI_JOB_STAGE" == "deploy_prod" ]; then
+      DB_URL=$PROD_DATABASE_URL; JWT_SEC=$PROD_JWT_SECRET
+    else
+      DB_URL=$STAGING_DATABASE_URL; JWT_SEC=$STAGING_JWT_SECRET
+    fi
+    kubectl create secret generic portfolio-secrets -n $APP_NAMESPACE \
+      --from-literal=DATABASE_URL="$DB_URL" \
+      --from-literal=JWT_SECRET="$JWT_SEC" \
+      --dry-run=client -o yaml | kubectl apply -f -
 
-      helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
-      helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --create-namespace --set image.tag=$BACKEND_TAG $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
-      helm upgrade --install portfolio-frontend ./helm/frontend --namespace $APP_NAMESPACE --create-namespace --set image.tag=$FRONTEND_TAG $HELM_EXTRA_ARGS --kube-insecure-skip-tls-verify
-
-wipe_staging:
+deploy_backend_staging:
   stage: deploy_staging
-  image:
-    name: alpine/helm:latest
-    entrypoint: [""]
-  tags:
-    - agent-1
-  script:
-    - echo "$KUBE_CONFIG_BASE64" | base64 -d > kubeconfig
-    - export KUBECONFIG=$PWD/kubeconfig
-    - helm uninstall portfolio-frontend -n portfolio || true
-    - helm uninstall portfolio-backend -n portfolio || true
-    - helm uninstall postgres -n database || true
-    - kubectl delete pvc --all -n portfolio || true
-    - kubectl delete pvc --all -n database || true
-    - kubectl delete pv postgres-pv portfolio-backend-pv || true
-    - kubectl delete secret portfolio-secrets -n portfolio || true
-  when: manual
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
-
-deploy_staging:
-  stage: deploy_staging
-  extends: .deploy_template
+  <<: *deploy_setup
   variables:
-    DB_NAMESPACE: "database"
     APP_NAMESPACE: "portfolio"
-    HELM_EXTRA_ARGS: ""
+    DB_NAMESPACE: "database"
+  script:
+    - *get_tags
+    - *create_secrets
+    - helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace --kube-insecure-skip-tls-verify
+    - helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --set image.tag=$BACKEND_TAG --kube-insecure-skip-tls-verify
   rules:
+    - if: '$COMPONENT == "backend"'
+      when: always
     - if: '$CI_PIPELINE_SOURCE == "pipeline" || $CI_PIPELINE_SOURCE == "trigger"'
       when: always
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
       when: manual
-      allow_failure: true
+
+deploy_frontend_staging:
+  stage: deploy_staging
+  <<: *deploy_setup
+  variables:
+    APP_NAMESPACE: "portfolio"
+  script:
+    - *get_tags
+    - *create_secrets
+    - |
+      if [ -n "$STAGING_SSL_CERT" ] && [ -n "$STAGING_SSL_KEY" ]; then
+        echo "$STAGING_SSL_CERT" | base64 -d > cert.pem
+        echo "$STAGING_SSL_KEY" | base64 -d > key.pem
+        kubectl create secret tls luumac-tls-staging -n $APP_NAMESPACE --cert=cert.pem --key=key.pem --dry-run=client -o yaml | kubectl apply -f -
+      fi
+    - helm upgrade --install portfolio-frontend ./helm/frontend --namespace $APP_NAMESPACE --set image.tag=$FRONTEND_TAG --kube-insecure-skip-tls-verify
+  rules:
+    - if: '$COMPONENT == "frontend"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "pipeline" || $CI_PIPELINE_SOURCE == "trigger"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      when: manual
 
 deploy_prod:
   stage: deploy_prod
-  extends: .deploy_template
+  <<: *deploy_setup
   variables:
-    DB_NAMESPACE: "database-prod"
     APP_NAMESPACE: "portfolio-prod"
-    HELM_EXTRA_ARGS: "-f ./helm/postgres/values-prod.yaml -f ./helm/backend/values-prod.yaml -f ./helm/frontend/values-prod.yaml"
-  when: manual
-  allow_failure: false
+    DB_NAMESPACE: "database-prod"
+    HELM_ARGS: "-f ./helm/postgres/values-prod.yaml -f ./helm/backend/values-prod.yaml -f ./helm/frontend/values-prod.yaml"
+  script:
+    - *get_tags
+    - *create_secrets
+    - helm upgrade --install postgres ./helm/postgres --namespace $DB_NAMESPACE --create-namespace $HELM_ARGS --kube-insecure-skip-tls-verify
+    - helm upgrade --install portfolio-backend ./helm/backend --namespace $APP_NAMESPACE --set image.tag=$BACKEND_TAG $HELM_ARGS --kube-insecure-skip-tls-verify
+    - helm upgrade --install portfolio-frontend ./helm/frontend --namespace $APP_NAMESPACE --set image.tag=$FRONTEND_TAG $HELM_ARGS --kube-insecure-skip-tls-verify
+    - helm upgrade --install cert-manager-issuers ./helm/cert-manager-issuers --namespace cert-manager --kube-insecure-skip-tls-verify
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-  script:
-    - !reference [.deploy_template, script]
-    - helm upgrade --install cert-manager-issuers ./helm/cert-manager-issuers --namespace cert-manager --kube-insecure-skip-tls-verify
+      when: manual
