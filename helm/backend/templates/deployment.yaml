@@ -26,10 +26,12 @@ spec:
       initContainers:
       - name: fix-permissions
         image: busybox
-        command: ["sh", "-c", "chown -R 1001:1001 /app/uploads && ln -snf /app/uploads /uploads"]
+        command: ["sh", "-c", "chown -R 1001:1001 /app/uploads"]
         volumeMounts:
         - name: uploads-storage
           mountPath: /app/uploads
+        - name: uploads-storage
+          mountPath: /uploads
       - name: prisma-migrate
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -71,6 +73,8 @@ spec:
         volumeMounts:
         - name: uploads-storage
           mountPath: /app/uploads
+        - name: uploads-storage
+          mountPath: /uploads
       volumes:
       - name: uploads-storage
         persistentVolumeClaim:
