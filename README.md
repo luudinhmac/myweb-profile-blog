@@ -10,12 +10,19 @@ Sử dụng Ansible node (`192.168.157.50`) để cài đặt K8s v1.31, Cilium 
 ssh macld@192.168.157.50 "cd /home/macld/portfolio-infratructure/ansible && ansible-playbook -i inventory.ini playbooks/setup_cluster.yml --extra-vars 'ansible_become_pass=admin'"
 ```
 
+
 ## 2. Quản lý Ứng dụng (Helm)
 
 ### Triển khai Database (PostgreSQL)
 ```powershell
 # Từ Ansible node
-ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm upgrade --install postgres /home/macld/portfolio-infratructure/helm/postgres --namespace infra --create-namespace"
+ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && helm upgrade --install postgres /home/macld/portfolio-infratructure/helm/postgres --namespace database --create-namespace"
+```
+
+### Kiểm tra trạng thái Database
+```powershell
+ssh macld@192.168.157.50 "export KUBECONFIG=/home/macld/staging-k8s.conf && kubectl get pods -n database"
+# Mong đợi: postgres-0   1/1     Running
 ```
 
 ### Triển khai Backend & Frontend (CI/CD)
