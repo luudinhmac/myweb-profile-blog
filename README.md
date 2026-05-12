@@ -52,6 +52,33 @@ kubectl get pods -n argocd         # ArgoCD System
 kubectl exec -it postgres-0 -n database -- psql -U portfolio_user -d portfolio_staging
 ```
 
+### Truy cập Kubernetes Dashboard
+Dashboard được quản lý trong namespace `kubernetes-dashboard`. Để lấy Token đăng nhập:
+
+**Cách 1: Lấy Token tạm thời (24h)**
+```bash
+kubectl create token admin-user -n kubernetes-dashboard --duration=24h
+```
+
+**Cách 2: Tạo và lấy Token vĩnh viễn (Chỉ làm 1 lần)**
+Tạo Secret tĩnh:
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admin-user-token-permanent
+  namespace: kubernetes-dashboard
+  annotations:
+    kubernetes.io/service-account.name: admin-user
+type: kubernetes.io/service-account-token
+EOF
+```
+Lấy Token vĩnh viễn:
+```bash
+kubectl get secret admin-user-token-permanent -n kubernetes-dashboard -o jsonpath="{.data.token}" | base64 -d
+```
+
 ## 5. Xử lý sự cố (Troubleshooting)
 
 ### Lỗi ArgoCD Redirect quá nhiều lần (Too many redirects)
