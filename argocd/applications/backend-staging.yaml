@@ -10,7 +10,7 @@ metadata:
   name: portfolio-backend-staging
   namespace: argocd
 spec:
-  project: default
+  project: portfolio-staging
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main # Git branch/tag to track; 'main' represents stable staging state
