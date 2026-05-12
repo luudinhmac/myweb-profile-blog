@@ -45,7 +45,6 @@ spec:
         envFrom:
         - secretRef:
             name: portfolio-secrets
-        env:
       containers:
       - name: {{ .Chart.Name }}
         securityContext:
