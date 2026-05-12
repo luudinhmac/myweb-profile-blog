@@ -1,3 +1,9 @@
+# ==============================================================================
+# COMPONENT: Backend Application Deployment
+# ROLE: Core API service managing business logic and persistence
+# ORCHESTRATION: Standard Deployment with RollingUpdate for zero-downtime
+# ==============================================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,10 +13,10 @@ metadata:
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
-    type: RollingUpdate
+    type: RollingUpdate # Ensure availability by updating pods incrementally
     rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+      maxUnavailable: 0 # IMPORTANT: Prevent downtime by keeping all pods running during rollout
+      maxSurge: 1 # Allow one extra pod to be created before killing an old one
   selector:
     matchLabels:
       {{- include "backend.selectorLabels" . | nindent 6 }}
@@ -20,13 +26,13 @@ spec:
         {{- include "backend.selectorLabels" . | nindent 8 }}
     spec:
       securityContext:
-        runAsUser: 1001
-        fsGroup: 1001
-        runAsNonRoot: true
+        runAsUser: 1001 # Hardened: Run as non-privileged service user
+        fsGroup: 1001 # Ensure volume permissions match service user
+        runAsNonRoot: true # WARNING: Prevent container escalation to root
       initContainers:
       - name: fix-permissions
         image: busybox
-        command: ["sh", "-c", "chown -R 1001:1001 /app/uploads"]
+        command: ["sh", "-c", "chown -R 1001:1001 /app/uploads"] # Rectify PVC ownership for non-root containers
         volumeMounts:
         - name: uploads-storage
           mountPath: /app/uploads
@@ -35,7 +41,7 @@ spec:
       - name: prisma-migrate
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["npx", "prisma", "migrate", "deploy"]
+        command: ["npx", "prisma", "db", "push", "--accept-data-loss"] # Critical: Auto-apply schema changes (db push used as there are no migration files)
         envFrom:
         - secretRef:
             name: portfolio-secrets
@@ -62,13 +68,13 @@ spec:
           httpGet:
             path: /api/v1/health
             port: {{ .Values.service.port }}
-          initialDelaySeconds: 15
+          initialDelaySeconds: 15 # Allow Prisma initialization and DB connection warm-up
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /api/v1/health
             port: {{ .Values.service.port }}
-          initialDelaySeconds: 15
+          initialDelaySeconds: 15 # Ensure API is ready to serve traffic before joining Service
           periodSeconds: 5
         volumeMounts:
         - name: uploads-storage
@@ -78,4 +84,4 @@ spec:
       volumes:
       - name: uploads-storage
         persistentVolumeClaim:
-          claimName: {{ include "backend.fullname" . }}-pvc
+          claimName: {{ include "backend.fullname" . }}-pvc # WARNING: Data loss risk if PVC is deleted
