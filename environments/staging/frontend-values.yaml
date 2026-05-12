@@ -1,5 +1,5 @@
 image:
-  tag: "dev-57d4c8d8"
+  tag: "dev-b95c4fce"
 
 ingress:
   enabled: true
