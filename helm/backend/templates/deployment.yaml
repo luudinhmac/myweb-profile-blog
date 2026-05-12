@@ -41,7 +41,7 @@ spec:
       - name: prisma-migrate
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["npx", "prisma", "db", "push", "--accept-data-loss", "--force-reset", "--skip-generate"] # Critical: Auto-apply schema changes (db push used as there are no migration files)
+        command: ["npx", "prisma", "migrate", "deploy"] # Production safe: apply tracked SQL migrations
         envFrom:
         - secretRef:
             name: portfolio-secrets
