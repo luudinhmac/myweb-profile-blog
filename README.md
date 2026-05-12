@@ -76,31 +76,37 @@ kubectl exec -it postgres-0 -n database -- psql -U portfolio_user -d portfolio_s
 ```
 
 ### Truy cập Kubernetes Dashboard
-Dashboard được quản lý trong namespace `kubernetes-dashboard`. Để lấy Token đăng nhập:
+Dashboard được quản lý trong namespace `kubernetes-dashboard`.
 
-**Cách 1: Lấy Token tạm thời (24h)**
-```bash
-kubectl create token admin-user -n kubernetes-dashboard --duration=24h
-```
+#### 1. Lấy Token đăng nhập
+*   **Token tạm thời (24h)**:
+    ```bash
+    kubectl create token admin-user -n kubernetes-dashboard --duration=24h
+    ```
+*   **Token vĩnh viễn**: Tạo Secret tĩnh (chỉ làm 1 lần) và lấy token:
+    ```bash
+    # Tạo Secret
+    kubectl apply -f https://gitlab.com/portfolio-macld/portfolio-infratructure/-/raw/main/manifests/dashboard-ingress.yaml # (Nếu chưa áp dụng ingress)
+    # Lấy mã token
+    kubectl get secret admin-user-token-permanent -n kubernetes-dashboard -o jsonpath="{.data.token}" | base64 -d
+    ```
 
-**Cách 2: Tạo và lấy Token vĩnh viễn (Chỉ làm 1 lần)**
-Tạo Secret tĩnh:
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: admin-user-token-permanent
-  namespace: kubernetes-dashboard
-  annotations:
-    kubernetes.io/service-account.name: admin-user
-type: kubernetes.io/service-account-token
-EOF
-```
-Lấy Token vĩnh viễn:
-```bash
-kubectl get secret admin-user-token-permanent -n kubernetes-dashboard -o jsonpath="{.data.token}" | base64 -d
-```
+#### 2. Các phương thức truy cập
+*   **Cách A: Truy cập qua tên miền (Cố định)**:
+    *   URL: [https://k8s.luumac.io.vn](https://k8s.luumac.io.vn)
+    *   Yêu cầu: Đã áp dụng file `manifests/dashboard-ingress.yaml`.
+
+*   **Cách B: Port-Forward (Tạm thời - An toàn)**:
+    ```bash
+    kubectl port-forward -n kubernetes-dashboard --address 0.0.0.0 service/kubernetes-dashboard 8443:443
+    ```
+    *   URL: `https://<IP-SERVER>:8443`
+
+*   **Cách C: Kubectl Proxy (Tạm thời)**:
+    ```bash
+    kubectl proxy --address='0.0.0.0' --accept-hosts='^*$'
+    ```
+    *   URL: `http://<IP-SERVER>:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/`
 
 ## 5. Xử lý sự cố (Troubleshooting)
 
