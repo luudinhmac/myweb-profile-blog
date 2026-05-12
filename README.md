@@ -28,15 +28,15 @@ kubectl apply -f argocd/applications/
 
 ## 3. Quy trình Triển khai (Workflow)
 
-Hệ thống được chia làm 2 môi trường chính trong thư mục `environments/`:
+Hệ thống sử dụng kiến trúc **Microservices (Frontend / Backend tách biệt)** và **GitOps**.
 
-### Môi trường Staging (Tự động)
-*   **Cấu hình**: `environments/staging/`
-*   **Cách cập nhật**: CI/CD của Backend/Frontend sẽ thực hiện **Direct Git Push** để sửa trực tiếp file `values-app.yaml` trong thư mục này. ArgoCD sẽ tự động Sync ngay khi thấy commit mới.
-
-### Môi trường Production (Manual/Approval)
-*   **Cấu hình**: `environments/production/`
-*   **Cách cập nhật**: Đánh Git Tag (`v*`) ở repo App. CI sẽ build image và dừng lại ở bước chờ xác nhận (Manual). Khi nhấn nút Deploy, CI sẽ thực hiện **Direct Git Push** vào thư mục này để cập nhật Tag.
+### Workflow Hàng Ngày (Phát triển tính năng):
+1. **Viết Code**: Developer làm việc trên 2 repo riêng biệt (`portfolio-frontend` và `portfolio-backend`).
+2. **Commit & Push**: Lên code ở nhánh `dev` hoặc tag `v*` của từng repo.
+3. **CI/CD Tự động**:
+   - **GitLab CI** tự động chạy Test, Build Docker Image.
+   - CI script tự động thực hiện **Direct Git Push** để cập nhật mã Image Tag vào file `environments/staging/*-values.yaml` trên repo `infra` này.
+4. **ArgoCD Tự động Sync**: ArgoCD phát hiện repo `infra` có commit mới, tự động báo K8s tạo Pod mới. Riêng Backend sẽ chạy Init Container để migrate DB trước khi khởi động.
 
 ## 4. Các lệnh hữu ích
 
@@ -95,16 +95,15 @@ kubectl exec -it <pod-backend> -n portfolio -- npx prisma db push
 
 ## 6. Quy trình chuẩn về Database Migration (Prisma)
 
-Để hệ thống tự động cập nhật Database một cách an toàn khi có thay đổi code, hãy tuân thủ quy trình sau:
+Hệ thống đã được cấu hình Baseline chuẩn cho Production. **Tuyệt đối không sử dụng `db push` để tránh mất dữ liệu**.
 
-1.  **Tại máy Local**: Sau khi thay đổi file `schema.prisma`, bạn cần tạo file migration bằng lệnh:
+### Quy trình thay đổi Database an toàn:
+1.  **Tại máy Local**: Sau khi thay đổi file `schema.prisma`, bạn bắt buộc tạo file migration bằng lệnh:
     ```bash
-    npx prisma migrate dev --name <ten_migration_goi_nho>
+    npx prisma migrate dev --name <ten_tinh_nang>
     ```
-2.  **Commit lên Git**: Bạn **PHẢI** commit thư mục `prisma/migrations` vào Repo App (Backend).
-3.  **Deploy**: Khi Docker Image được build, nó sẽ mang theo các file SQL này. Khi Pod khởi chạy trên K8s, Init Container sẽ chạy lệnh `prisma migrate deploy` để cập nhật Database mà không làm mất dữ liệu hiện có.
-
-*Lưu ý: Chỉ dùng `db push` cho môi trường Staging/Dev khi muốn thử nghiệm nhanh và không quan tâm đến lịch sử thay đổi của Database.*
+2.  **Commit lên Git**: Bạn **PHẢI** commit thư mục `prisma/migrations` vừa sinh ra vào Repo App (Backend).
+3.  **Tự động Deploy**: Khi Docker Image được build, nó sẽ mang theo các file SQL này. Khi Pod khởi chạy trên K8s, Init Container sẽ tự động chạy lệnh `prisma migrate deploy` để cập nhật Database bằng file SQL một cách an toàn tuyệt đối.
 
 ---
 
@@ -125,3 +124,19 @@ kubectl exec -it <pod-backend> -n portfolio -- npx prisma db push
 
 ---
 *Lưu ý: Luôn đảm bảo repo Infra trên máy Ansible node được cập nhật mới nhất bằng lệnh `git pull` trước khi chạy Ansible.*
+
+---
+
+## 8. Quy trình thiết lập Server Mới (Disaster Recovery / Mở rộng)
+
+Nhờ mô hình GitOps, việc dời nhà sang server mới chỉ mất 15 phút:
+1. Cài đặt Kubernetes (K3s/MicroK8s), Traefik, Cert-manager và ArgoCD trên server mới.
+2. Tạo Secret thủ công (chứa các thông tin không được phép đẩy lên Git):
+    ```bash
+    kubectl create namespace portfolio
+    kubectl create secret generic portfolio-secrets -n portfolio \
+      --from-literal=DATABASE_URL="postgresql://portfolio_user:macld@2026@postgres-staging.database:5432/portfolio_staging" \
+      --from-literal=JWT_SECRET="chuoi-bi-mat"
+    ```
+3. Khai báo 1 Application duy nhất trên ArgoCD trỏ về repo `portfolio-infratructure` nhánh `main`. ArgoCD sẽ tự động: dựng DB, tạo bảng (qua `migrate deploy`), xin SSL và chạy App.
+4. Chạy script `seed_db.sh` từ nhánh code backend để khởi tạo dữ liệu Admin đầu tiên.
