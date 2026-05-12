@@ -49,6 +49,32 @@ kubectl apply -f argocd/applications/
     kubectl get applications -n argocd
     ```
 
+### Cấu hình xác thực Git (Credentials)
+Nếu ArgoCD báo lỗi `Access Denied` hoặc `Authentication required` khi kéo code từ GitLab, bạn cần cập nhật Token:
+
+1.  **Lấy Token mới trên GitLab**: Preference > Access Tokens > Tạo token với quyền `read_repository`.
+2.  **Cập nhật vào Cluster**:
+    ```bash
+    # Xóa secret cũ (nếu có)
+    kubectl delete secret -n argocd -l argocd.argoproj.io/secret-type=repository
+
+    # Tạo secret mới chứa Token
+    cat <<EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: portfolio-infra-repo-creds
+      namespace: argocd
+      labels:
+        argocd.argoproj.io/secret-type: repository
+    stringData:
+      type: git
+      url: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
+      username: portfolio-macld
+      password: <MÃ_TOKEN_CỦA_BẠN>
+    EOF
+    ```
+
 ## 3. Quy trình Triển khai (Workflow)
 
 Hệ thống sử dụng kiến trúc **Microservices (Frontend / Backend tách biệt)** và **GitOps**.
