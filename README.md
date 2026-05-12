@@ -26,6 +26,29 @@ Nếu chưa thấy các ứng dụng hiện trên Dashboard, chạy lệnh sau:
 kubectl apply -f argocd/applications/
 ```
 
+### Các lệnh kiểm tra & Quản lý
+*   **Kiểm tra thời gian quét định kỳ (Reconciliation Timeout)**:
+    ```bash
+    kubectl -n argocd get cm argocd-cm -o jsonpath='{.data.timeout\.reconciliation}'
+    ```
+    *(Nếu trống, giá trị mặc định là 180s - 3 phút)*
+
+*   **Ép ArgoCD quét Git ngay lập tức (Refresh)**:
+    ```bash
+    # Yêu cầu cài đặt ArgoCD CLI hoặc dùng kubectl patch (cho nâng cao)
+    kubectl patch app portfolio-backend-staging -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "normal"}}}'
+    ```
+
+*   **Xem lỗi đồng bộ hoặc log của ArgoCD Server**:
+    ```bash
+    kubectl logs -n argocd -l app.kubernetes.io/name=argocd-server
+    ```
+
+*   **Liệt kê trạng thái các ứng dụng**:
+    ```bash
+    kubectl get applications -n argocd
+    ```
+
 ## 3. Quy trình Triển khai (Workflow)
 
 Hệ thống sử dụng kiến trúc **Microservices (Frontend / Backend tách biệt)** và **GitOps**.
