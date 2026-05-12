@@ -5,7 +5,7 @@
 # ==============================================================================
 
 image:
-  tag: "dev-d90a2e30" # UPDATED_BY_CI: Do not change manually unless pinning
+  tag: "dev-aab3224f"
 
 ingress:
   enabled: true
