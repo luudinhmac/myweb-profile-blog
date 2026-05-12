@@ -41,7 +41,15 @@ spec:
       - name: prisma-migrate
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["npx", "prisma", "migrate", "deploy"] # Production safe: apply tracked SQL migrations
+        command: # Smart migration: handles fresh DB, legacy db-push DB, and already-migrated DB
+        - sh
+        - -c
+        - |
+          npx prisma migrate deploy 2>&1 && echo "Migrations applied successfully" || \
+          (echo ">>> Baseline resolve: marking init migration as applied..." && \
+           npx prisma migrate resolve --applied 20260512000000_init && \
+           npx prisma migrate deploy && \
+           echo ">>> Baseline resolved and migrations applied successfully")
         envFrom:
         - secretRef:
             name: portfolio-secrets
