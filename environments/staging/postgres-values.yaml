@@ -1,3 +1,7 @@
+# Description: Helm values for the PostgreSQL staging database.
+# Overrides default values with staging-specific storage and configuration settings.
+# Last Updated: 2026-05-12
+
 storage:
   size: 5Gi
 

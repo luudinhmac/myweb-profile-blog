@@ -1,3 +1,7 @@
+# Description: Default Helm values for the PostgreSQL database.
+# Defines image, service, storage, and authentication settings.
+# Last Updated: 2026-05-12
+
 replicaCount: 1
 
 image:

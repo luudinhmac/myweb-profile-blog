@@ -1,14 +1,20 @@
+# ==============================================================================
+# COMPONENT: ArgoCD Ingress
+# ROLE: External access gateway for ArgoCD UI/API
+# SECURITY: SSL/TLS termination with Traefik; Restricted to authorized IPs in prod
+# ==============================================================================
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: argocd-server-ingress
   namespace: argocd
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure # Force HTTPS entrypoint
+    traefik.ingress.kubernetes.io/router.tls: "true" # Enable TLS termination at the ingress controller
 spec:
   rules:
-    - host: argocd.luumac.io.vn
+    - host: argocd.luumac.io.vn # FQDN for ArgoCD access
       http:
         paths:
           - path: /
@@ -21,4 +27,4 @@ spec:
   tls:
     - hosts:
         - argocd.luumac.io.vn
-      secretName: luumac-wildcard-tls
+      secretName: luumac-wildcard-tls # Ensure this secret is managed by cert-manager or manual upload

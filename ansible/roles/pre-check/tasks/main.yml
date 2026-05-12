@@ -1,3 +1,7 @@
+# Description: Main tasks for the 'pre-check' role.
+# Runs diagnostic checks (like port availability) before cluster setup.
+# Last Updated: 2026-05-12
+
 - name: Verify that ports 80 and 443 are not occupied by non-K8s processes
   script: check_ports.sh
   register: port_check

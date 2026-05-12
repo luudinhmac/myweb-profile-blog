@@ -1,5 +1,11 @@
+# ==============================================================================
+# ENVIRONMENT: Staging (Backend)
+# PURPOSE: Integration testing and preview
+# UPDATE POLICY: Automated CI/CD image tag updates
+# ==============================================================================
+
 image:
-  tag: "dev-d90a2e30"
+  tag: "dev-d90a2e30" # UPDATED_BY_CI: Do not change manually unless pinning
 
 ingress:
   enabled: true
@@ -7,7 +13,7 @@ ingress:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
   hosts:
-    - host: api-staging.luumac.io.vn
+    - host: api-staging.luumac.io.vn # Staging API endpoint
       paths:
         - path: /
           pathType: Prefix

@@ -1,3 +1,7 @@
+# Description: Ansible playbook to clean up infrastructure resources.
+# Useful for resetting environments or removing unused configurations.
+# Last Updated: 2026-05-12
+
 ---
 - name: Cleanup Infrastructure
   hosts: all

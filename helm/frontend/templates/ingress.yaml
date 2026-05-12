@@ -1,3 +1,7 @@
+# Description: Helm template for the frontend Kubernetes Ingress.
+# Configures external access and TLS settings for the web application.
+# Last Updated: 2026-05-12
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

@@ -1,3 +1,7 @@
+# Description: Main tasks for the 'infra-services' role.
+# Deploys foundational Kubernetes services like ArgoCD and Traefik.
+# Last Updated: 2026-05-12
+
 ---
 - name: Add Traefik Helm repo
   become_user: "{{ ansible_operator_user }}"

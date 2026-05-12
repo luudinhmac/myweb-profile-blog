@@ -1,3 +1,7 @@
+# Description: Main tasks for the 'gitlab-runner' role.
+# Installs and registers GitLab Runner for CI/CD jobs.
+# Last Updated: 2026-05-12
+
 ---
 - name: Install GitLab Runner binary on Build Agent
   when: "'build' in group_names"

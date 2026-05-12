@@ -1,4 +1,10 @@
 {{/*
+Description: Helm helper templates for the backend chart.
+Defines reusable snippets for labels, names, and other metadata.
+Last Updated: 2026-05-12
+*/}}
+
+{{/*
 Expand the name of the chart.
 */}}
 {{- define "backend.name" -}}

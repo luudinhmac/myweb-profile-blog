@@ -1,3 +1,7 @@
+# Description: Installation tasks for Kubernetes binaries.
+# Installs kubelet, kubeadm, and kubectl on the host.
+# Last Updated: 2026-05-12
+
 ---
 - name: Install dependencies for k8s
   apt:

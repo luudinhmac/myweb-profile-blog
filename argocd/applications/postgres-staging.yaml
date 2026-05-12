@@ -1,3 +1,7 @@
+# Description: ArgoCD Application manifest for the PostgreSQL staging database.
+# Defines the source repository, path, and destination cluster/namespace.
+# Last Updated: 2026-05-12
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

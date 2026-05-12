@@ -1,3 +1,7 @@
+# Description: Initialization tasks for the Kubernetes cluster.
+# Runs kubeadm init and configures the control plane.
+# Last Updated: 2026-05-12
+
 ---
 - name: Check if cluster is initialized
   stat:

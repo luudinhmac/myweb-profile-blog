@@ -1,3 +1,7 @@
+# Description: Global variables for all host groups in the Ansible inventory.
+# Defines project names, namespaces, network CIDRs, and common paths.
+# Last Updated: 2026-05-12
+
 ---
 # Project Configuration
 project_name: portfolio

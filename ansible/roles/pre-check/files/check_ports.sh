@@ -1,4 +1,8 @@
 #!/bin/bash
+# Description: Script to check if ports 80 and 443 are occupied by non-K8s processes.
+# Used as a pre-check before installing Traefik or other ingress controllers.
+# Last Updated: 2026-05-12
+
 # Check port 80 (Only LISTEN)
 P80=$(lsof -t -i :80 -sTCP:LISTEN)
 if [ ! -z "$P80" ]; then

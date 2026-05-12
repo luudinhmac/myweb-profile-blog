@@ -1,3 +1,7 @@
+# Description: Production override values for the PostgreSQL database.
+# Used when deploying to the production environment via ArgoCD or Helm.
+# Last Updated: 2026-05-12
+
 replicaCount: 1
 
 image:

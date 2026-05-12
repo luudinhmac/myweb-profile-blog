@@ -1,3 +1,9 @@
+# ==============================================================================
+# COMPONENT: ArgoCD Application (Backend Staging)
+# ROLE: GitOps continuous delivery for backend environment
+# STRATEGY: Automated sync with pruning and self-healing
+# ==============================================================================
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -7,7 +13,7 @@ spec:
   project: default
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
-    targetRevision: main # Hoặc feature/k8s-staging-setup
+    targetRevision: main # Git branch/tag to track; 'main' represents stable staging state
     path: helm/backend
     helm:
       valueFiles:
@@ -17,7 +23,7 @@ spec:
     namespace: portfolio
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      prune: true # WARNING: Automatically delete resources removed from Git (use caution with PVCs)
+      selfHeal: true # Automatically revert manual 'kubectl' changes to match Git state
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace=true # Ensure target namespace exists before deployment

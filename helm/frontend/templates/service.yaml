@@ -1,3 +1,7 @@
+# Description: Helm template for the frontend Kubernetes Service.
+# Defines internal load balancing and port configuration for the web frontend.
+# Last Updated: 2026-05-12
+
 apiVersion: v1
 kind: Service
 metadata:

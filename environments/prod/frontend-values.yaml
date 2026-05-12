@@ -1,3 +1,7 @@
+# Description: Helm values for the frontend production environment.
+# Overrides default values with production-specific settings.
+# Last Updated: 2026-05-12
+
 image:
   tag: "latest"
 

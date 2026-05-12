@@ -1,3 +1,7 @@
+# Description: Tasks to deploy and configure the Kubernetes Dashboard.
+# Deploys the dashboard and creates an admin user for access.
+# Last Updated: 2026-05-12
+
 ---
 - name: Install Kubernetes Dashboard
   become_user: "{{ ansible_operator_user }}"
