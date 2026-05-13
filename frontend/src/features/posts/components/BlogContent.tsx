@@ -18,7 +18,7 @@ import Pagination from '@/shared/components/ui/Pagination';
 import { useAuth } from '@/context/AuthContext';
 import OfflineMessage from '@/shared/components/common/OfflineMessage';
 
-import { Post, User as Author } from '@portfolio/contracts';
+import { Post, User as Author } from '@/types';
 
 interface Category {
   id: number;
@@ -67,17 +67,12 @@ export default function BlogContent() {
         seriesService.getAll()
       ]);
 
-<<<<<<< HEAD
-      setPosts(postsData?.data || []);
-      setMeta(postsData?.meta || { total: 0, limit: 12, page: 1 });
-=======
       setPosts(postsData?.items || []);
       setMeta({
         total: postsData?.total || 0,
         limit: postsData?.limit || 12,
         page: postsData?.page || 1
       });
->>>>>>> feature/arch-refactor
       setCategories(catsData);
       setRecentSeries(Array.isArray(seriesData) ? seriesData.slice(0, 5) : []);
       setHasError(false);
@@ -179,10 +174,13 @@ export default function BlogContent() {
           <aside className="lg:w-1/4 space-y-1">
             {/* Search Box */}
             <div className="relative group">
+              <label htmlFor="home-search" className="sr-only">Tìm kiếm nội dung</label>
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
                 <Search size={18} />
               </div>
               <input
+                id="home-search"
+                name="home-search"
                 type="text"
                 placeholder="Tìm nội dung hấp dẫn..."
                 className="w-full pl-11 pr-11 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm group-hover:shadow-md"
