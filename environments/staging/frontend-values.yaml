@@ -1,6 +1,8 @@
-# Description: Helm values for the frontend staging environment.
-# Overrides default values with staging-specific settings and automated tag updates.
-# Last Updated: 2026-05-12
+# ==============================================================================
+# ENVIRONMENT: Staging (Frontend)
+# PURPOSE: Integration testing and preview
+# UPDATE POLICY: Automated CI/CD image tag updates
+# ==============================================================================
 
 image:
   tag: "dev-3a2c4735"
@@ -19,6 +21,14 @@ ingress:
     - secretName: luumac-wildcard-tls
       hosts:
         - staging.luumac.io.vn
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 
 env:
   tz: "Asia/Ho_Chi_Minh"
