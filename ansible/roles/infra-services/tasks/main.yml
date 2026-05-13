@@ -40,6 +40,55 @@
     --set securityContext.capabilities.add={NET_ADMIN,NET_BIND_SERVICE}
     --set securityContext.readOnlyRootFilesystem=false
 
+- name: Create Traefik HTTPS Redirect Middleware
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    cat <<EOF | kubectl apply -f -
+    apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: redirect-https
+      namespace: infra
+    spec:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    EOF
+  changed_when: true
+
+- name: Create Traefik ServersTransport for Insecure Backends
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    cat <<EOF | kubectl apply -f -
+    apiVersion: traefik.io/v1alpha1
+    kind: ServersTransport
+    metadata:
+      name: insecure-transport
+      namespace: infra
+    spec:
+      insecureSkipVerify: true
+    EOF
+  changed_when: true
+
+- name: Create Traefik IPAllowList Middleware for Admin UI
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    cat <<EOF | kubectl apply -f -
+    apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: admin-allowlist
+      namespace: infra
+    spec:
+      ipAllowList:
+        sourceRange:
+          - 127.0.0.1/32
+          - 10.200.0.0/24
+          - 10.0.0.0/8
+          - 100.64.0.0/10
+    EOF
+  changed_when: true
+
 - name: Install Metrics Server
   become_user: "{{ ansible_operator_user }}"
   command: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
@@ -72,6 +121,11 @@
   become_user: "{{ ansible_operator_user }}"
   command: helm repo update
 
+- name: Clean up failed ArgoCD releases (if any)
+  become_user: "{{ ansible_operator_user }}"
+  command: helm uninstall argocd --namespace argocd
+  ignore_errors: yes
+
 - name: Install ArgoCD
   become_user: "{{ ansible_operator_user }}"
   command: >
@@ -79,3 +133,33 @@
     --namespace argocd
     --create-namespace
     --set server.service.type=ClusterIP
+    --set "server.extraArgs={--insecure}"
+    --wait --timeout 10m
+
+- name: Install Local Path Provisioner
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.26/deploy/local-path-storage.yaml
+    kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+  changed_when: true
+
+- name: Add Prometheus Community Helm repo
+  become_user: "{{ ansible_operator_user }}"
+  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  changed_when: true
+
+- name: Install kube-prometheus-stack
+  become_user: "{{ ansible_operator_user }}"
+  command: >
+    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack
+    --namespace monitoring
+    --create-namespace
+    --set grafana.adminPassword=admin
+    --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce
+    --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=5Gi
+    --set grafana.persistence.enabled=true
+    --set grafana.persistence.size=2Gi
+    --set prometheus-node-exporter.service.port=9101
+    --set prometheus-node-exporter.service.targetPort=9101
+    --set prometheus-node-exporter.hostPort=9101
+    --wait --timeout 15m

@@ -44,6 +44,11 @@
     name: "{{ item }}"
     selection: hold
   loop:
-    - kubelet
-    - kubeadm
     - kubectl
+
+- name: Configure Kubelet to use private bridge IP
+  copy:
+    dest: /etc/default/kubelet
+    content: |
+      KUBELET_EXTRA_ARGS="--node-ip={{ private_bridge_ip }} --address={{ private_bridge_ip }}"
+  notify: Restart Kubelet

@@ -7,22 +7,27 @@
 project_name: portfolio
 k8s_namespace: portfolio
 
-# System Configuration
-ansible_operator_user: macld
-user_home: "/home/{{ ansible_operator_user }}"
-
 # Kubernetes Dashboard Configuration
 dashboard_namespace: kubernetes-dashboard
 dashboard_admin_user: admin-user
 
-# Port Configuration
-backend_port: 3001
-frontend_port: 3000
+# SSH Configuration
+ansible_port: 2222
+ansible_operator_user: macld
+ansible_become_password: "admin"
+user_home: "/home/{{ ansible_operator_user }}"
+ansible_ssh_key_path: "{{ user_home }}/.ssh/id_ed25519_ansible"
+
+# Network Configuration
+# On Staging (Local), this is ens33 IP. On VPS, this will be eth0 IP.
+public_ip: "{{ ansible_host }}" 
+private_bridge_ip: "10.200.0.1"
+private_bridge_interface: "br0"
+
+# VPN Configuration (Tailscale)
+tailscale_auth_key: "" # To be provided by user or via environment variable
 
 # Infrastructure Configuration
 internal_subnet: 192.168.157.0/24
 pod_network_cidr: 10.0.0.0/8
 service_network_cidr: 10.96.0.0/12
-
-# SSH Configuration
-ansible_ssh_key_path: "{{ user_home }}/.ssh/id_ed25519_ansible"

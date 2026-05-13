@@ -32,6 +32,9 @@ spec:
       initContainers:
       - name: fix-permissions
         image: busybox
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
         command: ["sh", "-c", "chown -R 1001:1001 /app/uploads"] # Rectify PVC ownership for non-root containers
         volumeMounts:
         - name: uploads-storage

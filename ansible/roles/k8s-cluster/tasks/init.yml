@@ -8,8 +8,14 @@
     path: /etc/kubernetes/admin.conf
   register: kube_admin_conf
 
+- name: Template kubeadm config
+  template:
+    src: kubeadm-config.yaml.j2
+    dest: /tmp/kubeadm-config.yaml
+  when: not kube_admin_conf.stat.exists
+
 - name: Initialize Kubernetes cluster
-  command: kubeadm init --pod-network-cidr={{ pod_network_cidr }} --service-cidr={{ service_network_cidr }}
+  command: kubeadm init --config=/tmp/kubeadm-config.yaml --upload-certs
   when: not kube_admin_conf.stat.exists
   register: kubeadm_init
 
@@ -48,6 +54,7 @@
     --set hubble.enabled=true 
     --set hubble.relay.enabled=true 
     --set hubble.ui.enabled=true
+    --set mtu=1150
 
 - name: Remove Taint from Master (Single Node Cluster)
   become_user: "{{ ansible_operator_user }}"
@@ -58,3 +65,17 @@
   become_user: "{{ ansible_operator_user }}"
   command: kubectl wait --for=condition=Ready node/{{ ansible_hostname }} --timeout=60s
   ignore_errors: yes
+
+- name: Get Pending CSRs
+  become_user: "{{ ansible_operator_user }}"
+  command: kubectl get csr -o json
+  register: csr_list
+  changed_when: false
+
+- name: Approve Pending Kubelet CSRs
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    for csr in $(kubectl get csr | grep Pending | awk '{print $1}'); do
+      kubectl certificate approve $csr
+    done
+  when: "csr_list.stdout | from_json | json_query('items[?status.conditions==null]') | length > 0"

@@ -8,6 +8,8 @@
   become: yes
   roles:
     - common
+    - network
+    - vpn
     - docker
     - k8s-cluster
     - infra-services
