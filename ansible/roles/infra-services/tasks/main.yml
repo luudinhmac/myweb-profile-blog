@@ -29,7 +29,7 @@
     --set service.type=NodePort
     --set deployment.kind=DaemonSet
     --set hostNetwork=true
-    --set additionalArguments="{--entrypoints.web.http.compress=true,--entrypoints.websecure.http.compress=true,--accesslog=true,--accesslog.format=json}"
+    --set additionalArguments="{--accesslog=true,--accesslog.format=json}"
     --set updateStrategy.rollingUpdate.maxUnavailable=1
     --set updateStrategy.rollingUpdate.maxSurge=0
     --set podSecurityContext.runAsNonRoot=false
