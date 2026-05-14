@@ -1,4 +1,14 @@
 apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "{{ private_bridge_ip }}"
+  bindPort: 6443
+nodeRegistration:
+  kubeletExtraArgs:
+    - name: "node-ip"
+      value: "{{ private_bridge_ip }}"
+---
+apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 kubernetesVersion: v1.31.14
 controlPlaneEndpoint: "{{ private_bridge_ip }}:6443"
