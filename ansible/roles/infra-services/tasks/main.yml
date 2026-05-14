@@ -29,7 +29,7 @@
     --set service.type=NodePort
     --set deployment.kind=DaemonSet
     --set hostNetwork=true
-    --set additionalArguments="{--accesslog=true,--accesslog.format=json}"
+    --set additionalArguments="{{ traefik_additional_arguments }}"
     --set updateStrategy.rollingUpdate.maxUnavailable=1
     --set updateStrategy.rollingUpdate.maxSurge=0
     --set podSecurityContext.runAsNonRoot=false

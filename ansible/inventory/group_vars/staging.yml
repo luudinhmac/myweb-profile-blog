@@ -1,0 +1,24 @@
+# Description: Staging group variables for Ansible.
+# Environment: Staging
+
+env: staging
+is_production: false
+
+# K8s Node Roles
+k8s_role: master
+node_labels:
+  - env=staging
+  - role=master
+
+# Security & Network
+ssh_port: 22
+fail2ban_enabled: false
+
+# Infrastructure Services
+traefik_enabled: true
+cert_manager_enabled: true
+argo_cd_enabled: true
+
+# Traefik Configuration
+# Using v2 compatible flags for staging if necessary
+traefik_additional_arguments: "{--entrypoints.web.http.compress=true,--entrypoints.websecure.http.compress=true,--accesslog=true,--accesslog.format=json}"

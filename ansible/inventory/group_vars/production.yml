@@ -18,3 +18,6 @@ fail2ban_enabled: true
 traefik_enabled: true
 cert_manager_enabled: true
 argo_cd_enabled: true
+
+# Traefik Configuration
+traefik_additional_arguments: "{--accesslog=true,--accesslog.format=json}"
