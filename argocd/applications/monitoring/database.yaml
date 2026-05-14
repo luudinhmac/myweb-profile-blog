@@ -1,17 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: platform-cert-manager
+  name: monitoring-database
   namespace: argocd
 spec:
-  project: portfolio-staging
+  project: monitoring-project
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main
-    path: platform/cert-manager/cert-manager-issuers
+    path: monitoring
+    directory:
+      recurse: true
+      include: '{exporters/postgres-exporter.yaml,servicemonitors/postgres.yaml}'
   destination:
     server: https://kubernetes.default.svc
-    namespace: cert-manager
+    namespace: database
   syncPolicy:
     automated:
       prune: true

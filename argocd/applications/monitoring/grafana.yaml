@@ -1,19 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: portfolio-root-app
+  name: monitoring-grafana
   namespace: argocd
 spec:
-  project: portfolio-staging
+  project: monitoring-project
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main
-    path: argocd/applications
-    directory:
-      recurse: true
+    path: monitoring/grafana/ingress
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true

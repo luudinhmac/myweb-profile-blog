@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring-database
+  name: platform-dashboard
   namespace: argocd
 spec:
-  project: portfolio-staging
+  project: platform-project
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main
-    path: monitoring/database-monitoring
+    path: platform/kubernetes-dashboard
   destination:
     server: https://kubernetes.default.svc
-    namespace: database
+    namespace: kubernetes-dashboard
   syncPolicy:
     automated:
       prune: true

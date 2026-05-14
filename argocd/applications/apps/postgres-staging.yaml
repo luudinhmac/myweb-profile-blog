@@ -8,7 +8,7 @@ metadata:
   name: postgres-staging
   namespace: argocd
 spec:
-  project: portfolio-staging
+  project: apps-project
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main

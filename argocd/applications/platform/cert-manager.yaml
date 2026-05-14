@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring-grafana
+  name: platform-cert-manager
   namespace: argocd
 spec:
-  project: portfolio-staging
+  project: platform-project
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main
-    path: monitoring/grafana
+    path: platform/cert-manager/cluster-issuers
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: cert-manager
   syncPolicy:
     automated:
       prune: true

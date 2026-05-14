@@ -4,7 +4,7 @@ metadata:
   name: platform-argocd-ingress
   namespace: argocd
 spec:
-  project: portfolio-staging
+  project: platform-project
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main
