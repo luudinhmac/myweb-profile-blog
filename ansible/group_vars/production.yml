@@ -1,0 +1,20 @@
+# Description: Production group variables for Ansible.
+# Environment: Production
+
+env: production
+is_production: true
+
+# K8s Node Roles
+k8s_role: master
+node_labels:
+  - env=production
+  - role=master
+
+# Security & Network
+ssh_port: 2222
+fail2ban_enabled: true
+
+# Infrastructure Services
+traefik_enabled: true
+cert_manager_enabled: true
+argo_cd_enabled: true
