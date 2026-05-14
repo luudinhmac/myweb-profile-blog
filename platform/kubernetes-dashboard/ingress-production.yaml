@@ -9,7 +9,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: infra-admin-allowlist@kubernetescrd,infra-infra-compress@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: infra-admin-allowlist@kubernetescrd
 spec:
   rules:
   - host: k8s-prod.luumac.io.vn
@@ -19,7 +19,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: kubernetes-dashboard-kong-proxy
+            name: kubernetes-dashboard
             port:
               number: 443
   tls:
