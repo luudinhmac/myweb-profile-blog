@@ -17,7 +17,7 @@ spec:
     path: apps/frontend
     helm:
       valueFiles:
-        - ../../../environments/staging/frontend-values.yaml
+        - /environments/staging/frontend-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: portfolio

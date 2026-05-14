@@ -11,7 +11,7 @@ spec:
     path: apps/postgres
     helm:
       valueFiles:
-        - ../../../environments/production/postgres-values.yaml
+        - /environments/production/postgres-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: database-production

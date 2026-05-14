@@ -11,7 +11,7 @@ spec:
     path: apps/backend
     helm:
       valueFiles:
-        - ../../../environments/production/backend-values.yaml
+        - /environments/production/backend-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: production
