@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main # Tracks the 'main' branch for continuous delivery to staging
-    path: helm/frontend
+    path: apps/frontend
     helm:
       valueFiles:
         - ../../environments/staging/frontend-values.yaml

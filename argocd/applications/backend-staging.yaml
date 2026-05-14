@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
     targetRevision: main # Git branch/tag to track; 'main' represents stable staging state
-    path: helm/backend
+    path: apps/backend
     helm:
       valueFiles:
         - ../../environments/staging/backend-values.yaml
