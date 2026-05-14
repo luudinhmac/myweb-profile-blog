@@ -1,0 +1,28 @@
+# Description: Ingress manifest for Kubernetes Dashboard in the production environment.
+# Provides secure access via HTTPS with admin allowlist protection.
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-dashboard-ingress-production
+  namespace: kubernetes-dashboard
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: infra-admin-allowlist@kubernetescrd,infra-infra-compress@kubernetescrd
+spec:
+  rules:
+  - host: k8s.luumac.io.vn
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kubernetes-dashboard-kong-proxy
+            port:
+              number: 443
+  tls:
+  - hosts:
+    - k8s.luumac.io.vn
+    secretName: luumac-wildcard-tls
