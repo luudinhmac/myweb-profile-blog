@@ -11,7 +11,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory # Production ACME server (rate limits apply)
-    email: {{ .Values.email | default "macld@luumac.io.vn" }}
+    email: macld@luumac.io.vn
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
     solvers:
