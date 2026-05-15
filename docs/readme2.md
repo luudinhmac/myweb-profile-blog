@@ -138,5 +138,3 @@ Cấu hình tại Repo Backend & Frontend (Ứng dụng):
 *   **`GITLAB_API_TOKEN`**: Personal Access Token của repo **Infra** (quyền `write_repository`).
 *   **`CI_REGISTRY_USER`** / **`CI_REGISTRY_PASSWORD`**: Tài khoản Docker Hub.
 
----
-*Cập nhật lần cuối: 2026-05-14*
