@@ -3,6 +3,7 @@
 
 env: production
 is_production: true
+ansible_become_password: "your_production_sudo_password"
 
 # K8s Node Roles
 k8s_role: master
