@@ -10,10 +10,6 @@ node_labels:
   - env=production
   - role=master
 
-# Security & Network
-ssh_port: 2222
-fail2ban_enabled: true
-
 # Infrastructure Services
 traefik_enabled: true
 cert_manager_enabled: true
