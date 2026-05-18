@@ -5,7 +5,7 @@
 ---
 - name: Disable SWAP
   command: swapoff -a
-  when: ansible_swaptotal_mb > 0
+  when: ansible_facts['swaptotal_mb'] > 0
 
 - name: Remove SWAP from /etc/fstab
   replace:

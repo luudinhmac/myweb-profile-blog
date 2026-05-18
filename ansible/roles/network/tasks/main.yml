@@ -65,7 +65,7 @@
         version: 2
         renderer: networkd
         ethernets:
-          {{ ansible_default_ipv4.interface }}:
+          {{ ansible_facts['default_ipv4']['interface'] }}:
             mtu: 1200
         bridges:
           {{ private_bridge_interface }}:
@@ -76,7 +76,6 @@
             parameters:
               stp: false
   notify: Apply Netplan
-
 
 - name: Enable IP Forwarding
   sysctl:
@@ -127,10 +126,10 @@
     iptables -A FORWARD -i tailscale0 -j ACCEPT
     
     # NAT (Masquerade) for pods/services to reach internet
-    iptables -t nat -A POSTROUTING -s 10.200.0.0/24 -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+    iptables -t nat -A POSTROUTING -s 10.200.0.0/24 -o {{ ansible_facts['default_ipv4']['interface'] }} -j MASQUERADE
     
     # Allow forwarding from bridge to internet
-    iptables -A FORWARD -i {{ private_bridge_interface }} -o {{ ansible_default_ipv4.interface }} -j ACCEPT
+    iptables -A FORWARD -i {{ private_bridge_interface }} -o {{ ansible_facts['default_ipv4']['interface'] }} -j ACCEPT
     iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     
     # Save rules for persistence

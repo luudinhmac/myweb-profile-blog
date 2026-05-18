@@ -58,11 +58,11 @@
 
 - name: Allow traffic on Flannel interface
   shell: ufw allow in on flannel.1
-  ignore_errors: yes
+  failed_when: false
 
 - name: Allow traffic on CNI interface
   shell: ufw allow in on cni0
-  ignore_errors: yes
+  failed_when: false
 
 - name: Enable UFW
   ufw:

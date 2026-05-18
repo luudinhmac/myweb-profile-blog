@@ -7,7 +7,7 @@
   apt:
     update_cache: yes
     upgrade: dist
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
 
 - name: Install basic packages
   apt:
@@ -21,7 +21,7 @@
       - gnupg
       - lsb-release
     state: present
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
 
 - name: Generate SSH key on control node if not exists
   delegate_to: localhost
@@ -43,9 +43,10 @@
 
 - name: Add control node public key to staging server authorized_keys
   authorized_key:
-    user: "{{ ansible_user }}"
+    user: "{{ ansible_user | default(ansible_facts['user_id']) }}"
     state: present
-    key: "{{ control_node_pub_key['content'] | b64decode }}"
+    key: "{{ control_node_pub_key.content | b64decode }}"
+
 
 - name: Install Helm
   shell: |
