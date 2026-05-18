@@ -10,9 +10,13 @@ spec:
   destinations:
   - namespace: database
     server: https://kubernetes.default.svc
+  - namespace: database-production
+    server: https://kubernetes.default.svc
   - namespace: staging
     server: https://kubernetes.default.svc
   - namespace: production
+    server: https://kubernetes.default.svc
+  - namespace: portfolio
     server: https://kubernetes.default.svc
   clusterResourceWhitelist:
   - group: '*'
