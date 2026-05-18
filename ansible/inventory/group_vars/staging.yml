@@ -3,6 +3,7 @@
 
 env: staging
 is_production: false
+ansible_become_password: "admin"
 
 # K8s Node Roles
 k8s_role: master
