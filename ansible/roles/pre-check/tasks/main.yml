@@ -8,12 +8,11 @@
   failed_when: port_check.rc != 0
   changed_when: false
 
-- name: Check free disk space (require at least 5GB on /var/lib/containerd)
-  shell: df /var/lib/containerd --output=avail -h | tail -1 | tr -d 'G' | tr -d 'M' | awk '{print ($1 > 5)}'
+- name: Check free disk space (require at least 5GB on root filesystem)
+  shell: df / --output=avail -h | tail -1 | tr -d 'G' | tr -d 'M' | awk '{print ($1 > 5)}'
   register: disk_space
   failed_when: disk_space.stdout != "1"
   changed_when: false
-  ignore_errors: yes # Don't fail if directory doesn't exist yet, but warn
 
 - name: Verify Sudo access without password
   command: sudo -n true
