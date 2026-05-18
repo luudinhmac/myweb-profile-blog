@@ -18,3 +18,17 @@ argo_cd_enabled: true
 
 # Traefik Configuration
 traefik_additional_arguments: "{--accesslog=true,--accesslog.format=json}"
+
+# Project Configuration
+project_name: portfolio
+k8s_namespace: portfolio
+
+# Kubernetes Dashboard Configuration
+dashboard_namespace: kubernetes-dashboard
+dashboard_admin_user: admin-user
+
+# SSH Configuration
+ansible_port: 2222
+ansible_operator_user: macld
+user_home: "/home/{{ ansible_operator_user }}"
+ansible_ssh_key_path: "{{ user_home }}/.ssh/id_ed25519_ansible"
