@@ -11,12 +11,6 @@ ingress:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: luumac.io.vn
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: portfolio-frontend-tls
-      hosts:
-        - luumac.io.vn
+  host: luumac.io.vn
+  secretName: portfolio-frontend-tls
+  issuer: letsencrypt-prod
