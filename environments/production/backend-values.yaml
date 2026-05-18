@@ -5,7 +5,7 @@
 # ==============================================================================
 
 image:
-  tag: "latest" # CAUTION: 'latest' is non-deterministic; prefer immutable SHAs for prod
+  tag: "v1.0.9"
 
 ingress:
   enabled: true
