@@ -63,7 +63,7 @@
 
 - name: Wait for node to be ready
   become_user: "{{ ansible_operator_user }}"
-  command: kubectl wait --for=condition=Ready node/{{ ansible_hostname }} --timeout=60s
+  command: kubectl wait --for=condition=Ready node/{{ ansible_facts['hostname'] }} --timeout=120s
   ignore_errors: yes
 
 - name: Get Pending CSRs
