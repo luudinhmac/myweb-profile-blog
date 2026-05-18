@@ -6,7 +6,7 @@
 - name: Add Traefik Helm repo
   become_user: "{{ ansible_operator_user }}"
   command: helm repo add traefik https://traefik.github.io/charts
-  ignore_errors: yes
+  failed_when: false
 
 - name: Update Helm repos
   become_user: "{{ ansible_operator_user }}"
@@ -15,7 +15,7 @@
 - name: Create Infra namespace
   become_user: "{{ ansible_operator_user }}"
   command: kubectl create namespace infra
-  ignore_errors: yes
+  failed_when: false
 
 - name: Deploy Traefik Ingress Controller
   become_user: "{{ ansible_operator_user }}"
@@ -103,7 +103,7 @@
 - name: Add Jetstack Helm repo (for Cert-Manager)
   become_user: "{{ ansible_operator_user }}"
   command: helm repo add jetstack https://charts.jetstack.io
-  ignore_errors: yes
+  failed_when: false
 
 - name: Install Cert-Manager
   become_user: "{{ ansible_operator_user }}"
@@ -116,7 +116,7 @@
 - name: Add ArgoCD Helm repo
   become_user: "{{ ansible_operator_user }}"
   command: helm repo add argo https://argoproj.github.io/argo-helm
-  ignore_errors: yes
+  failed_when: false
 
 - name: Update Helm repos
   become_user: "{{ ansible_operator_user }}"
@@ -125,7 +125,7 @@
 - name: Clean up failed ArgoCD releases (if any)
   become_user: "{{ ansible_operator_user }}"
   command: helm uninstall argocd --namespace argocd
-  ignore_errors: yes
+  failed_when: false
 
 - name: Install ArgoCD
   become_user: "{{ ansible_operator_user }}"

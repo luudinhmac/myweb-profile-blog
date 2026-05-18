@@ -2,7 +2,7 @@
 - name: Remove ArgoCD initial admin secret
   become_user: "{{ ansible_operator_user }}"
   command: kubectl delete secret argocd-initial-admin-secret -n argocd
-  ignore_errors: yes
+  failed_when: false
 
 - name: Apply Default Deny NetworkPolicy in portfolio namespace
   become_user: "{{ ansible_operator_user }}"
@@ -18,7 +18,7 @@
       policyTypes:
       - Ingress
     EOF
-  ignore_errors: yes
+  failed_when: false
 
 - name: Restrict default ServiceAccount in all namespaces
   become_user: "{{ ansible_operator_user }}"
@@ -28,4 +28,4 @@
     - portfolio
     - database
     - infra
-  ignore_errors: yes
+  failed_when: false

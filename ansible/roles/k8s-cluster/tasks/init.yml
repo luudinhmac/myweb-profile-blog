@@ -38,7 +38,7 @@
 - name: Add Cilium Helm repo
   become_user: "{{ ansible_operator_user }}"
   command: helm repo add cilium https://helm.cilium.io/
-  ignore_errors: yes
+  failed_when: false
 
 - name: Update Helm repos
   become_user: "{{ ansible_operator_user }}"
@@ -59,12 +59,12 @@
 - name: Remove Taint from Master (Single Node Cluster)
   become_user: "{{ ansible_operator_user }}"
   command: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
-  ignore_errors: yes
+  failed_when: false
 
 - name: Wait for node to be ready
   become_user: "{{ ansible_operator_user }}"
   command: kubectl wait --for=condition=Ready node/{{ ansible_facts['hostname'] }} --timeout=120s
-  ignore_errors: yes
+  failed_when: false
 
 - name: Get Pending CSRs
   become_user: "{{ ansible_operator_user }}"
