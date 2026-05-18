@@ -14,3 +14,6 @@ ingress:
   host: luumac.io.vn
   secretName: portfolio-frontend-tls
   issuer: letsencrypt-prod
+
+env:
+  internalApiUrl: "http://portfolio-backend-production:3001/api/v1"
