@@ -13,6 +13,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure # Force HTTPS entrypoint
     traefik.ingress.kubernetes.io/router.tls: "true" # Enable TLS termination at the ingress controller
     traefik.ingress.kubernetes.io/router.middlewares: infra-admin-allowlist@kubernetescrd,infra-infra-compress@kubernetescrd # Security + Performance
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
     - host: argocd.luumac.io.vn # FQDN for ArgoCD access

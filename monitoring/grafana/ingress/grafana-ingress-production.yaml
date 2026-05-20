@@ -11,6 +11,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: "true"
     # Re-using the same security middlewares
     traefik.ingress.kubernetes.io/router.middlewares: infra-admin-allowlist@kubernetescrd
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
   - host: grafana.luumac.io.vn
@@ -26,4 +27,4 @@ spec:
   tls:
   - hosts:
     - grafana.luumac.io.vn
-    secretName: luumac-wildcard-tls
+    secretName: grafana-prod-tls
