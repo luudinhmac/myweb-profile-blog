@@ -10,6 +10,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: infra-admin-allowlist@kubernetescrd
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
   - host: argocd-prod.luumac.io.vn
@@ -25,4 +26,4 @@ spec:
   tls:
   - hosts:
     - argocd-prod.luumac.io.vn
-    secretName: luumac-wildcard-tls
+    secretName: argocd-prod-tls
