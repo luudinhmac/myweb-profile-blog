@@ -144,23 +144,4 @@
     kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
   changed_when: true
 
-- name: Add Prometheus Community Helm repo
-  become_user: "{{ ansible_operator_user }}"
-  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-  changed_when: true
 
-- name: Install kube-prometheus-stack
-  become_user: "{{ ansible_operator_user }}"
-  command: >
-    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack
-    --namespace monitoring
-    --create-namespace
-    --set grafana.adminPassword=admin
-    --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce
-    --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=5Gi
-    --set grafana.persistence.enabled=true
-    --set grafana.persistence.size=2Gi
-    --set prometheus-node-exporter.service.port=9101
-    --set prometheus-node-exporter.service.targetPort=9101
-    --set prometheus-node-exporter.hostPort=9101
-    --wait --timeout 15m
