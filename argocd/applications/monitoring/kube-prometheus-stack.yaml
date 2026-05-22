@@ -17,6 +17,8 @@ spec:
           persistence:
             enabled: true
             size: 2Gi
+          initChownData:
+            enabled: false
           resources:
             requests:
               cpu: 20m
