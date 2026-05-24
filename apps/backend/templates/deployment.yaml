@@ -48,10 +48,10 @@ spec:
         - sh
         - -c
         - |
-          npx prisma migrate deploy 2>&1 && echo "Migrations applied successfully" || \
+          node node_modules/prisma/build/index.js migrate deploy 2>&1 && echo "Migrations applied successfully" || \
           (echo ">>> Baseline resolve: marking init migration as applied..." && \
-           npx prisma migrate resolve --applied 20260512000000_init && \
-           npx prisma migrate deploy && \
+           node node_modules/prisma/build/index.js migrate resolve --applied 20260512000000_init && \
+           node node_modules/prisma/build/index.js migrate deploy && \
            echo ">>> Baseline resolved and migrations applied successfully")
         envFrom:
         - secretRef:
