@@ -11,7 +11,9 @@ metadata:
   labels:
     {{- include "frontend.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }} # Scale based on traffic; ensure >= 2 for production HA
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "frontend.selectorLabels" . | nindent 6 }}
@@ -24,6 +26,8 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }} # Use Always for staging to pull latest tags
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
         ports:
         - containerPort: {{ .Values.service.port }}
         env:
