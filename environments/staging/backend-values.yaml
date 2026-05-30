@@ -5,8 +5,7 @@
 # ==============================================================================
 
 image:
-  tag: "dev-7ea56015"
-
+  tag: "dev-4adf068e"
 ingress:
   enabled: true
   annotations:
@@ -22,7 +21,6 @@ ingress:
     - secretName: luumac-wildcard-tls
       hosts:
         - api-staging.luumac.io.vn
-
 resources:
   requests:
     cpu: 100m
@@ -30,7 +28,6 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
 env:
   tz: "Asia/Ho_Chi_Minh"
   port: "3001"
