@@ -5,8 +5,7 @@
 # ==============================================================================
 
 image:
-  tag: "dev-e1c7f394"
-
+  tag: "dev-38226ee9"
 ingress:
   enabled: true
   annotations:
@@ -15,7 +14,6 @@ ingress:
     traefik.ingress.kubernetes.io/router.middlewares: infra-infra-compress@kubernetescrd
   host: staging.luumac.io.vn
   secretName: luumac-wildcard-tls
-
 resources:
   requests:
     cpu: 100m
@@ -23,7 +21,6 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
 env:
   tz: "Asia/Ho_Chi_Minh"
   nodeEnv: "production"
