@@ -5,7 +5,7 @@
 # ==============================================================================
 
 image:
-  tag: "dev-2a7c4ded"
+  tag: "dev-cf13916f"
 ingress:
   enabled: true
   annotations:
