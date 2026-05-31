@@ -3,7 +3,7 @@
 # Last Updated: 2026-05-12
 
 image:
-  tag: "v0.0.13@sha256:c5e1245a0e4b1e245c54e2e054d1f7579491d32fead97456cdd3f83ee3c8c0f2"
+  tag: "v0.0.14@sha256:731894ffe40bb3cb688ffc028da00b4c3611efdaa7264332f1f7798feee918db"
 ingress:
   enabled: true
   annotations:
@@ -15,7 +15,6 @@ ingress:
   issuer: letsencrypt-prod
 env:
   internalApiUrl: "http://portfolio-backend-production:3001/api/v1"
-
 autoscaling:
   enabled: true
   minReplicas: 1
