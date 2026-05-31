@@ -3,8 +3,7 @@
 # Last Updated: 2026-05-12
 
 image:
-  tag: "v0.0.11@sha256:2c16158d58cfa38b937f9a1ea5a1ecf7fc8d950267a3023359b8ebab7146bb79"
-
+  tag: "v0.0.13@sha256:c5e1245a0e4b1e245c54e2e054d1f7579491d32fead97456cdd3f83ee3c8c0f2"
 ingress:
   enabled: true
   annotations:
@@ -14,6 +13,5 @@ ingress:
   host: blog.luumac.io.vn
   secretName: portfolio-frontend-tls
   issuer: letsencrypt-prod
-
 env:
   internalApiUrl: "http://portfolio-backend-production:3001/api/v1"
