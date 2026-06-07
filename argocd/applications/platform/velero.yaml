@@ -29,6 +29,12 @@ spec:
         # Deploy Node Agent (daemonset) to perform filesystem backup on PVs
         deployNodeAgent: true
         
+        # Override kubectl image for CRD upgrades since bitnami/kubectl:1.31 does not exist
+        kubectl:
+          image:
+            repository: rancher/kubectl
+            tag: v1.31.1
+
         # Use existing secret managed by Ansible
         credentials:
           existingSecret: cloud-credentials
