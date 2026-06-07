@@ -145,4 +145,28 @@
     kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
   changed_when: true
 
+- name: Create Velero Namespace
+  become_user: "{{ ansible_operator_user }}"
+  command: kubectl create namespace velero
+  failed_when: false
+
+- name: Create Velero Cloud Credentials Secret
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    cat <<EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: cloud-credentials
+      namespace: velero
+    type: Opaque
+    stringData:
+      cloud: |
+        [default]
+        aws_access_key_id = "{{ r2_access_key_id }}"
+        aws_secret_access_key = "{{ r2_secret_access_key }}"
+    EOF
+  changed_when: true
+
+
 
