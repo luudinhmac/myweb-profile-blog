@@ -168,24 +168,6 @@
     EOF
   changed_when: true
 
-- name: Add Velero Helm Repo
-  become_user: "{{ ansible_operator_user }}"
-  command: helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
-  failed_when: false
-
-- name: Template Velero Helm Values
-  template:
-    src: velero-values.yaml.j2
-    dest: /tmp/velero-values.yaml
-    mode: '0644'
-
-- name: Install Velero via Helm
-  become_user: "{{ ansible_operator_user }}"
-  command: >
-    helm upgrade --install velero vmware-tanzu/velero
-    --namespace velero
-    -f /tmp/velero-values.yaml
-    --wait --timeout 10m
 
 
 
