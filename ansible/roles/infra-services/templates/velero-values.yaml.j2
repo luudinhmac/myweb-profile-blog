@@ -1,0 +1,30 @@
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: "{{ r2_bucket_name }}"
+      config:
+        region: auto
+        s3ForcePathStyle: true
+        s3Url: https://{{ r2_account_id }}.r2.cloudflarestorage.com
+  # Default to using File System Backup (restic/kopia) for all PVs
+  defaultVolumesToFsBackup: true
+  extraEnvVars:
+    AWS_EC2_METADATA_DISABLED: "true"
+
+# Deploy Node Agent (daemonset) to perform filesystem backup on PVs
+deployNodeAgent: true
+
+# Use credentials secret managed by Ansible
+credentials:
+  existingSecret: cloud-credentials
+  secretKeys:
+    cloud: cloud
+
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.10.1
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins

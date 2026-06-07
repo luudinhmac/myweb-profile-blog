@@ -31,16 +31,16 @@ Hệ thống sử dụng **Velero** để tự động sao lưu cấu hình toà
    ```
 
 ### Bước 2.2: Đồng bộ cấu hình lên K8s Cluster
-1. **Cập nhật cấu hình ArgoCD**:
-   Sửa các thông tin `<YOUR_R2_BUCKET_NAME>` và `<YOUR_CLOUDFLARE_ACCOUNT_ID>` trong file [velero.yaml](file:///d:/DATA/Portfolio/infra/argocd/applications/platform/velero.yaml).
-2. **Chạy lại Ansible Playbook**:
+1. **Chạy lại Ansible Playbook**:
    ```bash
    ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/setup_cluster.yml --tags infra
    ```
-   *Ansible sẽ tự động tạo namespace `velero` và tạo secret `cloud-credentials` chứa thông tin đăng nhập R2.*
-3. **Đồng bộ ứng dụng qua ArgoCD**:
-   ArgoCD sẽ tự động nhận diện và sync 2 ứng dụng:
-   * `platform-velero`: Cài đặt Core Velero và Node Agent (DaemonSet).
+   *Ansible sẽ tự động thực hiện:*
+   * Tạo namespace `velero` và secret `cloud-credentials` chứa thông tin đăng nhập R2.
+   * Tạo tệp cấu hình `/tmp/velero-values.yaml` chứa thông tin Bucket và Account ID từ `secrets.yml`.
+   * Cài đặt và cập nhật Velero Helm Chart lên cluster.
+2. **Đồng bộ lịch backup qua ArgoCD**:
+   ArgoCD sẽ tự động nhận diện và sync ứng dụng:
    * `platform-velero-configs`: Áp dụng lịch backup tự động (`Schedule`).
 
 ---
