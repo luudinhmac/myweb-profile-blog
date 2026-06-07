@@ -25,6 +25,7 @@ spec:
           defaultVolumesToFsBackup: true
           extraEnvVars:
             AWS_EC2_METADATA_DISABLED: "true"
+          volumeSnapshotLocation: []
         
         # Deploy Node Agent (daemonset) to perform filesystem backup on PVs
         deployNodeAgent: true
