@@ -32,8 +32,8 @@ spec:
         # Override kubectl image for CRD upgrades since bitnami/kubectl:1.31 does not exist
         kubectl:
           image:
-            repository: alpine/k8s
-            tag: 1.31.2
+            repository: bitnami/kubectl
+            tag: 1.31.1-debian-12-r2
 
         # Use existing secret managed by Ansible
         credentials:
