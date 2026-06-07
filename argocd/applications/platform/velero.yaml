@@ -33,7 +33,7 @@ spec:
         kubectl:
           image:
             repository: bitnami/kubectl
-            tag: 1.31.1-debian-12-r2
+            tag: latest
 
         # Use existing secret managed by Ansible
         credentials:
