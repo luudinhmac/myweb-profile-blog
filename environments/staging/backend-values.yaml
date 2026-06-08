@@ -5,9 +5,8 @@
 # ==============================================================================
 
 replicaCount: 1
-
 image:
-  tag: "dev-eb317807"
+  tag: "dev-130022f8"
 ingress:
   enabled: true
   annotations:
@@ -33,10 +32,8 @@ resources:
 env:
   tz: "Asia/Ho_Chi_Minh"
   port: "3001"
-
 sealedSecret:
   enabled: true
   encryptedData:
     DATABASE_URL: "AgAEPbF7vK96NQPvXi0620B4gZ9ebqHszSypkDm5dr8Y7CGY5xEy/mD7A0+LrBOEi1Il5vca/mi8APIShWk6d18D22mRYtkvX0Jm2UBYbYyiW3KBna6RSS2YoXVpC107T7GK5vRr1ho46q2+4f7a80h6qGDOMIw7vZCLkleK2+BK2gVZHcA+wU0gdGgY2OOhC4Z0W16mlKvruUbMLQMeuUVnzYkhYlygtgvc5pltD/GpK8nip+QmS1Mu3jxMPXvGjbZD1Zu7eOIHoEojJNzTd7KdvGoHrR15xgV9dszSnC5VNvqcpi2ttyPNjWhvVmgF5+7LdTwWpjESXop/uwqyA1rj6IOdDSN9dYfZXos2aXTkuPbL4YHvLxylCAxOLPkzvdBrgmByJU6wW/8hXefN1QsK/qObBrkubDnfhvssbrjSKyCwqsE6i61rImQUMCk3uDet69vYCwF6xd/rFb9MZCoNfz0gdvk7B4aiIESV0qi4MfKSViIw6I7HiH3K2NYjxoJfmvn38rsfdFxdNgWG5MQQvfcKRT3R1fBjtwOOPeUjKoYZ78KAxXuqQoPa80tshli+krTFwHVkDg9BBcDnFBjG2z+4lDpSXpGN4vYaNGQ5QZTy9zKIayVuFFxsQr9Fwlncgz6Q7fRoIKFsi1cOia4mQvcEIUD0Zfs6HGa7vH76JrKyg311CTh8MzkpeiOOryc6KxGCWm6U0U/alTkqpQZsQITXP59Zdey4CvSdZR1FF/JdI/ueuZSHolRLnJtpeuJrS5s/tfWb+HuXN1RFCp0GfsyqMIrcQx0cyZA3WSQeeBKGrlAu5dgFxc2IGZ5tgN/8PsJbQLgtgKI="
     JWT_SECRET: "AgAt1NV0Yvm1SPznLMBnwRBOCeF5z09ow3u+yGzY+ZE8fuYMIadl/Ngu3dUUqXpE4pUMzpC7BMY0ORsMb+JN+HATNAOFhYtD5CkcFcf+I4HMORdsCYn5Sw16cbcYZRkXO6NxQwf3GGWmo4aNn/vr5+TL841598rdQ5OryqSP62pR887YOxDdUQOq7wwaOrro+Sq+VciVJzlMQrzYEnXTznLZBBkmdETF+lYvYWd4gE5ghCZmIGhqy+qPR8Z/oRnxb8SeNQpsaX0nNFH2m6l8RjhCq7CsxEhkE4dkAoV78u0AmWe7g97ItCxF7d2VmpIWWPCKlZ+FezoDhUehMjEIgJnjxH99Ar7Ig8RnMXrfNuS7p1Hnm9d+6pUvkwJrkYmY4pgdCPthiyziayt5QrlxCWrhm5Qevlob5bR/QSt5Jk6OofAzN36IU4VSoe5o82ZXVlTK+gVlC/pJ2Z9jQOxsGf4kDmDC89bkBT9OCU+rxtV8ja2qU30PtR9mCPuIBbp/kP4d3cPjx+l5vaQyRVuX4gqKBVEKpGnUKT275hh/7WPZs0kPmPxvzfcW7T5nyrLFds9a5N5sGXGtLALsBEUxa9YW8pZpnv0gdwds7nxxpZb0mN/tjHwvsyPTG6oAjy/CVGCkS4ArAM2pabLpbzwcdOsflgw+egT6nc8/ZOK2VIp3eJZyZIOT/m6i0IwTjcfav/46RRuKKJWB73NM"
-
