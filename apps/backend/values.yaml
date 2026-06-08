@@ -30,6 +30,8 @@ resources:
 persistence:
   size: 5Gi
   path: /data/k8s/storage/backend-uploads
+  storageClassName: "local-path"
+
 
 env:
   tz: "Asia/Ho_Chi_Minh"
@@ -40,3 +42,10 @@ ingress:
   secretName: "luumac-tls-staging"
 
 namespace: portfolio
+
+sealedSecret:
+  enabled: false
+  encryptedData:
+    DATABASE_URL: ""
+    JWT_SECRET: ""
+

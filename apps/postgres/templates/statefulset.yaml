@@ -33,6 +33,11 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data # Standard path for PostgreSQL data persistence
+          {{- if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+
       volumes:
         - name: postgres-data
           persistentVolumeClaim:

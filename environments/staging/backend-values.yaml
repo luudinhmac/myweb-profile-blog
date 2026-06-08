@@ -4,6 +4,8 @@
 # UPDATE POLICY: Automated CI/CD image tag updates
 # ==============================================================================
 
+replicaCount: 0
+
 image:
   tag: "dev-eb317807"
 ingress:
@@ -31,3 +33,10 @@ resources:
 env:
   tz: "Asia/Ho_Chi_Minh"
   port: "3001"
+
+sealedSecret:
+  enabled: true
+  encryptedData:
+    DATABASE_URL: "AQBKELz6zHI0sZ93FgcQSWpNqh2WzV3nrZCajMpyzkXETnAZqiRIfK9Pklfu6WL3HhW787CXSg0OLTLw6hml8Y/5zGxRbPRHPbmKSNqYVijHYjy1pTRxY2Tt++sQxzk+aCpRZskSKsRzKgoNqZHdw0pYiuIcWOq+ixJn02fDvFtxlRt6cWJaGoy3nV5pOorPIvvOSgkbSTzkWLsuFpEUyXdI+nO4tyGlhxmTitLqx/yZ+XnpIu1M7c/V0GFyDf/uJxZLhLOQPDzxHyLe6Zu2MFEpbT8WP3xIpLEr7ZFgj7WQlO404TTe1sFtdBftqWZ1KiNafAwqtBu941DA2v5Tjt5H84wNI6ksCGOuSSwzVTJIc/rqPz4URj9pvF1WEd17Ssi+CfhD8///FxoGm+p7rRhMPUpPkLN4XSZh8ZNrllRYBYutg2V4WOwkD4IPlBdKFFNNvBvT5sLNVQ2KgC9pxaXALY5xDBAat/OSxMpHKiMT4e9+47Gn+1KV2A=="
+    JWT_SECRET: "AQBaj2jaDsDXizAzV0aRA0Q9d+TtGXWIJwmprMVoWAcTo3cdH4/F4IScMwDZ5I3Pa58cbEeouygZ9joJYjmagpG0NZGD8NON9li4EKeePaZiRH2JSWHJ53rmmr14q8dE3pF7IxDMXdj0viEQESsf+K1wbBSH83WAKhGWNlqJq1HVYuB07SY+luYknjC5RwfhBy0uj+kF0z/fThOK409mKzC9ObejqVuExDlmY0/5fbUyzZLlfRY+FY9HjbyBUnROJGt/5hyrfeWNedYUGPaTYryeZP8C3ivMoDaQlaEj3D2lBlqYMa/EHy+tltN1GEAj1Tu4lyNlOj23iJFq0XeobhcSiah6KyFlVb20oV2uvZmyaeCr2n2TKSgyNDw="
+

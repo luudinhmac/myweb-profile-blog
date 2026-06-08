@@ -1,19 +1,30 @@
 # Description: Helm values for PostgreSQL in the production environment.
 # Configures resource limits, persistence, and service settings.
+replicaCount: 0
 
-postgresql:
-  persistence:
-    size: 20Gi  # Larger for production
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 1024Mi
-    requests:
-      cpu: 500m
-      memory: 512Mi
+persistence:
+  size: 20Gi  # Larger for production
+  storageClassName: "local-path"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
 
 # Database connection settings (used by backend)
 database:
   name: portfolio_production
   user: portfolio_admin
   host: postgres-production.database-production
+
+sealedSecret:
+  enabled: true
+  encryptedData:
+    POSTGRES_USER: "AQAT029L7w98/TcC7UvVjyHdad8p9AqwT3850+SFndqw4lFbmvacDQX06sMfHR3sGMxiWe0nwKvgzmBMPj4r9Xn2w8WEE5lvh0Wg77hndwr+/3ykJ8WOa2+8dtKEATKwwbRKodi3sMLpJsDvvQhacK3M+M0sfsawZQRwjJdKYDANu+4l2E2sPIvI/e2A5Pq7XJdMMfRiIrsKDDs9kXXz4JjTlonOUxTpw6eee+RZNRl6Ky08yqljXlX3fBO31xWvrzelj//RiEFkTK8H6dSaR6th7xfUOiSEN0Taf/W03ywvwQ9TTWbKVH6QVECss6GXQ/Nrv21M51wtg5HvNgPttlE6wxMF79D4NW7KjxHQ/knVZbZnqVhOj4PO+Ynb9w/fzQ=="
+    POSTGRES_PASSWORD: "AQAQX0UALz8vbml6L2Ikhf/U+oT5GjkQZezVSkvWuvwJCV2xw6ycNFxdjR+Bb3Q8n2nrA7H63fXqzq/ftAfmq3ABUFaYGDgRyxkC0M36hNiOVmrfFnxK/6DBiTuIxEeXpyFs6rzlKn7O4ZA68U5ZOc0TunVbdD1XY6TR068DGPk+LgdcLVXLTHwiSelOSDXBH6Sodt8v09tlx+60+95ynZvCZMpoEvVe1Mm7VnLrczGxaWvS+iEstkIZSm6mUOMhC03LLzIBTLv1ib448Ibinqd+pVKAGOGaPuO3yitbqws6AcR/3fLE3Qbzaw5388/mlZ6+/olsOSQ1ZqWdMbKjYRZbC9y/EAnYKN0ABJpkp465cfc05v+0EqM1flmuZMWY1WxInY/uwoCaxDo+NHg="
+    POSTGRES_DB: "AQA6C76+k3yz3ur6MVxnEDbjgCkqLgevlzon5d6f6BJRDpnzveWPdmnZA25NuT8FlHKW3FDuYdPkkho8BSglEfesMTXq7rpK6FyGzZkDsbRgGqV9Of+8wLjj0TslfqvqEGoSocdH7mL2vR/QQJmA7ZdQuEGAIDTgL5vt1OQuI3VRvsFCYQ3APqBQBrb3A+Rn88YYgLbJteD381oX51ITdER8aj3zhKPacxSFjYB+Za4g+aM+f7Zf9QkPbwaR0N5giiE8OCjtEqNp+uS3jpqxXN0wycE7rhwQFf+y7mmJ+G4vWNqFDmRMtNn3swI4TKKDYJ1nmKT5XiqigsX2Ha2daDAzUtFxRqbhj6Z8z2juu0bYQGSt/TlMlI2sbPnhZdal6ci87XvR"
+

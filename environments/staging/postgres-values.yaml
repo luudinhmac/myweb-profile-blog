@@ -2,9 +2,21 @@
 # Overrides default values with staging-specific storage and configuration settings.
 # Last Updated: 2026-05-12
 
-storage:
+replicaCount: 0
+
+persistence:
   size: 5Gi
+  storageClassName: "local-path"
+
 
 service:
   type: ClusterIP
   port: 5432
+
+sealedSecret:
+  enabled: true
+  encryptedData:
+    POSTGRES_USER: "AQAzCV/Ua2xO/pi834P41OYqfbdq9Z01i7qSRNaB8fer2nSjlRIdgXnDsQ5TlXxLN5rNF5iGm0W2gdS7vmBVSJcU3+FZ75mmqMIbfa8dLuyLuowea5q4k0f5G6xa1CmRsuuwH4q4stHHJ9aYgkcfIxwvxMxxIlC4Hq4in6TQKMvoGzKn97wNR5nLxykghOJcL+JQMYyeO+uXa+eePUONkLsmISC/IhwB0+VyrijEIArrY6BAelVimustIHzLr9ThRBSs6Hn535JRdAjRakfIwigczmWReF00Btr0cRtoiF+3q55S90GrgafSq3yl0xh1e84u/uK6XaEqebrDaFlndN/g9Ag+sIj/vlnzAJKGlk0w8uvkW8uo2I0429BB2cba"
+    POSTGRES_PASSWORD: "AQBPPcGtJ6xxXzwTmmISalF8lV3A9W8wFvFrdxfcKLu7/9LhpzVWGqoMOHRlPzFniv5KdwtjGaJUTYSFeqHNUrqwS2vv2JQa6/eOa53crim3t288L5xxZlnWTv8bu5gJL2pzRq+RMjTznCqcb8yyNXcWChdQ23PyBXWIBgShF8y3TobSFi/6WRQMbDsVL3PSUqqgiyi2FEKEf/cbITrvUhB+xGuapn8vLpW9CedL0eTtdk/4hKGLfZozVKYt1R48YlbQ2GeMmHYsqaG1zaBKc7hNClEVy8r50IPXcCIv1wnFPHMKSDEBXwv8wRuzRE+CvOIHfyLWPH8qc3CqCoIIjNecxMTT4GQwawGZwd8f72bMrdxx9vezOD0yJp0="
+    POSTGRES_DB: "AQBTGFGrKNkDfL80y4E0JiyF+ORVyVg35fzVWLjBy2cp1Enep3Ig3/cKDR0AtNMryAmOATWFWRpGyh9a2tiEcF9EBZuPaqB4qOnA/k7OMC4Jj3HO7ZWsk+FQ7QR/lu72PNfNTdlW/jnTj/sN96TdjXQb5rPgTkLx55ngC6CzgCJMOkQKjJep7az5zkX0K9g0pvpk11zqZEbXCaoDXG+5AjBjaV2dQIGM6os3EkGnp9TvfXP5W1AkkM3xwSAxX7iF/kfWO7znHpY/BX0lQDGI0mi5iQ06VLjFYstx96Ik7wOJ3+L2/m1IQhDo9LtiPmyB7xVCbaGNb7eIWn/uUFtqWm4JwL4sPwB3ueCRjXHwPQDhbY+7jPniq2xQhCqDg/qmtn7X"
+
