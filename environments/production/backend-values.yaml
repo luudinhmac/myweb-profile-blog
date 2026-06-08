@@ -4,7 +4,7 @@
 # SECURITY: Strict TLS enforcement with Let's Encrypt certificates
 # ==============================================================================
 
-replicaCount: 0
+replicaCount: 1
 
 image:
   tag: "v0.0.12@sha256:7b389ff04aa88dc9f4d5c618aa2551fb60e1c3580772b3ea574640a9ad0bd968"
@@ -25,7 +25,7 @@ ingress:
         - api.luumac.io.vn
 
 autoscaling:
-  enabled: false
+  enabled: true
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80

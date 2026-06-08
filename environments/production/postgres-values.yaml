@@ -1,6 +1,6 @@
 # Description: Helm values for PostgreSQL in the production environment.
 # Configures resource limits, persistence, and service settings.
-replicaCount: 0
+replicaCount: 1
 
 persistence:
   size: 20Gi  # Larger for production

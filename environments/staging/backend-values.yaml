@@ -4,7 +4,7 @@
 # UPDATE POLICY: Automated CI/CD image tag updates
 # ==============================================================================
 
-replicaCount: 0
+replicaCount: 1
 
 image:
   tag: "dev-eb317807"
