@@ -6,7 +6,7 @@ replicaCount: 1
 
 persistence:
   size: 5Gi
-  storageClassName: "local-path"
+  storageClassName: "longhorn"
 
 
 service:
