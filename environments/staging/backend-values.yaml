@@ -6,7 +6,7 @@
 
 replicaCount: 1
 image:
-  tag: "dev-cd30e87a"
+  tag: "dev-f470f802"
 ingress:
   enabled: true
   issuer: letsencrypt-prod
