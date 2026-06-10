@@ -5,7 +5,6 @@
 # ==============================================================================
 
 replicaCount: 1
-
 image:
   tag: "v1.6.5@sha256:a3fef589984aa3d1298f1e95cae14dffacc0252fd2626c1e9203854747e12b87"
 ingress:
@@ -24,24 +23,18 @@ ingress:
     - secretName: portfolio-backend-tls
       hosts:
         - api.luumac.io.vn
-
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
-
 persistence:
   storageClassName: "longhorn"
-
 sealedSecret:
   enabled: true
   encryptedData:
     DATABASE_URL: "AgBlZhpRkUTJ1MaffD+g5eCBjMz5ZvP74BEsy6XT+DXWfslPlku2YKNtB5uiCFAQGXo7+DjlT4EzC6PlGn/nxW3A53Wva1JhAFpGEFRQELTaGoIL5BCHT4ehJtf/mfxPz1gDy80BkO1o7NwQDT0gU5habwTo9dASomPwPvlfbE8DrQZWc3SEYo25YTJFVNr5QX2Ng3WVcnL3plLbo6o5GX0NTmVs2ytikjwlrSzyYNFO5bdy+pAZaK9opQFNF73ZtgHD/cOiO88WzkmeVeJXuvD1eUyja5EMRtl0W8Z7Lp4WstlbyFrZQckI+1UlykZYDbIl4hRTk8d7C2Ju+iacXeI7tg52XuIkoSHjOPTtXIPd1AJtJcfWTyyButTK0DCuN78lT6FymoOdQ9XYdjPKcxK391dpBZqPH3R9sGga+Z7Z7W72CAJrjh0chLaH6easSVhRswZlHqcRp8ec0Cqd9qV2THEIXwW+x7yeHPU00h3CfUgE5bZo5qMVpkRQGJkL9KzZIDu8zepKtF4W4peSSZTrkKk5Hb8ciLcC0L8ZGttie6A2pwmipJ4whJCnoKdvYUGplaw71rYX4TWtcvRp6uXNFtepqBkmUxFzi0BVgqjAnURpuFXQtF+Jl1MmXBfh8J/UshgsWhXqy/QA08fUUSjN/2m0JE41VIeSLyaY7OTG1A0pRpMj3gWw4Ps3fr/0WlO8O/l939VvZW59bkE8QwSIHVfizmcxQYMTy6iol2vfGKjRBz7y7wmTdkveVwex7N/I1ByDhvjbyXxIpokTgFZAQlQLDu6TO195ytVPodzbXXs+KYli2heHj7u5dO4WBgyGY/J922YjFysPORQSwxsGK9vE93AZXtZTUA=="
     JWT_SECRET: "AgCyk1eqjRI7qANwIjyUD5inZgjiQAjoxuryPa2sSiPW8e83EizKyIgRm/g8sx1pdFzy8mIW1A+RiLuOobacPksoFG+8MhkrL4y4wJfch2tpqC7L8TECrRYoV26Qv0OvDJ0lroqTKWop/b5GfrEowu21Oo3z37M2N+I6T/sTErTRwkX/zYrQVOLI0wv4gyVRAreFTffxDa4DTRl7DJRD+EBSVRWngtplpNYhz4LnZRaRF+4+Srj+DJaGVB1cAu9DaVVwtGV2bym+JBgM0Zizwd32M8cGPWJNOilOxOd4j5pmnp60rlZ3fR3huhnm9TCQYF9Qj7etUa2NyVZO4EIpl8f8VC6OWL7HHQo1CNiBBtwThSMQ4tUh9tj0BjfLyRaRNIbTTNeYGEViaxvszhNi/VcMFMFYdMBl41Dn0qbsceJ5G3xwbSV+wYsdb0MRxr6SWDtKPO9WkKV7B3Qiye7Y6EZ2hxwos/d9z19QEM1Mkm95X/BAC9bGSggmotyPsGBnpFXFOeAAAqMjyz4fNDzkQyPGqTq1mmP5Brx27PGtudXHOJGGvUoiAfrdpTi09lzAmzQ4lrPLDHu16wZJk/x9YOnX2TZz0HIt1lZOyosRhlGvXcSXzOm0MHIPhERAbLUfjmjAAbTL+ZDtBctl430n7g2HM6ntujY13NpZzL4uypcimxVgslBIRvsQSwj2BTF3S6quf8lpHxwkNWiNu0xUJS+z41U/VN4EATZ/CeMWvl91dgcHG9iqaVPNyMK8Bg=="
-
 redis:
   enabled: true
   encryptedPassword: "AgB8IFcBBQt7prvpN2Gu5Dl+kNMO9APvzEehgyRtXZRMqP3J0/oDbQRhUcngOdcmkTjoZWCcodNf4BqIa7G+ZaqHI4ExJArfQUm8te2zQsth+5KPYERI0nywMc5QNtnA9XoBe4CXEkA2dqiEwLoa3gpMzN089qlfRNBurpJoQfY2YWQrq8m2O+zJ09aYUM05A6vZFgIfcPOeACDr6PJY+ybcpfLmPFTt8w9YzXlVLrbRJDQXsyT7ShSbugNAxu6xJxsoHK78ONR5rId1qIRHwaZMT4Yj9H5NCdV0QysF4pyUItDTMT8Z2sVzONZssa6ogGmzG68BjxwFfDVZc4s+SAhnqv1ezVKMU9ZgwwUBqxYlnOn7jc4jnFhYYO75zgnf4h98UlQpSPfY2ouKBhhjvyxqYhcwMp4D7GiuTGmbFQPpDhld02LCB/jK6zbGpooIAT3atF+N0hOVWFxupikwmHhPXZV3qYiyccsRza6tls62l7lNBRuLNOQZYpRS6YQuuOSPN/OwKjQ8LQVQKGO+P+iyBFde3k51Cean5GQ0vAQhHU1jYeJ37bnGaMV30asc0/LOS6MyptJwD5vk0jUO06NZuypCzGTV0CVAoOXP6fQc4PCfDD0U20YodhV/EVeXStVJljjhbktgCNK5F9GKD+uN2WSBgZC0HUS1xIX+YG2N/h/MSPROIrFrJNjRqGemxIIdTJ92r4zmdLJ7UingxyzWWSy6NfaCQLfZYWzbeegiKg=="
-
-
