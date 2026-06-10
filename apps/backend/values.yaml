@@ -49,3 +49,6 @@ sealedSecret:
     DATABASE_URL: ""
     JWT_SECRET: ""
 
+redis:
+  enabled: false
+  encryptedPassword: ""
