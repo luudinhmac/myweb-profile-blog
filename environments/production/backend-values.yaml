@@ -10,6 +10,7 @@ image:
   tag: "v0.0.12@sha256:7b389ff04aa88dc9f4d5c618aa2551fb60e1c3580772b3ea574640a9ad0bd968"
 ingress:
   enabled: true
+  issuer: letsencrypt-prod
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"

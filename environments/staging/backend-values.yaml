@@ -10,6 +10,7 @@ image:
   tag: "dev-eb317807"
 ingress:
   enabled: true
+  issuer: letsencrypt-prod
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
@@ -20,7 +21,7 @@ ingress:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: luumac-wildcard-tls
+    - secretName: portfolio-backend-staging-tls
       hosts:
         - api-staging.luumac.io.vn
 resources:
