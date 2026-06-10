@@ -6,7 +6,7 @@
 
 replicaCount: 1
 image:
-  tag: "v1.6.6@sha256:d91aa56d9e33c1034af87e56695bf0ab58336cd1201de026218516da42c61823"
+  tag: "v0.0.13@sha256:e963d311a52d54652629cb9db4132a5c2ab968ea8d22ed298a9b44343bcbf1ca"
 ingress:
   enabled: true
   issuer: letsencrypt-prod
