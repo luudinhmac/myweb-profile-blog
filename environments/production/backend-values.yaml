@@ -30,6 +30,9 @@ autoscaling:
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
 
+persistence:
+  storageClassName: "longhorn"
+
 sealedSecret:
   enabled: true
   encryptedData:

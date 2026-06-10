@@ -4,7 +4,7 @@ replicaCount: 1
 
 persistence:
   size: 20Gi  # Larger for production
-  storageClassName: "local-path"
+  storageClassName: "longhorn"
 
 resources:
   limits:
