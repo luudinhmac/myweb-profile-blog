@@ -13,6 +13,8 @@ spec:
       releaseName: redis
       values: |
         architecture: standalone
+        image:
+          tag: latest
         auth:
           enabled: true
           existingSecret: redis-credentials
