@@ -36,7 +36,7 @@ spec:
             - -c
             - |
               echo "Installing etcdctl..."
-              apk add --no-cache etcd-client
+              apk add --no-cache etcd
               
               echo "Creating etcd snapshot..."
               export ETCDCTL_API=3
@@ -47,7 +47,7 @@ spec:
                 snapshot save /backup/etcd-snapshot-$(date +%F_%H-%M-%S).db
               
               echo "Snapshot status:"
-              etcdctl --write-out=table snapshot status /backup/etcd-snapshot-$(date +%F_*).db || true
+              etcdctl --write-out=table snapshot status /backup/etcd-snapshot-$(date +%F_%H-%M-%S).db || true
               
               echo "Cleaning up backups older than 7 days..."
               find /backup -name "etcd-snapshot-*.db" -mtime +7 -exec rm -f {} \;
