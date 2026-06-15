@@ -11,7 +11,7 @@ spec:
     path: platform/etcd-backup
   destination:
     server: https://kubernetes.default.svc
-    namespace: kube-system
+    namespace: infra
   syncPolicy:
     automated:
       prune: true
