@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+  namespace: kube-system
+  labels:
+    app: etcd-backup
+spec:
+  schedule: "0 1 * * *" # 1:00 AM daily (GMT+7)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: etcd-backup
+        spec:
+          hostNetwork: true
+          restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/hostname: k8s-prod
+          tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          containers:
+          - name: backup
+            image: alpine:3.18
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Installing etcdctl..."
+              apk add --no-cache etcd-client
+              
+              echo "Creating etcd snapshot..."
+              export ETCDCTL_API=3
+              etcdctl --endpoints=https://127.0.0.1:2379 \
+                --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+                --cert=/etc/kubernetes/pki/etcd/server.crt \
+                --key=/etc/kubernetes/pki/etcd/server.key \
+                snapshot save /backup/etcd-snapshot-$(date +%F_%H-%M-%S).db
+              
+              echo "Snapshot status:"
+              etcdctl --write-out=table snapshot status /backup/etcd-snapshot-$(date +%F_*).db || true
+              
+              echo "Cleaning up backups older than 7 days..."
+              find /backup -name "etcd-snapshot-*.db" -mtime +7 -exec rm -f {} \;
+              
+              echo "Backup process finished."
+            volumeMounts:
+            - name: etcd-certs
+              mountPath: /etc/kubernetes/pki/etcd
+              readOnly: true
+            - name: backup-dir
+              mountPath: /backup
+          volumes:
+          - name: etcd-certs
+            hostPath:
+              path: /etc/kubernetes/pki/etcd
+              type: Directory
+          - name: backup-dir
+            hostPath:
+              path: /data/k8s/backups
+              type: DirectoryOrCreate
