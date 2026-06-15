@@ -17,6 +17,7 @@ spec:
           labels:
             app: etcd-backup
         spec:
+          serviceAccountName: etcd-backup-sa
           hostNetwork: true
           restartPolicy: OnFailure
           nodeSelector:
@@ -35,6 +36,9 @@ spec:
             - /bin/sh
             - -c
             - |
+              echo "Installing required packages..."
+              apk add --no-cache curl
+              
               echo "Downloading etcdctl..."
               wget -qO- https://github.com/etcd-io/etcd/releases/download/v3.5.24/etcd-v3.5.24-linux-amd64.tar.gz | tar -xzO etcd-v3.5.24-linux-amd64/etcdctl > /usr/local/bin/etcdctl
               chmod +x /usr/local/bin/etcdctl
@@ -51,7 +55,35 @@ spec:
               echo "Snapshot status:"
               etcdctl --write-out=table snapshot status "$BACKUP_FILE" || true
               
-              echo "Cleaning up backups older than 7 days..."
+              echo "Fetching R2 credentials from Velero..."
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              SECRET_JSON=$(curl -s -k -H "Authorization: Bearer $TOKEN" \
+                https://kubernetes.default.svc/api/v1/namespaces/velero/secrets/cloud-credentials)
+              
+              AWS_CREDENTIALS_B64=$(echo "$SECRET_JSON" | grep -o '"cloud": "[^"]*' | cut -d'"' -f4)
+              if [ -n "$AWS_CREDENTIALS_B64" ]; then
+                AWS_CREDENTIALS=$(echo "$AWS_CREDENTIALS_B64" | base64 -d)
+                ACCESS_KEY=$(echo "$AWS_CREDENTIALS" | grep aws_access_key_id | cut -d'"' -f2)
+                SECRET_KEY=$(echo "$AWS_CREDENTIALS" | grep aws_secret_access_key | cut -d'"' -f2)
+                
+                if [ -n "$ACCESS_KEY" ] && [ -n "$SECRET_KEY" ]; then
+                  echo "Downloading MinIO Client (mc)..."
+                  wget -qO /usr/local/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc
+                  chmod +x /usr/local/bin/mc
+                  
+                  echo "Configuring MinIO Client alias..."
+                  mc alias set r2 https://a8823974263cfbb734616640f1b9dd55.r2.cloudflarestorage.com "$ACCESS_KEY" "$SECRET_KEY"
+                  
+                  echo "Uploading snapshot to Cloudflare R2..."
+                  mc cp "$BACKUP_FILE" r2/velero-k8s-prod/etcd-backups/
+                else
+                  echo "Error: Access Key or Secret Key not found in decrypted credentials!"
+                fi
+              else
+                echo "Error: Failed to fetch/parse R2 credentials from Velero secret!"
+              fi
+              
+              echo "Cleaning up local backups older than 7 days..."
               find /backup -name "etcd-snapshot-*.db" -mtime +7 -exec rm -f {} \;
               
               echo "Backup process finished."
