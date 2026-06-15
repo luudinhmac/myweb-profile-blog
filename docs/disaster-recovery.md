@@ -91,3 +91,72 @@ Khi cần cài đặt lại hệ điều hành VPS hoặc dựng cụm trên VPS
 4.  **Khôi phục ứng dụng trên ArgoCD:**
     Truy cập giao diện ArgoCD Web, kết nối lại Repo và chọn **Sync** để tự động kéo toàn bộ Helm Charts và Deployments về cụm mới.
 5.  **Khôi phục Database backup:** Thực hiện import lại file sql đã backup theo hướng dẫn tại **Mục 1.2**.
+
+---
+
+## 💾 5. Sao Lưu & Khôi Phục Cụm Cơ Sở Dữ Liệu ETCD (ETCD Backup & Restore)
+
+Hệ thống đã được trang bị Kubernetes CronJob `etcd-backup` tại namespace `infra` để tự động tạo bản sao lưu snapshot etcd hàng ngày vào lúc 1:00 AM. 
+
+Các bản sao lưu được lưu trữ trên VPS Host tại đường dẫn `/data/k8s/backups/etcd-snapshot-*.db`. Các file sao lưu cũ hơn 7 ngày sẽ tự động bị xóa.
+
+### 5.1. Lệnh Tạo Snapshot Thủ Công Khẩn Cấp
+Nếu muốn sao lưu etcd thủ công ngay lập tức bằng CronJob hiện có:
+```bash
+# Tạo Job thủ công từ CronJob
+kubectl create job --from=cronjob/etcd-backup etcd-backup-manual -n infra
+
+# Xem log quá trình thực hiện và trạng thái file snapshot
+kubectl logs -f job/etcd-backup-manual -n infra
+
+# Dọn dẹp Job sau khi chạy xong
+kubectl delete job etcd-backup-manual -n infra
+```
+
+### 5.2. Quy Trình Khôi Phục ETCD khi Hỏng Cụm (Restore ETCD)
+> [!CAUTION]
+> Khôi phục etcd là tác vụ có rủi ro cực kỳ cao, chỉ thực hiện khi cụm Kubernetes bị hỏng cơ sở dữ liệu etcd không thể tự phục hồi (ví dụ: mất điện đột ngột làm hỏng database). Quy trình này phải chạy trên Host của VPS dưới quyền root.
+
+1. **Chuẩn bị file snapshot:** Xác định file snapshot cần khôi phục trong thư mục `/data/k8s/backups/`.
+2. **Dừng các thành phần Control Plane:**
+   Để tránh ghi dữ liệu đè lên nhau, cần di chuyển tạm thời các file cấu hình Static Pods ra khỏi thư mục của kubelet để dừng chúng:
+   ```bash
+   sudo mv /etc/kubernetes/manifests/*.yaml /tmp/
+   # Chờ khoảng 1-2 phút cho các Container apiserver, controller-manager, scheduler, etcd dừng hoàn toàn
+   sudo crictl ps # Đảm bảo không còn container hệ thống nào chạy
+   ```
+3. **Sao lưu thư mục etcd cũ:**
+   ```bash
+   sudo mv /var/lib/etcd /var/lib/etcd-backup-$(date +%F)
+   ```
+4. **Cài đặt công cụ etcdctl trên host (nếu chưa có):**
+   ```bash
+   wget https://github.com/etcd-io/etcd/releases/download/v3.5.24/etcd-v3.5.24-linux-amd64.tar.gz
+   tar -xvf etcd-v3.5.24-linux-amd64.tar.gz
+   sudo mv etcd-v3.5.24-linux-amd64/etcdctl /usr/local/bin/
+   ```
+5. **Thực hiện lệnh khôi phục (etcdctl snapshot restore):**
+   ```bash
+   # Đường dẫn tới file backup etcd bạn muốn phục hồi
+   SNAPSHOT_FILE="/data/k8s/backups/etcd-snapshot-xxxx.db"
+
+   sudo ETCDCTL_API=3 etcdctl snapshot restore "$SNAPSHOT_FILE" \
+     --name=k8s-prod \
+     --initial-cluster=k8s-prod=https://10.200.0.1:2380 \
+     --initial-cluster-token=etcd-cluster-1 \
+     --initial-advertise-peer-urls=https://10.200.0.1:2380 \
+     --data-dir=/var/lib/etcd
+   ```
+6. **Đặt lại quyền sở hữu cho thư mục etcd mới khôi phục:**
+   ```bash
+   sudo chown -R root:root /var/lib/etcd
+   ```
+7. **Khởi động lại các thành phần Control Plane:**
+   Di chuyển các file cấu hình Static Pods trở lại vị trí cũ để kubelet tự động bật lại chúng:
+   ```bash
+   sudo mv /tmp/*.yaml /etc/kubernetes/manifests/
+   # Chờ 1-2 phút cho các pods khởi chạy lại
+   kubectl get nodes
+   kubectl get pods -n kube-system
+   ```
+
