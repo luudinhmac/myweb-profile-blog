@@ -37,7 +37,7 @@ spec:
             - -c
             - |
               echo "Installing required packages..."
-              apk add --no-cache curl
+              apk add --no-cache curl jq
               
               echo "Downloading etcdctl..."
               wget -qO- https://github.com/etcd-io/etcd/releases/download/v3.5.24/etcd-v3.5.24-linux-amd64.tar.gz | tar -xzO etcd-v3.5.24-linux-amd64/etcdctl > /usr/local/bin/etcdctl
@@ -60,7 +60,7 @@ spec:
               SECRET_JSON=$(curl -s -k -H "Authorization: Bearer $TOKEN" \
                 https://kubernetes.default.svc/api/v1/namespaces/velero/secrets/cloud-credentials)
               
-              AWS_CREDENTIALS_B64=$(echo "$SECRET_JSON" | grep -o '"cloud": "[^"]*' | cut -d'"' -f4)
+              AWS_CREDENTIALS_B64=$(echo "$SECRET_JSON" | jq -r '.data.cloud // empty')
               if [ -n "$AWS_CREDENTIALS_B64" ]; then
                 AWS_CREDENTIALS=$(echo "$AWS_CREDENTIALS_B64" | base64 -d)
                 ACCESS_KEY=$(echo "$AWS_CREDENTIALS" | grep aws_access_key_id | cut -d'"' -f2)
