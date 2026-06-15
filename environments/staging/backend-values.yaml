@@ -10,10 +10,14 @@ image:
 ingress:
   enabled: true
   issuer: letsencrypt-prod
+  rateLimit:
+    enabled: true
+    average: 100
+    burst: 50
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: infra-infra-compress@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: blog-staging-portfolio-backend-staging-rate-limit@kubernetescrd,infra-infra-compress@kubernetescrd
   hosts:
     - host: api-staging.luumac.io.vn # Staging API endpoint
       paths:

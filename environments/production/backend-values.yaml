@@ -10,10 +10,15 @@ image:
 ingress:
   enabled: true
   issuer: letsencrypt-prod
+  rateLimit:
+    enabled: true
+    average: 100
+    burst: 50
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod" # Triggers cert-manager to provision production certificates
+    traefik.ingress.kubernetes.io/router.middlewares: blog-prod-portfolio-backend-production-rate-limit@kubernetescrd
   hosts:
     - host: api.luumac.io.vn # Production API endpoint
       paths:

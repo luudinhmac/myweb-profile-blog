@@ -40,6 +40,10 @@ env:
 ingress:
   host: "staging.luumac.io.vn"
   secretName: "luumac-tls-staging"
+  rateLimit:
+    enabled: false
+    average: 100
+    burst: 50
 
 namespace: portfolio
 
