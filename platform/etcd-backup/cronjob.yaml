@@ -41,14 +41,15 @@ spec:
               
               echo "Creating etcd snapshot..."
               export ETCDCTL_API=3
+              BACKUP_FILE="/backup/etcd-snapshot-$(date +%F_%H-%M-%S).db"
               etcdctl --endpoints=https://127.0.0.1:2379 \
                 --cacert=/etc/kubernetes/pki/etcd/ca.crt \
                 --cert=/etc/kubernetes/pki/etcd/server.crt \
                 --key=/etc/kubernetes/pki/etcd/server.key \
-                snapshot save /backup/etcd-snapshot-$(date +%F_%H-%M-%S).db
+                snapshot save "$BACKUP_FILE"
               
               echo "Snapshot status:"
-              etcdctl --write-out=table snapshot status /backup/etcd-snapshot-$(date +%F_%H-%M-%S).db || true
+              etcdctl --write-out=table snapshot status "$BACKUP_FILE" || true
               
               echo "Cleaning up backups older than 7 days..."
               find /backup -name "etcd-snapshot-*.db" -mtime +7 -exec rm -f {} \;
