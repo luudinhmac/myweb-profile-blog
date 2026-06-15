@@ -58,7 +58,7 @@ spec:
               echo "Fetching R2 credentials from Velero..."
               TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
               SECRET_JSON=$(curl -s -k -H "Authorization: Bearer $TOKEN" \
-                https://kubernetes.default.svc/api/v1/namespaces/velero/secrets/cloud-credentials)
+                https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/namespaces/velero/secrets/cloud-credentials)
               
               AWS_CREDENTIALS_B64=$(echo "$SECRET_JSON" | jq -r '.data.cloud // empty')
               if [ -n "$AWS_CREDENTIALS_B64" ]; then
