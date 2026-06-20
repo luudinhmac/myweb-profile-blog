@@ -19,8 +19,23 @@ spec:
       - name: exporter
         image: prometheuscommunity/postgres-exporter:latest
         env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-production-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-production-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-production-secret
+              key: POSTGRES_DB
         - name: DATA_SOURCE_NAME
-          value: "postgresql://portfolio_user:macld%402026@postgres-production.blog-prod:5432/portfolio_production?sslmode=disable"
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-production.blog-prod:5432/$(POSTGRES_DB)?sslmode=disable"
         ports:
         - containerPort: 9187
           name: metrics
