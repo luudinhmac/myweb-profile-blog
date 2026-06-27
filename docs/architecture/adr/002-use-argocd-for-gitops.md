@@ -1,7 +1,6 @@
 # ADR 002: Use ArgoCD for GitOps-based Continuous Delivery
 
 *   **Status**: Approved
-*   **Date**: 2026-06-16
 *   **Deciders**: Lưu Đình Mác
 *   **Context**: [CI/CD Pipeline & GitOps Flow](../../deployment/gitops-workflow.md)
 
