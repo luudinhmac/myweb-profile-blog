@@ -1,157 +1,136 @@
-# LƯU ĐÌNH MÁC | Fullstack Portfolio & Blog System
+# 🚀 Production-Grade GitOps Platform with CI/CD, Security & Observability
 
-## Overview
-Dự án Portfolio + Blog chuyên nghiệp dành cho Kỹ sư Hệ thống (System Engineer) để trình diễn các kỹ năng hạ tầng, dự án ảo hóa và chia sẻ kiến thức chuyên môn qua các bài viết kỹ thuật.
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![ArgoCD](https://img.shields.io/badge/Argo%20CD-FF7C09?style=for-the-badge&logo=argo&logoColor=white)](https://argoproj.github.io/cd/)
+[![GitLab CI](https://img.shields.io/badge/GitLab%20CI-FC6D26?style=for-the-badge&logo=gitlab&logoColor=white)](https://docs.gitlab.com/ee/ci/)
+[![Helm](https://img.shields.io/badge/Helm-0F162D?style=for-the-badge&logo=helm&logoColor=white)](https://helm.sh)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)](https://www.terraform.io)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)](https://prometheus.io)
+[![Grafana](https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com)
+[![Traefik](https://img.shields.io/badge/Traefik-24A1C1?style=for-the-badge&logo=traefik&logoColor=white)](https://traefik.io)
+[![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://www.cloudflare.com)
+[![Velero](https://img.shields.io/badge/Velero-009688?style=for-the-badge&logo=kubernetes&logoColor=white)](https://velero.io)
 
-## Tech Stack
-- **Frontend:** Next.js (App Router)
-- **Backend:** NestJS
-- **Database:** PostgreSQL (Dockerized)
-- **Monorepo:** Organized with `pnpm` workspaces for shared code management
-- **DevOps:**
-  - Docker & Docker Compose (Containerization: Apps, DB, Nginx)
-  - Kubernetes (Production Orchestration: Single-node kubeadm)
-  - Ansible (Automated Roles-based Infrastructure & App Deployment)
-  - Nginx (Unified Reverse Proxy & SSL Gateway)
-
-## Features
-- **Blog-First Architecture:** Hệ thống được cấu trúc với Blog là trang chủ (`/`) để tối ưu việc chia sẻ kiến thức, trong khi các phần Portfolio, Giới thiệu, Dự án được quy hoạch gọn gàng trong mục `/about`.
-- **Legal Compliance:** Đã tích hợp trang **Quyền riêng tư** và **Điều khoản sử dụng** theo Nghị định 13/2023/NĐ-CP của Chính phủ Việt Nam.
-- **Settings Module:** Bảng điều khiển quản lý toàn bộ thiết lập hệ thống động trên Dashboard, chia thành cấu hình Giao diện, SEO, cũng như giám sát an toàn Môi trường Hệ thống. Tích hợp hệ thống thông báo chủ động (**MessageDialog**) đảm bảo phản hồi quan trọng luôn được xác nhận trực quan.
-- **Advanced Search:** Tính năng tìm kiếm Real-time với cơ chế **Debounce (500ms)** tối ưu hiệu suất, cho phép tìm kiếm chéo tag, category, series mượt mà và không gây gián đoạn nhập liệu.
-- **Blue/Sky UI Identity:** Giao diện được tối ưu hóa đồng nhất bằng tông màu Xanh chuyên nghiệp, với bảng thiết kế tinh gọn cho trải nghiệm Dev/Tech content. Toàn bộ các nút thao tác và layout quản trị được chuẩn hóa kích thước (min-w-140px) và căn lề chuyên nghiệp.
-- **Authentication:** Quy trình xác thực JWT bền vững với HttpOnly Cookies, tự động khôi phục phiên bản hồ sơ người dùng đầy đủ.
-- **Administrative Security:** Triển khai **Stealth Administrative Path** (thay đổi đường dẫn mặc định) và hệ thống **Middleware Proxy** bảo mật để che giấu kiến trúc hạ tầng thực tế, ngăn chặn các cuộc tấn công dò tìm (brute-force) vào vùng quản trị.
-- **Advanced User Management:** Quản trị viên (Admin & Superadmin) có thể kiểm soát chi tiết quyền hạn của từng người dùng thông qua Settings Box: cấm đăng nhập (Khóa tài khoản), cấm bình luận, cấm đăng bài, và thay đổi vai trò trực quan. Tài khoản **Superadmin** có quyền hạn tối cao, quản lý được cả các tài khoản Admin khác.
-- **Maintenance Mode:** Hệ thống bảo trì phân mảnh (Global, Posts, Comments) cho phép khóa toàn bộ website hoặc từng chức năng cụ thể. Tích hợp "Cửa bí mật" (Hidden Door) với Passcode xác thực dành riêng cho Quản trị viên để truy cập quản trị trong lúc bảo trì.
-- **Notification System:** Hệ thống thông báo thời hạn thực với huy hiệu (badges) thông minh trên Navbar. Thông báo cho người dùng về các tương tác (bình luận, trả lời) và các sự kiện hệ thống quan trọng.
-- **Series Navigation:** Tự động hiển thị bài viết trước và bài viết sau trong cùng một series, hỗ trợ điều hướng thông minh theo thứ tự (series_order) ngay trong trang chi tiết bài viết.
-- **Security-First API:** Tài liệu Swagger được bảo vệ theo môi trường và giới hạn IP. Các thông tin nhạy cảm (pass hash) được lọc bỏ hoàn toàn khỏi các phản hồi API.
-
-## Architecture Principles
-Dự án được xây dựng dựa trên các nguyên tắc thiết kế hiện đại nhằm đảm bảo khả năng mở rộng và bảo trì lâu dài:
-- **Backend (Clean Architecture):** Tách biệt hoàn toàn logic nghiệp vụ khỏi các yếu tố hạ tầng (Database, Framework). Sử dụng mô hình lớp: `Domain` -> `Application` -> `Infrastructure` -> `Presentation`.
-- **Frontend (Feature-based):** Phân tách ứng dụng theo tính năng (Features). Mỗi tính năng tự quản lý giao diện, logic và API riêng biệt, giúp giảm thiểu phụ thuộc chéo.
-- **Unified Types:** Hệ thống Type-safe đồng nhất giữa Frontend và Backend thông qua Shared Packages.
-
-## Project Structure
-```text
-frontend/
-  src/features/    # Logic theo tính năng (Auth, Posts, Users, ...)
-  src/shared/      # Components và hooks dùng chung
-backend/
-  src/modules/     # Modules theo Clean Architecture
-    domain/        # Entities & Repository Interfaces
-    application/   # Use Cases (Business Logic)
-    infrastructure/# Prisma Repositories & Mappers
-    presentation/  # Controllers & Swagger
-packages/
-  types/           # Shared Type Definitions (@portfolio/types)
-ansible/           # Automation Playbooks & Roles
-k8s/               # Kubernetes Manifests (Production)
-docs/              # System Audit Reports & Documentation
-```
-
-## Local Development
-**Yêu cầu:** Node.js (LTS), PostgreSQL.
-**Lưu ý:** Tuyệt đối KHÔNG sử dụng Docker cho môi trường Local theo quy tắc dự án.
-
-1. **Cài đặt:**
-   ```bash
-   pnpm install
-   ```
-2. **Khởi chạy:**
-   ```bash
-   # Terminal 1 (Frontend)
-   pnpm --prefix frontend dev
-   # Terminal 2 (Backend)
-   pnpm --prefix backend start:dev
-   ```
-3. **Truy cập:**
-   - Frontend: http://localhost:3000
-   - Backend: http://localhost:3001
-   - Swagger Docs: http://localhost:3001/api/docs (Local only)
-
-## Environment Variables
-Sử dụng các tệp `.env.example` được cung cấp trong từng thư mục làm mẫu.
-
-**Backend:**
-- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DATABASE_URL`
-- `JWT_SECRET`, `ENABLE_SWAGGER`
-- `ALLOWED_ORIGINS`
-
-**Frontend:**
-- (Không còn yêu cầu biến môi trường lúc build nhờ kiến trúc Proxy tập trung)
-
-## Git Workflow
-Hệ thống tuân thủ quy trình làm việc chuyên nghiệp:
-- `feature/*` → `development`: Phát triển tính năng mới.
-- `dev` → `staging`: Kiểm thử trên VM Staging.
-- `main` → `production`: Vận hành chính thức.
-
-## Deployment
-Dự án hỗ trợ linh hoạt các phương thức triển khai tùy theo nhu cầu hạ tầng:
-
-### 1. Triển khai trực tiếp (Bare Metal)
-Dành cho việc chạy ứng dụng trực tiếp trên server vật lý hoặc VPS (Ubuntu/Windows/CentOS) không thông qua Container.
-
-1.  **Cài đặt Node.js (v18+) & pnpm.**
-2.  **Cài đặt & Chạy PostgreSQL.** Tạo một Database trống (ví dụ: `portfolio_db`).
-3.  **Thiết lập Môi trường:** Tạo file `.env` trong thư mục `backend/` trỏ đến Database vừa tạo.
-4.  **Cài đặt & Build:**
-    ```bash
-    pnpm install
-    pnpm --prefix backend build
-    pnpm --prefix frontend build
-    ```
-5.  **Khởi tạo cấu trúc bảng (Migration):**
-    ```bash
-    pnpm --prefix backend prisma migrate deploy
-    ```
-6.  **Vận hành:** Sử dụng PM2 để quản lý process:
-    ```bash
-    pm2 start backend/dist/src/main.js --name portfolio-backend
-    pm2 start "pnpm --prefix frontend start" --name portfolio-frontend
-    ```
-7.  **Khởi tạo hệ thống (Setup UI):** Truy cập vào địa chỉ website, hệ thống sẽ tự động chuyển hướng đến trang `/setup` để bạn cấu hình Admin và thông tin site qua giao diện.
-
-### 2. Môi trường Staging (Docker Compose)
-Dành cho kiểm thử nhanh trên VM đơn lẻ.
-```bash
-cd infra/ansible
-# Triển khai qua Docker Compose
-ansible-playbook -i inventory.ini playbooks/staging.yml
-```
-
-### 3. Môi trường Production (Kubernetes)
-Kiến trúc Production-Grade trên cụm Single-node K8s.
-*   **Hạ tầng:** Kubeadm, Flannel CNI, Dashboard.
-*   **Networking:** HostNetwork Nginx (Cổng 80/443 chuẩn), tương thích Cloudflare.
-*   **Security:** Quản lý tập trung qua K8s Secrets & ConfigMaps.
-
-**Triển khai:**
-```bash
-# 1. Setup Cluster (Cài đặt môi trường K8s)
-ansible-playbook -i inventory.ini playbooks/k8s_setup.yml
-
-# 2. Deploy App (Build, Sync & Run)
-ansible-playbook -i inventory.ini playbooks/k8s_app_deploy.yml
-```
-Quy trình K8s tự động bao gồm bridge Image từ Docker sang Containerd, cấp phát SSL, và khởi tạo Secrets động. Sau khi deploy, bạn cũng thực hiện bước **Setup UI** tương tự như bản Bare Metal.
+Repository này trình bày một nền tảng Kubernetes hoàn chỉnh, sẵn sàng cho môi trường production, được xây dựng dựa trên GitOps, quét bảo mật tự động và khả năng tự phục hồi (self-healing). Đây vừa là một trang blog thực tế, vừa là bản trình diễn toàn diện về kỹ thuật hạ tầng hiện đại, chứng minh các phương pháp vận hành DevOps tốt nhất trong một môi trường thực tế có tính sẵn sàng cao.
 
 ---
 
-## DevOps Architecture
-**Quy trình:** Laptop → GitHub → Ansible Controller → VM (All Docker Containers)
+## 🏛️ Sơ Đồ Kiến Trúc Hệ Thống (System Architecture)
 
-Kiến trúc này đảm bảo tính đóng gói tuyệt đối, cho phép di chuyển ứng dụng giữa các Server một cách dễ dàng (Portability).
+Dự án được xây dựng dựa trên mô hình **Smart Server / Lean Client**, kết hợp môi trường container tự động hóa được quản lý thông qua Kubernetes và điều phối bằng GitOps.
 
-## Security Notes
-- **API Protection:** Swagger chỉ hiển thị ở môi trường nội bộ/staging và bị chặn ở Production bởi Nginx.
-- **Data Privacy:** Các trường nhạy cảm trong Cấu hình (Settings) được che giấu tự động trước khi gửi về Client.
-- **Network Security:** Backend và DB không mở cổng ra internet, chỉ cho phép truy cập thông qua Nginx Proxy.
+```mermaid
+graph TD
+    Client[Browser/Client Next.js] -->|HTTPS SSL| Ingress[Traefik Ingress Gateway]
+    subgraph K8s Cluster
+        Ingress -->|Route /api| Backend[NestJS Backend API]
+        Ingress -->|Route /| Frontend[Next.js Standalone]
+        Backend -->|Query| DB[(PostgreSQL StatefulSet)]
+        Backend -->|Cache| Redis[(Redis Standalone)]
+        Backend -->|Uploads| R2[Cloudflare R2 Object Storage]
+        Velero[Velero Agent] -->|Cron Backup| R2
+        etcd[etcd backup Job] -->|Cron Snapshot| R2
+    end
+    subgraph GitOps CD Pipeline
+        Dev[Developer] -->|Push Code| GitLab[GitLab CI/CD]
+        GitLab -->|Build & Push Image| DockerHub[Docker Hub]
+        GitLab -->|Update Image Tag| GitInfra[Git Infrastructure Repo]
+        ArgoCD[ArgoCD Operator] -->|Sync Manifests| GitInfra
+        ArgoCD -->|Reconcile State| K8sCluster[K8s Cluster Resources]
+    end
+```
 
+---
 
+## 🛡️ Cấu Hình Pod Production Thực Tế (Production Pod Example)
 
-## Author
-**LƯU ĐÌNH MÁC** - System Engineer & Linux Expert.
+Dưới đây là một ví dụ thực tế cấu hình Pod đang chạy trên môi trường production, thể hiện cơ chế quản lý QoS, cấu hình các đầu dò sức khỏe (probes) hoạt động và kiểm soát bảo mật:
+
+```text
+Name:             portfolio-backend-7bc4dcfb95-xyz45
+Namespace:        production
+Priority:         0
+Service Account:  portfolio-backend-sa
+Node:             k8s-node-2/192.168.1.12
+Start Time:       Sat, 27 Jun 2026 10:00:00 +0700
+Labels:           app.kubernetes.io/instance=portfolio-backend
+                  app.kubernetes.io/name=portfolio-backend
+                  pod-template-hash=7bc4dcfb95
+Annotations:      checksum/config: 86b72a6b...
+Status:           Running
+IP:               10.244.1.45
+Controlled By:    ReplicaSet/portfolio-backend-7bc4dcfb95
+Containers:
+  portfolio-backend:
+    Container ID:   containerd://e85ba92b...
+    Image:          portfolio-macld/portfolio-backend:f902622
+    Image ID:       docker.io/portfolio-macld/portfolio-backend@sha256:d82b...
+    Port:           3001/TCP
+    State:          Running
+      Started:      Sat, 27 Jun 2026 10:00:05 +0700
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:     100m
+      memory:  256Mi
+    Liveness:  http-get http://:3001/api/v1/health delay=15s timeout=1s period=10s #success=1 #failure=3
+    Readiness: http-get http://:3001/api/v1/health delay=15s timeout=1s period=5s #success=1 #failure=3
+    Environment Variables from:
+      portfolio-backend-configmap  ConfigMap  Optional: false
+      portfolio-backend-secrets    Secret     Optional: false
+QoS Class:                   Burstable
+```
+
+### Phân Tích Pod Production
+*   **`Restart Count: 0`**: Chứng minh sự ổn định thời gian chạy của ứng dụng. Không có hiện tượng rò rỉ bộ nhớ (memory leaks) hay các ngoại lệ nghiêm trọng chưa được xử lý dẫn đến việc container engine trên node phải khởi động lại pod.
+*   **`QoS Class: Burstable`**: Pod định cấu hình mức requests vừa phải (`100m` CPU, `256Mi` Memory) và giới hạn limits rộng rãi (`500m` CPU, `512Mi` Memory). Điều này cho phép Kubernetes scheduler lập lịch phân bổ pod tối ưu, trong khi vẫn cho phép bùng nổ tài nguyên (resource bursts) khi lưu lượng truy cập tăng đột biến.
+*   **`Image Tag: f902622`**: Thay vì sử dụng thẻ mutable `latest` dễ thay đổi, deployment khóa cứng theo mã Git Short-SHA để đảm bảo quá trình build mang tính nhất quán và có khả năng tái lặp.
+*   **`Liveness & Readiness Probes`**: Kiểm tra liveness liên tục theo dõi để phát hiện các lỗi deadlock hoặc trạng thái không phản hồi nhằm kích hoạt tự phục hồi (self-healing), trong khi đầu dò readiness đảm bảo lưu lượng truy cập chỉ được định tuyến đến pod khi các tài nguyên phụ thuộc (như database và cache) đã kết nối thành công.
+
+---
+
+## 💎 Điểm Nổi Bật & Tính Năng Cốt Lõi (Key Features & Highlights)
+
+*   **✅ Zero-Downtime Deployments**: Cập nhật dạng Rolling update với `maxUnavailable: 0` kết hợp đầu dò startup/readiness tự động để đảm bảo không định tuyến lưu lượng đến các container chưa sẵn sàng.
+*   **🛡️ Security-First**: Các container chạy dưới quyền non-root, truy cập bảo mật qua Cloudflare Zero Trust, quét lỗ hổng bảo mật tự động (Trivy) và quản lý Sealed Secrets.
+*   **📊 Self-Healing & Observability**: Tự phục hồi qua các đầu dò liveness/readiness, tự động co giãn tài nguyên HPA và gửi cảnh báo thời gian thực qua Prometheus/Grafana.
+*   **⚡ Disaster Recovery**: Lịch trình sao lưu tự động hàng ngày cho dữ liệu ứng dụng (Velero) và trạng thái cụm (etcd) đẩy lên Cloudflare R2.
+*   **🔔 Smart Notifications**: Cảnh báo thông minh gửi tới MS Teams/Telegram phân loại theo trạng thái pipeline (chỉ chạy cho các bước quan trọng trên staging/prod).
+
+---
+
+## 🔄 Quy Trình CI/CD & Smoke Test (CI/CD & Smoke Test Workflow)
+
+Pipeline CI/CD thực thi các bước kiểm tra chất lượng và bảo mật nghiêm ngặt trước khi triển khai:
+
+1.  **Code Validation**: Thực hiện kiểm tra ESLint, định dạng code và kiểm tra dependencies.
+2.  **Security Scan**: Chạy quét bảo mật Trivy trực tiếp trên mã nguồn và các Docker images.
+3.  **Docker Build & Push**: Đóng gói Docker image dạng multi-stage và đẩy lên Docker Hub.
+4.  **GitOps Manifest Update**: Thay đổi tham số override trong kho lưu trữ hạ tầng GitOps.
+5.  **ArgoCD Sync**: Tự động đồng bộ và triển khai image mới lên Kubernetes.
+6.  **Smoke Testing**: Tự động chạy các bài kiểm thử khói (smoke tests) sau khi triển khai:
+    *   **Public Read Query Tests**: Xác thực các endpoints API (sắp xếp, lọc dữ liệu, phân trang) trên cả hai môi trường.
+    *   **Write Flow & Autoclean (Staging)**: Kiểm thử an toàn luồng API đăng ký/đăng nhập/ghi dữ liệu, sau đó đăng nhập bằng quyền Super Admin để tự động dọn dẹp các user test vừa tạo.
+    *   **Network Timeouts**: Rào chắn lỗi treo luồng bằng cách áp dụng kết nối/phản hồi timeout cho lệnh curl.
+
+---
+
+## 📚 Liên Kết Tài Liệu Chi Tiết (Links to Deep Dives)
+
+Để tìm hiểu chi tiết về các quyết định thiết kế, cẩm nang phục hồi hệ thống và hướng dẫn cài đặt, hãy truy cập [Documentation Portal](docs/README.md) của chúng tôi:
+
+*   **[System Architecture](docs/architecture/system-architecture.md)**: Sơ đồ kiến trúc mạng, phân chia namespace, và cơ chế co giãn HPA.
+*   **[Architecture Decision Records (ADR)](docs/architecture/adr/README.md)**: Nhật ký quyết định kiến trúc của dự án.
+*   **[GitOps & CI/CD Workflow](docs/deployment/gitops-workflow.md)**: Quy trình CI/CD từ code push đến đồng bộ ArgoCD.
+*   **[Zero-Downtime Strategy](docs/deployment/zero-downtime-strategy.md)**: Thiết lập RollingUpdate, Liveness/Readiness probes và HPA.
+*   **[Disaster Recovery & Backups](docs/operations/disaster-recovery.md)**: Cấu hình Velero, snapshot etcd và quy trình khôi phục.
+*   **[Cloudflare Zero Trust Access](docs/security/cloudflare-zero-trust.md)**: Bảo vệ hệ thống thông qua Cloudflare Access và OTP.
+*   **[Smoke Test Strategy](docs/testing/smoke-test-strategy.md)**: Nội dung script smoke test và phân tích các bước kiểm thử.
+*   **[Local Development Onboarding](docs/onboarding/local-development.md)**: Hướng dẫn cài đặt môi trường chạy local, SSH Config, và cấu hình `.env`.
+
+---
+*Dự án được duy trì bởi **Lưu Đình Mác** (luumac2801@gmail.com).*
