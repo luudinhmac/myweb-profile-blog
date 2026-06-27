@@ -18,13 +18,13 @@ Repository này trình bày một nền tảng Kubernetes hoàn chỉnh, sẵn s
 
 Mặc dù thư mục này hiển thị toàn bộ các thành phần để thuận tiện cho việc tham khảo ngoại tuyến và quản trị tập trung, trên thực tế, dự án được triển khai và vận hành độc lập thông qua **3 kho lưu trữ (repositories) riêng biệt** trên GitLab để đảm bảo tính an toàn, bảo mật thông tin và phân tách trách nhiệm (Separation of Concerns):
 
-1.  **Frontend Repository (`portfolio-frontend`)**:
+1.  **Frontend Repository ([`frontend/`](frontend))**:
     *   Chứa mã nguồn ứng dụng giao diện người dùng Next.js (App Router, Standalone Mode).
     *   Sở hữu pipeline CI/CD riêng để build/test/scan Docker image của frontend.
-2.  **Backend Repository (`portfolio-backend`)**:
+2.  **Backend Repository ([`backend/`](backend))**:
     *   Chứa mã nguồn NestJS API, cấu hình ORM Prisma và mã nguồn migrations.
     *   Sở hữu pipeline CI/CD riêng để build/test/scan Docker image của backend.
-3.  **Infrastructure Repository (`portfolio-infrastructure` / `infra-repo`)**:
+3.  **Infrastructure Repository ([`infra/`](infra))**:
     *   Chứa toàn bộ mã nguồn cấu hình hạ tầng GitOps (Kubernetes manifests, Helm values.yaml cho Staging và Production), Ansible Playbook cấu hình hệ điều hành máy chủ và các cấu hình Cloudflare Tunnel.
     *   Đây là kho lưu trữ trung tâm mà ArgoCD lắng nghe để đồng bộ hóa trạng thái ứng dụng lên cụm Kubernetes.
 
@@ -165,7 +165,11 @@ Kiểm tra lịch trình chạy cronjob sao lưu cơ sở dữ liệu và trạn
 
 ### 5. Thông báo tức thời qua MS Teams (CI/CD Pipeline Alerts)
 Thông báo tự động gửi về kênh chat MS Teams của đội ngũ vận hành khi có thay đổi trạng thái hoặc lỗi phát sinh trong quá trình build/deploy.
-![MS Teams Notification](images/notification_msteam.png)
+![MS Teams Notification](images/notification-msteam.png)
+
+### 6. Giao diện quản trị Kubernetes Dashboard (K8s Administration Portal)
+Giao diện điều khiển tập trung hiển thị danh sách các pod đang chạy và tình trạng cấp phát tài nguyên cho các cấu phần ứng dụng trong cụm.
+![Kubernetes Dashboard](images/k8s-dashboard-pod.png)
 
 ---
 
