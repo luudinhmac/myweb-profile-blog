@@ -24,8 +24,12 @@ Dự án được xây dựng dựa trên mô hình **Smart Server / Lean Client
 ```mermaid
 graph TD
     Dev[Developer] -->|Push Code| GitLab[GitLab CI/CD]
-    GitLab -->|Build & Push Image| DockerHub[Docker Hub]
-    GitLab -->|Update Image Tag| GitInfra[Git Infrastructure Repo]
+    subgraph GitLab CI/CD Pipeline
+        GitLab -->|Lint & Typecheck| Test[Automated Testing]
+        Test -->|Security Scan| Scan[Trivy Vulnerability Scan]
+        Scan -->|Build & Push Image| DockerHub[Docker Hub]
+        Scan -->|Update Image Tag| GitInfra[Git Infrastructure Repo]
+    end
     ArgoCD[ArgoCD Operator] -->|Sync Manifests| GitInfra
     ArgoCD -->|Reconcile State| K8sCluster[K8s Cluster Resources]
 ```
