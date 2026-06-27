@@ -8,9 +8,9 @@ Tài liệu này mô tả chi tiết quy trình tích hợp liên tục và tri�
 
 Dự án được phân rã thành 3 kho lưu trữ độc lập để đảm bảo an toàn bảo mật thông tin và phân tách trách nhiệm vận hành:
 
-1. **`portfolio-frontend`**: Chứa toàn bộ mã nguồn giao diện Next.js (App Router).
-2. **`portfolio-backend`**: Chứa toàn bộ mã nguồn API NestJS (Prisma).
-3. **`portfolio-infrastructure`**: Chứa các Ansible Playbooks setup máy chủ, cấu hình Helm Charts và các file định nghĩa biến (values.yaml) cho Staging/Production.
+1. **Frontend Repository ([`frontend/`](../../frontend))**: Chứa toàn bộ mã nguồn giao diện Next.js (App Router, Standalone Mode).
+2. **Backend Repository ([`backend/`](../../backend))**: Chứa toàn bộ mã nguồn API NestJS (Prisma, NestJS).
+3. **Infrastructure Repository ([`infra/`](../../infra))**: Chứa các Ansible Playbooks setup máy chủ, cấu hình Helm Charts và các file định nghĩa biến (values.yaml) cho Staging/Production.
 
 ---
 
