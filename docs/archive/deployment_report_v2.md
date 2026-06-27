@@ -53,7 +53,7 @@ Việc triển khai được thực hiện tự động qua **Ansible Playbook**
 
 ## 5. Hướng Dẫn Vận Hành
 *   **Truy cập Staging:** `https://192.168.157.109`
-*   **Tài khoản Admin:** `macld` / `macld@2026`
+*   **Tài khoản Admin:** `<username>` / `<password>`
 *   **Quản lý Service:**
     ```bash
     cd /opt/portfolio-staging
@@ -62,11 +62,3 @@ Việc triển khai được thực hiện tự động qua **Ansible Playbook**
     ```
 
 ---
-
-## 6. Kế Hoạch Tiếp Theo (Roadmap)
-1.  **Migration Baseline:** Chạy `npx prisma migrate dev` ở Local để tạo thư mục `migrations` chính thức, thay thế hoàn toàn cho `db push`.
-2.  **Kubernetes Migration:** Chuyển đổi file `docker-compose.yml` thành K8s Manifests (Deployment, Service, Ingress).
-3.  **CI/CD Pipeline:** Tích hợp quy trình build/push image vào GitHub Actions hoặc GitLab CI.
-
----
-*Báo cáo được lập bởi: **Senior DevOps Engineer & Architect Agent***
