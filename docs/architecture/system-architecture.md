@@ -59,27 +59,33 @@ Cụm Kubernetes được tổ chức thành các Namespace chuyên biệt nhằ
 
 ## 💾 Kiến Trúc Lưu Trữ (Storage Architecture)
 
-Hệ thống lưu trữ trên cụm đơn node được cấu hình sử dụng Local Path Provisioner để ghi trực tiếp lên đĩa cứng vật lý của VPS hoặc giải pháp lưu trữ khối phân tán Longhorn cho dữ liệu production:
+Hệ thống kết hợp giữa lưu trữ khối cục bộ/phân tán trên cụm Kubernetes cho cơ sở dữ liệu và lưu trữ đối tượng Cloudflare R2 cho tài nguyên tĩnh:
 
 ```mermaid
 graph TD
-    subgraph K8s Cluster
-        FE_Pod[Frontend/Backend Pods] -->|PVC Mount| local_SC[StorageClass: local-path]
-        BE_Pod[Backend Pods] -->|PVC Mount| lh_SC[StorageClass: longhorn]
-        local_SC -->|Local Path Provisioner| PV_local[Persistent Volume - Local]
-        lh_SC -->|Longhorn Engine| PV_lh[Persistent Volume - Distributed]
+    subgraph K8s Cluster Storage
+        lh_SC[StorageClass: longhorn] -->|Longhorn Engine| PV_lh[Persistent Volume - Distributed]
+        local_SC[StorageClass: local-path] -->|Local Path Provisioner| PV_local[Persistent Volume - Local]
     end
+    subgraph Cloud Storage
+        R2[Cloudflare R2 Object Storage]
+    end
+    
     PV_local -->|Directory Mapping| HostDisk[<host_storage_path>/... trên VPS Host]
     PV_lh -->|Replicated Blocks| Disk[Replicated disks on cluster nodes]
+    
+    FE_Uploads[Backend API Pods] -->|Direct S3 API Upload| R2
 ```
 
-### Chi tiết các tệp lưu trữ chính:
-* **StorageClass `local-path`:** Tự động cấp phát hostPath trên Node VPS cho các nhu cầu của môi trường Staging.
-* **StorageClass `longhorn`:** Sử dụng giải pháp lưu trữ khối phân tán Longhorn (phiên bản v1.7.0) làm hạ tầng lưu trữ chính cho Production (Postgres, Backend Uploads, Redis persistence).
+### Chi tiết phân bổ lưu trữ:
+* **Cloudflare R2 Object Storage (Bucket `blog-upload-prod`):**
+  * **avatar/**: Lưu trữ toàn bộ ảnh đại diện của người dùng.
+  * **post/**: Lưu trữ toàn bộ ảnh bìa bài viết, hình ảnh chèn trong nội dung blog và các file tài liệu đính kèm.
+* **StorageClass `longhorn`:** Sử dụng giải pháp lưu trữ khối phân tán Longhorn làm hạ tầng lưu trữ chính cho Production (PostgreSQL Database và Redis persistence).
+* **StorageClass `local-path`:** Tự động cấp phát hostPath trên Node VPS cho các nhu cầu dữ liệu của môi trường Staging.
 * **Đường dẫn lưu trữ vật lý trên VPS Host:**
-  * Backend Production Uploads: `<host_storage_path>/backend-uploads-prod` (lưu trữ ảnh bìa bài viết, avatar, file đính kèm).
-  * Database Production: `<host_storage_path>/postgres-production-pvc`.
-  * Database Staging: `<host_storage_path>/postgres-staging-pvc`.
+  * Database Production: `<host_storage_path>/postgres-production-pvc`
+  * Database Staging: `<host_storage_path>/postgres-staging-pvc`
 
 ---
 
