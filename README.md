@@ -20,6 +20,17 @@ Repository này trình bày một nền tảng Kubernetes hoàn chỉnh, sẵn s
 
 Dự án được xây dựng dựa trên mô hình **Smart Server / Lean Client**, kết hợp môi trường container tự động hóa được quản lý thông qua Kubernetes và điều phối bằng GitOps.
 
+### 1. Quy trình tích hợp & triển khai liên tục (GitOps CD Pipeline)
+```mermaid
+graph TD
+    Dev[Developer] -->|Push Code| GitLab[GitLab CI/CD]
+    GitLab -->|Build & Push Image| DockerHub[Docker Hub]
+    GitLab -->|Update Image Tag| GitInfra[Git Infrastructure Repo]
+    ArgoCD[ArgoCD Operator] -->|Sync Manifests| GitInfra
+    ArgoCD -->|Reconcile State| K8sCluster[K8s Cluster Resources]
+```
+
+### 2. Kiến trúc phân bổ tài nguyên và định tuyến cụm (K8s Cluster Runtime)
 ```mermaid
 graph TD
     Client[Browser/Client Next.js] -->|HTTPS SSL| Ingress[Traefik Ingress Gateway]
@@ -31,13 +42,6 @@ graph TD
         Backend -->|Uploads| R2[Cloudflare R2 Object Storage]
         Velero[Velero Agent] -->|Cron Backup| R2
         etcd[etcd backup Job] -->|Cron Snapshot| R2
-    end
-    subgraph GitOps CD Pipeline
-        Dev[Developer] -->|Push Code| GitLab[GitLab CI/CD]
-        GitLab -->|Build & Push Image| DockerHub[Docker Hub]
-        GitLab -->|Update Image Tag| GitInfra[Git Infrastructure Repo]
-        ArgoCD[ArgoCD Operator] -->|Sync Manifests| GitInfra
-        ArgoCD -->|Reconcile State| K8sCluster[K8s Cluster Resources]
     end
 ```
 
