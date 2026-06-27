@@ -47,4 +47,4 @@ docs/
 Để đảm bảo hệ thống tài liệu luôn chính xác và cập nhật song song với mã nguồn (Documentation-as-Code):
 1. **Quy tắc cập nhật**: Khi thay đổi logic hoặc hạ tầng (ví dụ: thêm Secret mới, đổi tên Service, nâng cấp thư viện core), nhà phát triển **bắt buộc** phải cập nhật các tài liệu liên quan trong cùng Merge Request.
 2. **Review chéo**: Tài liệu sửa đổi sẽ được kiểm tra và phê duyệt bởi Kỹ sư trưởng hoặc Quản trị viên hệ thống trước khi gộp vào nhánh chính.
-3. **Phân quyền sở hữu**: Tham khảo chi tiết tại **[Project Governance Matrix](file:///d:/DATA/Portfolio/docs/overview/project_mission.md#3-documentation-lifecycle-governance)** để biết Kỹ sư nào chịu trách nhiệm quản lý cấu phần tài liệu nào.
+3. **Phân quyền sở hữu**: Tham khảo chi tiết tại **[Project Governance Matrix](overview/project_mission.md#3-documentation-lifecycle-governance)** để biết Kỹ sư nào chịu trách nhiệm quản lý cấu phần tài liệu nào.

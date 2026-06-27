@@ -27,7 +27,7 @@ graph TD
     subgraph GitLab CI/CD Pipeline
         GitLab -->|Lint & Typecheck| Test[Automated Testing]
         Test -->|Security Scan| Scan[Trivy Vulnerability Scan]
-        Scan -->|Build & Push Image| DockerHub[Docker Hub]
+        Scan -->|Build & Push Image| DockerHub[Registry]
         Scan -->|Update Image Tag| GitInfra[Git Infrastructure Repo]
     end
     ArgoCD[ArgoCD Operator] -->|Sync Manifests| GitInfra
