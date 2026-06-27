@@ -1,7 +1,5 @@
 # ADR 001: Selection of NestJS for Backend API Development
 
-*   **Status**: Approved
-*   **Deciders**: Lưu Đình Mác
 *   **Context**: [Coding Guidelines](../overview/coding_guidelines.md)
 
 ---
