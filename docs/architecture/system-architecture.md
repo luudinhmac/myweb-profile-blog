@@ -57,25 +57,29 @@ Cụm Kubernetes được tổ chức thành các Namespace chuyên biệt nhằ
 | **`kubernetes-dashboard`**| Giao diện quản trị K8s | Kubernetes Dashboard, `admin-user` ServiceAccount |
 | **`argocd`** | Triển khai GitOps | ArgoCD Server, Application Controllers |
 
----
-
 ## 💾 Kiến Trúc Lưu Trữ (Storage Architecture)
 
-Hệ thống lưu trữ trên cụm đơn node được cấu hình sử dụng Local Path Provisioner để ghi trực tiếp lên đĩa cứng vật lý của VPS hoặc lưu trữ phân tán Longhorn cho dữ liệu production:
+Hệ thống lưu trữ trên cụm đơn node được cấu hình sử dụng Local Path Provisioner để ghi trực tiếp lên đĩa cứng vật lý của VPS hoặc giải pháp lưu trữ khối phân tán Longhorn cho dữ liệu production:
 
 ```mermaid
-graph LR
-    Pods[Frontend/Backend Pods] -->|PVC Mount| PV[Persistent Volume]
-    PV -->|Local Directory Mapping| HostDisk[/data/k8s/storage/... trên VPS Host]
+graph TD
+    subgraph K8s Cluster
+        FE_Pod[Frontend/Backend Pods] -->|PVC Mount| local_SC[StorageClass: local-path]
+        BE_Pod[Backend Pods] -->|PVC Mount| lh_SC[StorageClass: longhorn]
+        local_SC -->|Local Path Provisioner| PV_local[Persistent Volume - Local]
+        lh_SC -->|Longhorn Engine| PV_lh[Persistent Volume - Distributed]
+    end
+    PV_local -->|Directory Mapping| HostDisk[<host_storage_path>/... trên VPS Host]
+    PV_lh -->|Replicated Blocks| Disk[Replicated disks on cluster nodes]
 ```
 
 ### Chi tiết các tệp lưu trữ chính:
-* **StorageClass `local-path`:** Tự động cấp phát hostPath trên Node VPS cho các nhu cầu môi trường Staging.
+* **StorageClass `local-path`:** Tự động cấp phát hostPath trên Node VPS cho các nhu cầu của môi trường Staging.
 * **StorageClass `longhorn`:** Sử dụng giải pháp lưu trữ khối phân tán Longhorn (phiên bản v1.7.0) làm hạ tầng lưu trữ chính cho Production (Postgres, Backend Uploads, Redis persistence).
 * **Đường dẫn lưu trữ vật lý trên VPS Host:**
-  * Backend Production Uploads: `/data/k8s/storage/backend-uploads-prod` (lưu trữ ảnh bìa bài viết, avatar, file đính kèm).
-  * Database Production: `/data/k8s/storage/postgres-production-pvc`.
-  * Database Staging: `/data/k8s/storage/postgres-staging-pvc`.
+  * Backend Production Uploads: `<host_storage_path>/backend-uploads-prod` (lưu trữ ảnh bìa bài viết, avatar, file đính kèm).
+  * Database Production: `<host_storage_path>/postgres-production-pvc`.
+  * Database Staging: `<host_storage_path>/postgres-staging-pvc`.
 
 ---
 
