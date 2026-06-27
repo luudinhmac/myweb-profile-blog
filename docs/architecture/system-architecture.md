@@ -48,14 +48,17 @@ Cụm Kubernetes được tổ chức thành các Namespace chuyên biệt nhằ
 
 | Namespace | Vai trò | Các tài nguyên chính |
 | :--- | :--- | :--- |
-| **`infra`** | Hạ tầng mạng, định tuyến | Traefik, Cert-Manager, `admin-allowlist` Middleware |
-| **`production`** | Môi trường Product | Backend, Frontend (Next.js), PVC Uploads |
-| **`portfolio`** | Môi trường Staging | Backend-staging, Frontend-staging, PVC |
-| **`database-production`** | Cơ sở dữ liệu Prod | StatefulSet PostgreSQL |
-| **`database`** | Cơ sở dữ liệu Staging | StatefulSet PostgreSQL Staging |
+| **`infra`** | Hạ tầng mạng, định tuyến | Traefik Ingress, `admin-allowlist` Middleware |
+| **`cert-manager`** | Quản lý chứng chỉ SSL/TLS | Cert-manager controller & resource definitions |
+| **`blog-prod`** | Môi trường Production | Backend NestJS, Frontend Next.js, StatefulSet PostgreSQL, Redis |
+| **`blog-staging`** | Môi trường Staging | Backend-staging, Frontend-staging, StatefulSet PostgreSQL Staging, Redis Staging |
 | **`monitoring`** | Giám sát & Đo đạc | Prometheus, Grafana, Metrics-Server |
 | **`kubernetes-dashboard`**| Giao diện quản trị K8s | Kubernetes Dashboard, `admin-user` ServiceAccount |
 | **`argocd`** | Triển khai GitOps | ArgoCD Server, Application Controllers |
+| **`local-path-storage`**| Trình cấp phát lưu trữ local | Local Path Provisioner |
+| **`longhorn-system`** | Lưu trữ phân tán | Longhorn storage components |
+| **`velero`** | Sao lưu & Phục hồi | Velero backup manager & cron jobs |
+| **`trivy-system`** | Quét lỗ hổng bảo mật | Trivy Operator & reports |
 
 ## 💾 Kiến Trúc Lưu Trữ (Storage Architecture)
 

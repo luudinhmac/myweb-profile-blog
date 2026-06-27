@@ -1,8 +1,5 @@
 # ADR 003: Clean Architecture Domain Isolation Refactoring
 
-*   **Status**: Approved
-*   **Date**: 2026-06-17
-*   **Deciders**: Lưu Đình Mác
 *   **Context**: [Coding Guidelines](../../overview/coding_guidelines.md)
 
 ---
