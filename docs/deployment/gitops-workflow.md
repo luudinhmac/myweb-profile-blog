@@ -22,50 +22,99 @@ Quy trình tự động hóa từ khi nhà phát triển đẩy mã nguồn mớ
 sequenceDiagram
     autonumber
     actor Developer as System Developer
-    participant AppRepo as App Repository (FE/BE)
+    participant AppRepo as Monorepo (FE/BE)
     participant GitLab as GitLab CI Runner
+    participant Registry as Container Registry (Docker Hub)
     participant InfraRepo as Infrastructure Repo (GitOps)
     participant ArgoCD as ArgoCD Operator
-    participant Cluster as K8s VPS Cluster
+    participant Cluster as K8s Cluster (Staging/Prod)
 
-    Developer->>AppRepo: Push Code (dev / main)
-    AppRepo->>GitLab: Trigger CI Pipeline
+    Developer->>AppRepo: Push Code (dev branch / v* tags)
+    AppRepo->>GitLab: Trigger Pipeline
     activate GitLab
-    GitLab->>GitLab: Run Linter & Tests
-    GitLab->>GitLab: Security Scan (Trivy)
-    GitLab->>GitLab: Build & Push Docker Image
-    GitLab->>InfraRepo: Update Image Tag (yq CLI)
-    deactivate GitLab
     
+    rect rgb(240, 240, 240)
+        Note over GitLab: Stage 1: Validate (Lint, Typecheck, Migration Check)
+        GitLab->>GitLab: Run Linter & Typecheck
+        GitLab->>GitLab: Verify Database Migrations
+    end
+
+    rect rgb(230, 240, 250)
+        Note over GitLab: Stage 2: Test (Unit Test & Build Test)
+        GitLab->>GitLab: Run Unit Tests & App Compilation Build
+    end
+
+    rect rgb(220, 240, 220)
+        Note over GitLab: Stage 3: Build (Build Once)
+        GitLab->>GitLab: Build Docker Image (BuildKit & Cache)
+    end
+
+    rect rgb(250, 230, 230)
+        Note over GitLab: Stage 4: Security (Trivy Scan & SBOM)
+        GitLab->>GitLab: Run Trivy Image & File Scan
+        GitLab->>GitLab: Generate CycloneDX SBOM
+    end
+
+    rect rgb(250, 250, 210)
+        Note over GitLab: Stage 5: Publish (Cosign & Crane Copy)
+        GitLab->>GitLab: Sign Image with Cosign OIDC
+        GitLab->>Registry: Push/Copy final Image (crane copy)
+    end
+
+    rect rgb(220, 220, 250)
+        Note over GitLab: Stage 6: Deploy (yq manifest edit)
+        GitLab->>InfraRepo: Clone & Edit values.yaml (yq CLI)
+        GitLab->>InfraRepo: Git Commit & Push [skip ci]
+    end
+    deactivate GitLab
+
     activate ArgoCD
-    ArgoCD->>InfraRepo: Detect Git Commit (Polling/Webhook)
-    ArgoCD->>Cluster: Apply Manifest Changes (RollingUpdate)
+    ArgoCD->>InfraRepo: Poll Git / Webhook (Out-Of-Sync)
+    ArgoCD->>Cluster: Synchronize resources & RollingUpdate
     deactivate ArgoCD
-    Cluster-->Developer: Deploy Successful (Zero-Downtime)
+
+    activate Cluster
+    Cluster->>GitLab: Trigger Post-Deploy Smoke Test (150s buffer)
+    activate GitLab
+    GitLab->>Cluster: Execute Smoke Test suite (validate endpoints)
+    GitLab->>Developer: Send Notification (Telegram/Teams status)
+    deactivate GitLab
+    deactivate Cluster
 ```
 
 ---
 
-## 🛠️ Quy Trình Chi Tiết Các Bước
+## 🛠️ Quy Trình Chi Tiết Các Bước (7 Stages of GitOps Pipeline)
 
-### Bước 1: Phân tích & Đóng gói (CI - GitLab)
-Khi code được push lên các nhánh được giám sát trên GitLab, GitLab Runner sẽ khởi chạy các tác vụ:
-* **Kiểm tra cú pháp (Lint & Format):** Đảm bảo mã nguồn đạt tiêu chuẩn chất lượng.
-* **Build Image (Docker BuildKit):** Tự động đóng gói mã nguồn thành Docker Image dựa trên Dockerfile tối ưu hóa.
-  * *Môi trường Staging (Nhánh `dev`):* Image được gắn tag dạng `dev-<Short-SHA>` và deploy tự động.
-  * *Môi trường Production (Nhánh `main` + Git Tag):* Image được gắn tag chính xác theo version tag (ví dụ: `v1.0.12`).
-* **Đẩy Image (Registry):** Docker Image được đẩy lên Docker Hub (`luudinhmac/portfolio-frontend` và `luudinhmac/portfolio-backend`).
+### Stage 1: Validate (Xác thực chất lượng & Migration)
+*   **install_dependencies**: Thực hiện chuẩn bị và tải các package thông qua `pnpm` (sử dụng cache `.pnpm-store`). Đồng thời chạy `prisma generate` để khởi tạo Prisma Client.
+*   **lint**: Kiểm tra cú pháp và tiêu chuẩn code bằng `eslint`.
+*   **typecheck**: Biên dịch kiểm tra kiểu tĩnh của TypeScript (`tsc --noEmit`) nhằm tránh các lỗi runtime.
+*   **check_migrations**: Khởi tạo cơ sở dữ liệu Postgres test tạm thời trong container, chạy thử `prisma migrate deploy` và so sánh cấu trúc migration file với schema thực tế để đảm bảo không bị lệch database schema.
 
-### Bước 2: Cập nhật cấu hình GitOps (Update Manifests)
-Ở bước cuối của pipeline CI, runner sẽ clone repo `portfolio-infrastructure` và sử dụng công cụ CLI **`yq`** để thay đổi chính xác giá trị `.image.tag` trong file cấu hình Helm values:
-* **Staging:** Tự động ghi đè tag mới vào `environments/staging/[app-name]-values.yaml` và push lên Git.
-* **Production:** Ghi đè tag mới (kèm digest SHA) vào `environments/production/[app-name]-values.yaml` thông qua job thủ công `deploy_production` trên giao diện GitLab.
+### Stage 2: Test (Kiểm thử đơn vị & Biên dịch thử)
+*   **unit_test**: Thực thi toàn bộ mã nguồn kiểm thử tự động (Jest), tính toán và xuất báo cáo độ bao phủ mã nguồn (code coverage).
+*   **build_test**: Thử nghiệm biên dịch toàn bộ source code của ứng dụng. Bước này giúp phát hiện sớm các lỗi import hoặc lỗi cấu hình webpack trước khi đóng gói thành Docker Image.
 
-### Bước 3: Đồng bộ hóa & Triển khai (CD - ArgoCD)
-ArgoCD được cài đặt trên cụm Kubernetes liên tục lắng nghe và đối chiếu sự khác biệt giữa cấu hình trên Git và trạng thái thực tế trên cụm:
-* **Phát hiện sai lệch (Out of Sync):** Khi GitOps nhận commit cập nhật tag mới của GitLab, ArgoCD lập tức phát hiện sự khác biệt.
-* **Tự động đồng bộ (Auto Sync):** ArgoCD tiến hành deploy lại cụm.
-* **Rolling Update:** Sử dụng chiến lược **RollingUpdate** để khởi tạo các Pod mới chạy phiên bản mới trước, kiểm tra Health Check thành công rồi mới tắt các Pod cũ. Quy trình này đảm bảo **Zero-Downtime** cho hệ thống.
+### Stage 3: Build (Đóng gói một lần - Build Once)
+*   **build_image**: Tận dụng công cụ `docker buildx` và cơ chế BuildKit. Lấy (pull) cache cũ về máy ảo runner, biên dịch và đẩy (push) image dạng cache lên Registry. Quá trình này tạo ra `BUILD_IMAGE` tạm thời gắn nhãn tag theo mã Commit SHA (`build-$CI_COMMIT_SHA`).
+
+### Stage 4: Security (Quét lỗ hổng & sinh SBOM)
+*   **trivy_scan**: Sử dụng công cụ **Trivy (v0.70.0)** để thực hiện quét toàn bộ lỗ hổng bảo mật bên trong container image vừa được tạo. Ngăn chặn và ngắt pipeline ngay lập tức nếu phát hiện lỗi bảo mật ở mức `HIGH` hoặc `CRITICAL`.
+*   **generate_sbom**: Tạo tệp tin Software Bill of Materials (SBOM) định dạng CycloneDX JSON để lưu trữ minh bạch danh sách các thành phần/thư viện của ứng dụng.
+
+### Stage 5: Publish (Ký số & Phát hành - Cosign & Crane)
+*   **sign_image**: Sử dụng công cụ **Cosign** (kết hợp xác thực OIDC Keyless) để ký số xác minh tính chính danh của Docker Image, ngăn chặn tấn công giả mạo nguồn cung cấp phần mềm (Supply Chain Attack).
+*   **publish_staging (Nhánh `dev`)**: Sử dụng công cụ siêu nhẹ **crane** sao chép trực tiếp ảnh tạm sang ảnh môi trường Staging (`dev-$CI_COMMIT_SHORT_SHA`) mà không cần chạy lệnh `docker build` lại.
+*   **fetch_image (Thẻ `v*` tags)**: Thực hiện promote ảnh dev đã kiểm định an toàn từ Staging sang Production tag (ví dụ: `v1.2.0`) bằng **crane copy**.
+
+### Stage 6: Deploy (Cập nhật Git Manifests)
+*   **deploy_staging (Nhánh `dev`)**: Tự động clone kho cấu hình hạ tầng `portfolio-infratructure`, dùng công cụ `yq` thay đổi nhãn tag của backend/frontend values sang `dev-$CI_COMMIT_SHORT_SHA`, sau đó commit và push trực tiếp với cờ `[skip ci]`.
+*   **manual_approval & deploy_production (Thẻ `v*` tags)**: Yêu cầu quản trị viên/trưởng nhóm nhấn nút duyệt thủ công trên GitLab UI. Khi được duyệt, pipeline sẽ tự động cập nhật nhãn tag mới cùng mã định danh SHA (digest) của ảnh Production vào file values tương ứng trên repo `portfolio-infratructure`.
+
+### Stage 7: Post-Deploy (Smoke Test & Thông báo)
+*   **smoke_test**: Chờ một khoảng thời gian trễ đồng bộ (150 giây đối với Staging/Production để ArgoCD hoàn tất nạp và rollout) sau đó thực thi các phép kiểm thử HTTP (curl/jq) tự động lên các endpoint quan trọng như healthcheck `/api/v1/health`, public posts, authentication gate.
+*   **after_script (Notify)**: Bất kể pipeline thành công hay thất bại, script `notify.sh` sẽ tự động tính toán tổng thời gian chạy và gửi báo cáo chi tiết đến kênh chat của đội ngũ vận hành (Telegram/MS Teams).
 
 ---
 

@@ -14,6 +14,20 @@
 
 Repository này trình bày một nền tảng Kubernetes hoàn chỉnh, sẵn sàng cho môi trường production, được xây dựng dựa trên GitOps, quét bảo mật tự động và khả năng tự phục hồi (self-healing). Đây vừa là một trang blog thực tế, vừa là bản trình diễn toàn diện về kỹ thuật hạ tầng hiện đại, chứng minh các phương pháp vận hành DevOps tốt nhất trong một môi trường thực tế có tính sẵn sàng cao.
 
+## 📂 Kiến Trúc Đa Kho Lưu Trữ (Multi-Repository Architecture)
+
+Mặc dù thư mục này hiển thị toàn bộ các thành phần để thuận tiện cho việc tham khảo ngoại tuyến và quản trị tập trung, trên thực tế, dự án được triển khai và vận hành độc lập thông qua **3 kho lưu trữ (repositories) riêng biệt** trên GitLab để đảm bảo tính an toàn, bảo mật thông tin và phân tách trách nhiệm (Separation of Concerns):
+
+1.  **Frontend Repository (`portfolio-frontend`)**:
+    *   Chứa mã nguồn ứng dụng giao diện người dùng Next.js (App Router, Standalone Mode).
+    *   Sở hữu pipeline CI/CD riêng để build/test/scan ảnh Docker của frontend.
+2.  **Backend Repository (`portfolio-backend`)**:
+    *   Chứa mã nguồn NestJS API, cấu hình ORM Prisma và mã nguồn migrations.
+    *   Sở hữu pipeline CI/CD riêng để build/test/scan ảnh Docker của backend.
+3.  **Infrastructure Repository (`portfolio-infrastructure` / `infra-repo`)**:
+    *   Chứa toàn bộ mã nguồn cấu hình hạ tầng GitOps (Kubernetes manifests, Helm values.yaml cho Staging và Production), Ansible Playbook cấu hình hệ điều hành máy chủ và các cấu hình Cloudflare Tunnel.
+    *   Đây là kho lưu trữ trung tâm mà ArgoCD lắng nghe để đồng bộ hóa trạng thái ứng dụng lên cụm Kubernetes.
+
 ---
 
 ## 🏛️ Sơ Đồ Kiến Trúc Hệ Thống (System Architecture)
