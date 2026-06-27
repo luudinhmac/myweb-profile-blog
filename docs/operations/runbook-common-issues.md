@@ -113,3 +113,94 @@ Toàn bộ hệ thống tên miền (blog.luumac.io.vn, api.luumac.io.vn) báo l
 ### 4.5. Lỗi định tuyến Ingress trả về 404 Not Found
 *   **Nguyên nhân**: Ingress nằm khác namespace với Service cần trỏ tới, hoặc Traefik chặn chuyển tiếp `ExternalName` theo mặc định.
 *   **Cách khắc phục**: Đảm bảo Ingress được đặt cùng namespace với Pod/Service ứng dụng (`blog-prod` hoặc `blog-staging`), đồng thời kích hoạt thuộc tính cấu hình `allowExternalNameServices` trong Traefik nếu cần chuyển tiếp liên namespace.
+
+---
+
+## 5. Lỗi Next.js Standalone "Đóng băng" Proxy ở Staging URL (Build-time configuration drift)
+
+### Triệu chứng:
+Sau khi deploy phiên bản Production thành công, ArgoCD đã sync hoàn tất và nạp biến môi trường `INTERNAL_API_URL` trỏ tới bản Production. Tuy nhiên, ở phía máy khách, khi gọi API hệ thống liên tục ghi nhận log lỗi:
+```log
+Failed to proxy http://<backend_staging_service>:<port>/api/v1/setup/status
+Error: getaddrinfo ENOTFOUND <backend_staging_service>
+```
+Ứng dụng Production liên tục cố gắng kết nối và gửi dữ liệu về môi trường Staging.
+
+### Phân tích nguyên nhân:
+1.  Trong file `next.config.js`, chúng ta sử dụng cơ chế `rewrites()` để chuyển tiếp các request từ `/api/:path*` về Backend.
+2.  Tuy nhiên, đối với Next.js ở chế độ **Standalone Mode**, toàn bộ các rewrite và redirect được thực thi **CHỈ 1 LẦN DUY NHẤT LÚC BIÊN DỊCH (BUILD-TIME)** và xuất ra cấu hình tĩnh `.next/routes-manifest.json`.
+3.  Lúc build Docker Image Production trên GitLab CI, do biến môi trường toàn cục `INTERNAL_API_URL` trong file `.gitlab-ci.yml` đang được khai báo cứng là trỏ tới môi trường staging nên giá trị này đã bị **đóng băng cứng** vào bên trong nhân Docker Image.
+4.  Khi chạy trên K8s, dù chúng ta có truyền đè biến `INTERNAL_API_URL` bằng K8s Secrets đi nữa, Next.js Standalone Router cũng hoàn toàn bỏ qua và chỉ đọc giá trị tĩnh đã bị đóng băng trước đó.
+
+### Cách khắc phục:
+Cấu hình ghi đè biến môi trường Build-time riêng biệt cho bản Production trực tiếp trong file cấu hình `.gitlab-ci.yml` của repository frontend:
+```yaml
+build_production:
+  stage: build
+  image: docker:latest
+  variables:
+    # KHẮC PHỤC: Ghi đè biến build-time chuẩn trỏ thẳng sang Production Backend
+    INTERNAL_API_URL: "http://<backend_production_service>:<port>"
+```
+
+---
+
+## 6. Lỗi Cú Pháp Ký Tự Lạ BOM (\ufeff) Trực Tiếp Trong SQL Migrations
+
+### Triệu chứng:
+Pod Backend Production khởi chạy lên liên tục bị treo hoặc trả về lỗi 500 khi truy vấn cơ sở dữ liệu:
+```log
+GET /api/v1/setup/status 500 - Error:
+Invalid prisma.user.findFirst() invocation:
+The table public.User does not exist in the current database.
+```
+Kiểm tra log của Init-Container `prisma-migrate` ghi nhận thông tin:
+```log
+Applying migration 20260512000000_init
+Database error: ERROR: syntax error at or near "﻿" (u{feff})
+```
+
+### Phân tích nguyên nhân:
+1.  **Lỗi Mã Hóa BOM Windows:** File `migration.sql` được tạo/chỉnh sửa trên môi trường Windows chứa ký tự ẩn đánh dấu thứ tự byte **BOM (`\ufeff`)** ở đầu file.
+2.  **Lỗi Biên Dịch Postgres:** Khi Init-Container chạy và nạp file SQL vào Postgres, Postgres không nhận diện được ký tự `\ufeff` nên báo lỗi cú pháp và dừng tiến trình khởi tạo bảng.
+3.  **Hậu Quả Cơ Chế Cứu Hộ:** Kịch bản script tự động trong `deployment.yaml` của chúng ta phát hiện lỗi chạy migration nên đã chạy lệnh cứu hộ `prisma migrate resolve --applied <migration_name>` để bỏ qua. 
+4.  Lệnh này ghi nhận trạng thái đã áp dụng (Applied) vào bảng metadata `_prisma_migrations` trong PostgreSQL, nhưng thực tế **không một bảng dữ liệu nào được khởi tạo**.
+
+### Cách khắc phục:
+1.  **Viết Script dọn sạch ký tự BOM (Sử dụng PowerShell):**
+    Đọc file SQL dưới dạng UTF-8 chuẩn và ghi đè lại dưới định dạng **UTF-8 Không BOM** để loại bỏ hoàn toàn ký tự ẩn `\ufeff`:
+    ```powershell
+    $path = '<path_to_migration_sql>'
+    $content = [System.IO.File]::ReadAllText($path)
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($path, $content, $utf8NoBom)
+    ```
+2.  **Dọn dẹp DB lỗi và đồng bộ lại trên K8s (Thực hiện thủ công 1 lần duy nhất):**
+    Hạ Pod về 0 để ngắt kết nối, xóa/tạo lại Database sạch và khôi phục lại:
+    ```bash
+    # Hạ Pod về 0 để ngắt kết nối
+    kubectl scale deployment/<backend_deployment> -n <namespace> --replicas=0
+    # Xóa và tạo lại Database sạch hoàn toàn trên Postgres Pod
+    kubectl exec -it <postgres_pod> -n <namespace> -- psql -U <db_user> -d postgres -c "DROP DATABASE <db_name>;"
+    kubectl exec -it <postgres_pod> -n <namespace> -- psql -U <db_user> -d postgres -c "CREATE DATABASE <db_name>;"
+    # Kéo Pod hoạt động trở lại
+    kubectl scale deployment/<backend_deployment> -n <namespace> --replicas=1
+    ```
+
+---
+
+## 7. Lỗi Cấu HÌnh Backend Treo Ở Trạng Thái `CreateContainerConfigError`
+
+### Triệu chứng:
+Pod Backend liên tục hiển thị trạng thái `Init:CreateContainerConfigError` và không thể khởi chạy.
+
+### Phân tích nguyên nhân:
+Deployment của Backend yêu cầu nạp toàn bộ các cấu hình bảo mật (Database URL, JWT Secret) từ K8s Secret. Tuy nhiên, secret này chưa được tạo ở namespace tương ứng khiến K8s không thể nạp cấu hình cho container.
+
+### Cách khắc phục:
+Khởi tạo Secret tương ứng cho môi trường (sử dụng placeholder cho các biến nhạy cảm):
+```bash
+kubectl create secret generic <secret_name> -n <namespace> \
+  --from-literal=DATABASE_URL="postgresql://<db_user>:<db_password>@<db_host>:<db_port>/<db_name>" \
+  --from-literal=JWT_SECRET="<jwt_secret_key>"
+```
