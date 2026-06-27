@@ -20,10 +20,10 @@ Mặc dù thư mục này hiển thị toàn bộ các thành phần để thu�
 
 1.  **Frontend Repository (`portfolio-frontend`)**:
     *   Chứa mã nguồn ứng dụng giao diện người dùng Next.js (App Router, Standalone Mode).
-    *   Sở hữu pipeline CI/CD riêng để build/test/scan ảnh Docker của frontend.
+    *   Sở hữu pipeline CI/CD riêng để build/test/scan Docker image của frontend.
 2.  **Backend Repository (`portfolio-backend`)**:
     *   Chứa mã nguồn NestJS API, cấu hình ORM Prisma và mã nguồn migrations.
-    *   Sở hữu pipeline CI/CD riêng để build/test/scan ảnh Docker của backend.
+    *   Sở hữu pipeline CI/CD riêng để build/test/scan Docker image của backend.
 3.  **Infrastructure Repository (`portfolio-infrastructure` / `infra-repo`)**:
     *   Chứa toàn bộ mã nguồn cấu hình hạ tầng GitOps (Kubernetes manifests, Helm values.yaml cho Staging và Production), Ansible Playbook cấu hình hệ điều hành máy chủ và các cấu hình Cloudflare Tunnel.
     *   Đây là kho lưu trữ trung tâm mà ArgoCD lắng nghe để đồng bộ hóa trạng thái ứng dụng lên cụm Kubernetes.
