@@ -35,7 +35,7 @@ graph LR
 Đối với quản trị viên, khi truy cập vào bất kỳ tên miền con quản trị nào (ví dụ: `argocd.luumac.io.vn`), luồng xác thực diễn ra như sau:
 
 1.  **Chuyển hướng trang đăng nhập**: Cloudflare Access phát hiện request chưa có session token hợp lệ và chuyển hướng người dùng đến trang đăng nhập Zero Trust riêng biệt của hệ thống.
-2.  **Nhập Email**: Người dùng nhập địa chỉ email quản trị đã cấu hình trong chính sách chính thức (ví dụ: `luumac2801@gmail.com`).
+2.  **Nhập Email**: Người dùng nhập địa chỉ email quản trị đã cấu hình trong chính sách chính thức (ví dụ: `admin@gmail.com`).
 3.  **Gửi OTP**: Cloudflare kiểm tra email. Nếu email khớp với whitelist, hệ thống sẽ tự động gửi một mã xác thực dùng một lần (One-Time Password - OTP) gồm 6 chữ số về hòm thư của quản trị viên.
 4.  **Xác minh thành công**: Người dùng nhập mã OTP trên trình duyệt. Cloudflare Access kiểm tra, cấp JWT cookie dài hạn, và cho phép truy cập trực tiếp vào trang dashboard đích thông qua Cloudflare Tunnel.
 
