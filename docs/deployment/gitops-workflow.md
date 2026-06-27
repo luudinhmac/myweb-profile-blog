@@ -65,7 +65,7 @@ Khi code được push lên các nhánh được giám sát trên GitLab, GitLab
 ArgoCD được cài đặt trên cụm Kubernetes liên tục lắng nghe và đối chiếu sự khác biệt giữa cấu hình trên Git và trạng thái thực tế trên cụm:
 * **Phát hiện sai lệch (Out of Sync):** Khi GitOps nhận commit cập nhật tag mới của GitLab, ArgoCD lập tức phát hiện sự khác biệt.
 * **Tự động đồng bộ (Auto Sync):** ArgoCD tiến hành deploy lại cụm.
-* **Rolling Update:** Sử dụng chiến lược **RollingUpdate** (được cấu hình trong deployment templates) để khởi tạo các Pod mới chạy phiên bản mới trước, kiểm tra Health Check thành công rồi mới tắt các Pod cũ. Quy trình này đảm bảo **Zero-Downtime** cho hệ thống.
+* **Rolling Update:** Sử dụng chiến lược **RollingUpdate** để khởi tạo các Pod mới chạy phiên bản mới trước, kiểm tra Health Check thành công rồi mới tắt các Pod cũ. Quy trình này đảm bảo **Zero-Downtime** cho hệ thống.
 
 ---
 
@@ -103,8 +103,6 @@ Cơ chế kiểm soát an toàn sẽ lập tức ngăn chặn việc build/deplo
 ### 3. Nút Trigger Thủ Công Phê Duyệt Deploy Production
 Đối với nhánh Production, job triển khai thực tế (`deploy_production`) được thiết lập ở trạng thái chờ duyệt thủ công (Manual Approve) để kiểm soát chất lượng an toàn.
 ![Manual Approve Production](../../images/Manual_approve_deploy_production.png)
-
----
 
 ---
 

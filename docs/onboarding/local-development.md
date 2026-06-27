@@ -14,6 +14,7 @@ Hãy đảm bảo máy tính cá nhân của bạn đã cài đặt sẵn các c
    ```
 3. **kubectl** (Để tương tác trực tiếp với API Server của cụm K8s).
 4. **OpenSSH Client** (Được tích hợp mặc định trong Windows 10/11 PowerShell hoặc Terminal của macOS/Linux).
+5. **Docker / Docker Compose** (Nếu muốn chạy PostgreSQL và Redis local nhanh chóng).
 
 ---
 
@@ -101,7 +102,7 @@ Hãy tạo các tệp tin `.env` tương ứng tại thư mục gốc của từ
 
 ### 5.1. File cấu hình Backend (`/backend/.env`)
 ```env
-# Chuỗi kết nối Database trỏ về cổng Port-Forward (localhost:5432) đã mở ở trên
+# Chuỗi kết nối Database trỏ về cổng Port-Forward hoặc DB local
 DATABASE_URL="postgresql://portfolio_user:macld%402026@localhost:5432/portfolio_production?sslmode=disable"
 
 # Khóa JWT xác thực token (trùng khớp với JWT_SECRET trong cluster secret)
@@ -109,6 +110,10 @@ JWT_SECRET="5Ttv+p4uNMkFFnM2N/1jY86/XpsjZv8v8EZKaU120BA="
 
 PORT=3001
 TZ="Asia/Ho_Chi_Minh"
+
+# Cấu hình Redis local hoặc port forward từ cluster
+REDIS_HOST="localhost"
+REDIS_PORT=6379
 ```
 *Lưu ý:* Nếu mật khẩu chứa ký tự đặc biệt như `@` (ví dụ: `macld@2026`), bạn **bắt buộc phải mã hóa URL (URL Encode)** thành `%40` để tránh lỗi parse URL của Prisma.
 
@@ -122,7 +127,17 @@ INTERNAL_API_URL="http://localhost:3001/api/v1"
 
 ## 6. Hướng Dẫn Khởi Chạy Lập Trình (Run Commands)
 
-### 6.1. Chạy phân hệ Backend (NestJS)
+### 6.1. Khởi chạy Database & Redis cục bộ nhanh (Docker)
+Nếu không muốn port-forward từ cluster, bạn có thể chạy PostgreSQL và Redis nhanh qua Docker Compose hoặc Docker run:
+```bash
+# Khởi chạy PostgreSQL container
+docker run --name portfolio-db -e POSTGRES_USER=portfolio_user -e POSTGRES_PASSWORD=macld@2026 -e POSTGRES_DB=portfolio_production -p 5432:5432 -d postgres:16-alpine
+
+# Khởi chạy Redis container
+docker run --name portfolio-redis -p 6379:6379 -d redis:7-alpine
+```
+
+### 6.2. Chạy phân hệ Backend (NestJS)
 ```bash
 cd backend
 
@@ -132,12 +147,15 @@ pnpm install
 # 2. Đồng bộ các types và sinh mã Prisma client code từ DB schema
 pnpm prisma generate
 
-# 3. Khởi chạy Server ở chế độ debug/watch (tự reload khi đổi code)
+# 3. Chạy migrations để khởi tạo database local (nếu dùng db local)
+pnpm prisma db push
+
+# 4. Khởi chạy Server ở chế độ debug/watch (tự reload khi đổi code)
 pnpm run start:dev
 ```
 Backend sẽ khởi động thành công và lắng nghe tại địa chỉ: [http://localhost:3001](http://localhost:3001). Bạn có thể truy cập Swagger Docs tại `/api/docs`.
 
-### 6.2. Chạy phân hệ Frontend (Next.js)
+### 6.3. Chạy phân hệ Frontend (Next.js)
 ```bash
 cd frontend
 
