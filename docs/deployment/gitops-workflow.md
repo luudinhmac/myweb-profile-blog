@@ -22,7 +22,7 @@ Quy trình tự động hóa từ khi nhà phát triển đẩy mã nguồn mớ
 sequenceDiagram
     autonumber
     actor Developer as System Developer
-    participant AppRepo as Monorepo (FE/BE)
+    participant AppRepo as App Repository (FE/BE)
     participant GitLab as GitLab CI Runner
     participant Registry as Container Registry (Docker Hub)
     participant InfraRepo as Infrastructure Repo (GitOps)
@@ -104,13 +104,13 @@ sequenceDiagram
 *   **generate_sbom**: Tạo tệp tin Software Bill of Materials (SBOM) định dạng CycloneDX JSON để lưu trữ minh bạch danh sách các thành phần/thư viện của ứng dụng.
 
 ### Stage 5: Publish (Ký số & Phát hành - Cosign & Crane)
-*   **sign_image**: Sử dụng công cụ **Cosign** (kết hợp xác thực OIDC Keyless) để ký số xác minh tính chính danh của Docker Image, ngăn chặn tấn công giả mạo nguồn cung cấp phần mềm (Supply Chain Attack).
-*   **publish_staging (Nhánh `dev`)**: Sử dụng công cụ siêu nhẹ **crane** sao chép trực tiếp ảnh tạm sang ảnh môi trường Staging (`dev-$CI_COMMIT_SHORT_SHA`) mà không cần chạy lệnh `docker build` lại.
-*   **fetch_image (Thẻ `v*` tags)**: Thực hiện promote ảnh dev đã kiểm định an toàn từ Staging sang Production tag (ví dụ: `v1.2.0`) bằng **crane copy**.
+*   **sign_image**: Sử dụng công cụ **Cosign** (kết hợp xác thực OIDC Keyless) để ký số xác minh tính chính danh của Docker image, ngăn chặn tấn công giả mạo nguồn cung cấp phần mềm (Supply Chain Attack).
+*   **publish_staging (Nhánh `dev`)**: Sử dụng công cụ siêu nhẹ **crane** sao chép trực tiếp Docker image tạm sang Docker image môi trường Staging (`dev-$CI_COMMIT_SHORT_SHA`) mà không cần chạy lệnh `docker build` lại.
+*   **fetch_image (Thẻ `v*` tags)**: Thực hiện promote Docker image dev đã kiểm định an toàn từ Staging sang Production tag (ví dụ: `v1.2.0`) bằng **crane copy**.
 
 ### Stage 6: Deploy (Cập nhật Git Manifests)
 *   **deploy_staging (Nhánh `dev`)**: Tự động clone kho cấu hình hạ tầng `portfolio-infratructure`, dùng công cụ `yq` thay đổi nhãn tag của backend/frontend values sang `dev-$CI_COMMIT_SHORT_SHA`, sau đó commit và push trực tiếp với cờ `[skip ci]`.
-*   **manual_approval & deploy_production (Thẻ `v*` tags)**: Yêu cầu quản trị viên/trưởng nhóm nhấn nút duyệt thủ công trên GitLab UI. Khi được duyệt, pipeline sẽ tự động cập nhật nhãn tag mới cùng mã định danh SHA (digest) của ảnh Production vào file values tương ứng trên repo `portfolio-infratructure`.
+*   **manual_approval & deploy_production (Thẻ `v*` tags)**: Yêu cầu quản trị viên/trưởng nhóm nhấn nút duyệt thủ công trên GitLab UI. Khi được duyệt, pipeline sẽ tự động cập nhật nhãn tag mới cùng mã định danh SHA (digest) của Docker image Production vào file values tương ứng trên repo `portfolio-infratructure`.
 
 ### Stage 7: Post-Deploy (Smoke Test & Thông báo)
 *   **smoke_test**: Chờ một khoảng thời gian trễ đồng bộ (150 giây đối với Staging/Production để ArgoCD hoàn tất nạp và rollout) sau đó thực thi các phép kiểm thử HTTP (curl/jq) tự động lên các endpoint quan trọng như healthcheck `/api/v1/health`, public posts, authentication gate.
