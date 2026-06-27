@@ -37,17 +37,28 @@ graph TD
 *   **Lịch trình tự động (Schedules)**: Chạy định kỳ lúc **02:00 AM giờ Việt Nam** (tức 19:00 UTC) hàng ngày.
 *   **Thời gian lưu trữ (TTL)**: **7 ngày** (tự động dọn dẹp các bản sao lưu cũ để tối ưu dung lượng).
 *   **Lệnh kiểm tra lịch trình**:
-    ```bash
-    velero schedule get
-    ```
+    *   *Cách 1 (CLI trên máy Client/Host):*
+        ```bash
+        velero schedule get
+        ```
+    *   *Cách 2 (Thông qua Pod Velero trong cụm):*
+        ```bash
+        kubectl exec -n velero deployment/velero -c velero -- velero schedule get
+        ```
+    *   *Cách 3 (Truy vấn Custom Resource trực tiếp):*
+        ```bash
+        kubectl get schedules.velero.io -n velero
+        ```
 
 ### 1.2. Sao lưu Cấu hình Control Plane (etcd snapshots)
 *   **Công cụ**: `etcdctl` (để chụp snapshot cơ sở dữ liệu etcd) kết hợp với `rclone` (để đồng bộ file lên R2).
-*   **Lịch trình tự động**: Một Cronjob chạy hàng ngày trên Master Node thực thi tệp `/root/sync_etcd_backup.sh`.
+*   **Lịch trình tự động**: Script hoặc CronJob tự động kích hoạt chụp snapshot etcd hàng ngày.
+
+#### Trường hợp A: etcd chạy trực tiếp trên Host Node (External/Standalone Host)
 *   **Script đồng bộ etcd**:
     ```bash
     #!/bin/bash
-    # Chụp snapshot etcd lưu cục bộ
+    # Chụp snapshot etcd lưu cục bộ trên host
     sudo ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 \
       --cacert=/etc/kubernetes/pips/ca.crt \
       --cert=/etc/kubernetes/pips/healthcheck-client.crt \
@@ -56,6 +67,21 @@ graph TD
 
     # Đồng bộ snapshot etcd lên Cloudflare R2 bucket
     rclone sync /var/lib/etcd-backup r2:blog-etcd-backups --progress
+    ```
+
+#### Trường hợp B: etcd chạy dưới dạng Static Pod trong cụm (Standard Kubeadm setup)
+*   **Lệnh chụp snapshot chạy thông qua Pod**:
+    ```bash
+    # Tìm tên Pod etcd (ví dụ: etcd-k8s-control-plane)
+    kubectl get pods -n kube-system -l component=etcd
+
+    # Chạy snapshot save trong Pod (thư mục /var/lib/etcd được mount hostPath về máy vật lý)
+    kubectl exec -n kube-system etcd-<master_node_name> -- sh -c \
+      "ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 \
+      --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+      --cert=/etc/kubernetes/pki/etcd/server.crt \
+      --key=/etc/kubernetes/pki/etcd/server.key \
+      snapshot save /var/lib/etcd/etcd-snapshot.db"
     ```
 
 ### 1.3. Cấu trúc lưu trữ trên Cloudflare R2
@@ -127,22 +153,46 @@ kubectl rollout restart deployment/sealed-secrets-controller -n kube-system
 
 ### Bước 5: Khôi phục dữ liệu PV/PVC từ Velero
 1.  Đảm bảo Velero Agent trên cụm mới đã được cài đặt và kết nối thành công với R2 Bucket:
-    ```bash
-    velero backup get
-    ```
+    *   *Cách 1 (Sử dụng Velero CLI):*
+        ```bash
+        velero backup get
+        ```
+    *   *Cách 2 (Thông qua Pod Velero):*
+        ```bash
+        kubectl exec -n velero deployment/velero -c velero -- velero backup get
+        ```
+    *   *Cách 3 (Sử dụng kubectl):*
+        ```bash
+        kubectl get backups.velero.io -n velero
+        ```
 2.  Thực hiện khôi phục dữ liệu (Bao gồm dữ liệu PostgreSQL, Backend Uploads) từ bản sao lưu gần nhất:
-    ```bash
-    velero restore create --from-backup manual-backup-xxxx
-    ```
+    *   *Cách 1 (Sử dụng Velero CLI):*
+        ```bash
+        velero restore create --from-backup manual-backup-xxxx
+        ```
+    *   *Cách 2 (Thông qua Pod Velero):*
+        ```bash
+        kubectl exec -n velero deployment/velero -c velero -- velero restore create --from-backup manual-backup-xxxx
+        ```
 3.  **Theo dõi tiến trình**:
-    ```bash
-    velero restore get
-    velero restore describe <restore-name>
-    ```
+    *   *Cách 1 (Sử dụng Velero CLI):*
+        ```bash
+        velero restore get
+        velero restore describe <restore-name>
+        ```
+    *   *Cách 2 (Thông qua Pod Velero):*
+        ```bash
+        kubectl exec -n velero deployment/velero -c velero -- velero restore get
+        kubectl exec -n velero deployment/velero -c velero -- velero restore describe <restore-name>
+        ```
+    *   *Cách 3 (Sử dụng kubectl):*
+        ```bash
+        kubectl get restores.velero.io -n velero
+        ```
 
 > [!TIP]
 > **Khôi phục thủ công database PostgreSQL qua pg_dump**:
 > Nếu chỉ muốn khôi phục riêng lẻ cơ sở dữ liệu PostgreSQL từ một tệp SQL backup thủ công mà không muốn chạy Velero:
 > ```bash
-> cat production_backup.sql | kubectl exec -i postgres-production-0 -n database-production -- psql -U portfolio_user -d portfolio_production
+> cat production_backup.sql | kubectl exec -i postgres-0 -n blog-prod -- psql -U <db_user> -d <db_name>
 > ```
