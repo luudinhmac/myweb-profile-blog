@@ -89,3 +89,27 @@ Toàn bộ hệ thống tên miền (blog.luumac.io.vn, api.luumac.io.vn) báo l
         ```bash
         kubectl rollout restart deployment/cloudflared -n infra
         ```
+
+---
+
+## 4. Các lỗi hạ tầng Kubernetes và định tuyến Ingress (Traefik/PVC)
+
+### 4.1. Lỗi PVC không Bind được PV (Persistent Volume Pending)
+*   **Nguyên nhân**: Các PV thiếu `storageClassName` cụ thể dẫn đến xung đột với trình provisioner mặc định hoặc không tự động ghép cặp (bound).
+*   **Cách khắc phục**: Ép cứng `storageClassName` (ví dụ: `manual` hoặc `longhorn`) và chỉ định rõ thuộc tính `volumeName` trong khai báo của từng PVC.
+
+### 4.2. Lỗi thứ tự Deploy khiến Pod treo trạng thái `Pending`
+*   **Nguyên nhân**: Service/App được triển khai trước khi Persistent Volume (PV) hoặc lưu trữ vật lý sẵn sàng, khiến Pod không thể mount ổ đĩa.
+*   **Cách khắc phục**: Điều chỉnh quy trình triển khai (Ansible / GitOps) để nạp các tài nguyên lưu trữ (Storage/PV/PVC) trước, đồng thời bổ sung task/job chờ đợi (`Wait for PV`) trước khi deploy ứng dụng.
+
+### 4.3. Ingress Traefik không mở cổng hoặc bị chặn 80/443
+*   **Nguyên nhân**: Sử dụng `NodePort` mặc định của Helm chart hoặc `hostPort` bị xung đột/chặn bởi CNI (như Cilium).
+*   **Cách khắc phục**: Chuyển cấu hình DaemonSet của Traefik sang chế độ mạng máy chủ (`hostNetwork: true`).
+
+### 4.4. Traefik bị lỗi Permission Denied khi Bind cổng mạng
+*   **Nguyên nhân**: Các cổng dưới 1024 (bao gồm 80/443) là cổng đặc quyền trên Linux, trong khi container Traefik mặc định chạy với user thường không thể tự bind.
+*   **Cách khắc phục**: Cấu hình `securityContext` trong Helm values của Traefik để chạy dưới quyền `root` (UID 0) hoặc cấp thêm quyền `NET_BIND_SERVICE` trong Linux capabilities.
+
+### 4.5. Lỗi định tuyến Ingress trả về 404 Not Found
+*   **Nguyên nhân**: Ingress nằm khác namespace với Service cần trỏ tới, hoặc Traefik chặn chuyển tiếp `ExternalName` theo mặc định.
+*   **Cách khắc phục**: Đảm bảo Ingress được đặt cùng namespace với Pod/Service ứng dụng (`blog-prod` hoặc `blog-staging`), đồng thời kích hoạt thuộc tính cấu hình `allowExternalNameServices` trong Traefik nếu cần chuyển tiếp liên namespace.
