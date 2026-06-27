@@ -141,6 +141,34 @@ Pipeline CI/CD thực thi các bước kiểm tra chất lượng và bảo mậ
 
 ---
 
+## 📸 Hình Ảnh Minh Họa Hệ Thống (System & Operations Gallery)
+
+### 1. Quản lý trạng thái ứng dụng bằng ArgoCD (ArgoCD GitOps Dashboard)
+Giao diện ArgoCD hiển thị trạng thái đồng bộ hóa tự động và cấu trúc tài nguyên phân bổ cho các pod backend trong cụm Kubernetes.
+![ArgoCD Backend Status](images/backend-argocd.png)
+
+### 2. Giám sát tài nguyên hệ thống qua Grafana (Observability & Metrics Dashboard)
+Các số liệu về tải CPU, dung lượng Memory và trạng thái các Node trong cụm được biểu diễn trực quan thời gian thực qua Grafana dashboards.
+![Grafana Resource Usage 0](images/grafana-resource-0.png)
+![Grafana Resource Usage 1](images/grafana-resource-1.png)
+![Grafana Resource Usage 2](images/grafana-resource-2.png)
+
+### 3. Bảo vệ an toàn cổng Admin qua Cloudflare Zero Trust
+Yêu cầu mã xác thực dùng một lần (OTP) gửi qua email trước khi quản trị viên có thể kết nối vào các dịch vụ nội bộ (như Kubernetes Dashboard, Grafana, ArgoCD).
+![Cloudflare Zero Trust Access 0](images/verify-access-admin-argocd-k8s-dashboard-grafana-0.png)
+![Cloudflare Zero Trust Access 1](images/verify-access-admin-argocd-k8s-dashboard-grafana-1.png)
+
+### 4. Hệ thống sao lưu tự động (Velero & etcd Daily Backup)
+Kiểm tra lịch trình chạy cronjob sao lưu cơ sở dữ liệu và trạng thái cụm định kỳ hàng ngày, dữ liệu nén được truyền tải và lưu trữ an toàn trên Cloudflare R2.
+![K8s Backup to R2](images/backup-daily-k8s-to-r2.png)
+![K8s Backup to R2 Details](images/detail-backup-daily-k8s-r2.png)
+
+### 5. Thông báo tức thời qua MS Teams (CI/CD Pipeline Alerts)
+Thông báo tự động gửi về kênh chat MS Teams của đội ngũ vận hành khi có thay đổi trạng thái hoặc lỗi phát sinh trong quá trình build/deploy.
+![MS Teams Notification](images/notification_msteam.png)
+
+---
+
 ## 📚 Liên Kết Tài Liệu Chi Tiết (Links to Deep Dives)
 
 Để tìm hiểu chi tiết về các quyết định thiết kế, cẩm nang phục hồi hệ thống và hướng dẫn cài đặt, hãy truy cập [Documentation Portal](docs/README.md) của chúng tôi:
