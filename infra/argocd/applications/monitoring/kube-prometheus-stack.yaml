@@ -14,9 +14,12 @@ spec:
       values: |
         grafana:
           adminPassword: admin
+          nodeSelector:
+            kubernetes.io/hostname: worker-local-1
           persistence:
             enabled: true
             size: 2Gi
+            storageClassName: local-path
           initChownData:
             enabled: false
           resources:
@@ -29,17 +32,20 @@ spec:
 
         prometheus:
           prometheusSpec:
+            nodeSelector:
+              kubernetes.io/hostname: worker-local-1
             scrapeInterval: 60s
             evaluationInterval: 60s
             retention: 2d
             storageSpec:
               volumeClaimTemplate:
                 spec:
+                  storageClassName: local-path
                   accessModes:
                     - ReadWriteOnce
                   resources:
                     requests:
-                      storage: 5Gi
+                      storage: 2Gi
             resources:
               requests:
                 cpu: 50m
@@ -50,6 +56,8 @@ spec:
 
         alertmanager:
           alertmanagerSpec:
+            nodeSelector:
+              kubernetes.io/hostname: worker-local-1
             resources:
               requests:
                 cpu: 10m
@@ -100,6 +108,8 @@ spec:
                       {{ end }}
 
         prometheusOperator:
+          nodeSelector:
+            kubernetes.io/hostname: worker-local-1
           resources:
             requests:
               cpu: 20m
@@ -109,6 +119,8 @@ spec:
               memory: 100Mi
 
         kube-state-metrics:
+          nodeSelector:
+            kubernetes.io/hostname: worker-local-1
           resources:
             requests:
               cpu: 10m
