@@ -445,4 +445,37 @@ spec:
 3. **Kết quả**: 
    Pod Grafana khởi chạy hoàn tất và chuyển sang trạng thái **`3/3 Running`** hoàn toàn khỏe mạnh.
 
+---
+
+## Sự Cố 9: Cảnh Báo KubeJobFailed Hàng Loạt Sau Khi Khởi Động Lại Node VM Local
+
+### 1. Hiện tượng (Symptom)
+* Sau khi uncordon và khôi phục hoạt động của node `worker-local-1` khoảng 15-20 phút, hệ thống liên tục gửi về Telegram cảnh báo **`KubeJobFailed`** với độ nghiêm trọng `warning` tại namespace `trivy-system`:
+  ```text
+  🚨 [CẢNH BÁO HẠ TẦNG] KubeJobFailed
+  Namespace: trivy-system
+  Pod liên quan: monitoring-kube-state-metrics-...
+  Chi tiết: Job failed to complete.
+  ```
+
+### 2. Nguyên nhân gốc rễ (Root Cause Analysis)
+1. **Thiếu Node phù hợp trong quá trình bảo trì**:
+   * Các Job quét lỗ hổng bảo mật của Trivy Operator (`scan-vulnerabilityreport-*`) có cấu hình node selector bắt buộc: `workload=scanner`.
+   * Node duy nhất trong cụm sở hữu label này là `worker-local-1`. Khi node này bị tắt/cordon để bảo trì, các Job này được tạo ra nhưng không thể xếp lịch (schedule) và bị kẹt ở trạng thái `Pending`.
+   * Sau 300 giây (Active Deadline Seconds), Kubernetes tự động hủy Job và đánh dấu trạng thái **`Failed`** (`Reason: DeadlineExceeded`).
+2. **Sự chậm trễ của hệ thống giám sát (Monitoring Delay)**:
+   * Pod thu thập chỉ số trạng thái `kube-state-metrics` cũng được xếp lịch chạy trên `worker-local-1`.
+   * Trong suốt thời gian node bảo trì, Prometheus không thể thu thập metrics từ `kube-state-metrics`, do đó không phát hiện ra các Job đã failed trước đó.
+   * Ngay sau khi node online trở lại, `kube-state-metrics` khởi động thành công và bắt đầu xuất metrics. Prometheus quét qua và lập tức phát hiện các Job failed từ 6 tiếng trước đó, kích hoạt cảnh báo trễ tại thời điểm `23:35 ICT`.
+
+### 3. Giải pháp khắc phục (Remediation)
+1. **Dọn dẹp các Job lỗi**:
+   Các Job quét của Trivy sau khi chạy xong hoặc lỗi có thể xóa an toàn mà không làm mất dữ liệu báo cáo (vì kết quả đã được lưu vào Custom Resource `vulnerabilityreports`). Ta dọn dẹp các Job này để xóa metric lỗi khỏi Prometheus:
+   ```bash
+   kubectl delete jobs -n trivy-system --all
+   ```
+2. **Kết quả**:
+   * Các Job cũ bị xóa hoàn toàn khỏi namespace `trivy-system`.
+   * `kube-state-metrics` ngừng xuất chỉ số lỗi, cảnh báo trên Alertmanager tự động chuyển sang trạng thái **`Resolved`** sau vài phút.
+
 
