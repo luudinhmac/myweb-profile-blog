@@ -19,6 +19,7 @@ spec:
           persistence:
             enabled: true
             size: 2Gi
+            storageClassName: local-path
           initChownData:
             enabled: false
           resources:
@@ -39,11 +40,12 @@ spec:
             storageSpec:
               volumeClaimTemplate:
                 spec:
+                  storageClassName: local-path
                   accessModes:
                     - ReadWriteOnce
                   resources:
                     requests:
-                      storage: 5Gi
+                      storage: 2Gi
             resources:
               requests:
                 cpu: 50m
