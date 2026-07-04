@@ -47,27 +47,7 @@ Tài liệu này ghi nhận toàn bộ các sự cố kỹ thuật xảy ra tron
 
 ---
 
-## 🚨 Sự cố 2: Xung Đột Đồng Bộ GitOps (Git Conflict)
-
-### 1. Hiện tượng sự cố
-* Khi đẩy cấu hình Alertmanager mới lên Gitlab để ArgoCD tự động áp dụng, lệnh `git push` bị từ chối (`rejected`) do có sự sai lệch lịch sử commit giữa máy local của nhà phát triển và VM triển khai proxy (`ansible-node`).
-
-### 2. Nguyên nhân gốc rễ (Root Cause)
-* Cấu hình được thay đổi đồng thời trên cả máy cục bộ và VM proxy nhưng chưa được kéo gộp đúng cách trước khi tạo commit mới, dẫn đến phân nhánh lịch sử Git (non-fast-forward).
-
-### 3. Quy trình xử lý chi tiết (Resolution)
-* **Bước 1**: Truy cập vào VM triển khai proxy `ansible-node`.
-* **Bước 2**: Thực hiện đồng bộ hóa nhánh và giải quyết xung đột bằng cách tích hợp trực tiếp thay đổi từ xa:
-  ```bash
-  git checkout main
-  git pull origin main --rebase
-  ```
-* **Bước 3**: Đồng bộ hóa repository local tại đường dẫn `d:\DATA\Portfolio\infra` bằng cách kéo mã nguồn mới nhất về và gộp tự động (`git pull origin main`), sau đó thực hiện đẩy nhánh (`git push origin main`) để đảm bảo tất cả các môi trường có chung lịch sử commit.
-* **Kết quả**: Kho lưu trữ Git đồng nhất, ArgoCD kích hoạt cơ chế tự động đồng bộ (Auto-Sync) và áp dụng cấu hình chính xác lên cluster.
-
----
-
-## 🚨 Sự cố 3: Tràn Tin Nhắn Cảnh Báo Giả Trên Telegram (Alert Noise)
+## 🚨 Sự cố 2: Tràn Tin Nhắn Cảnh Báo Giả Trên Telegram (Alert Noise)
 
 ### 1. Hiện tượng sự cố
 * Kênh Telegram liên tục nhận được tin nhắn cảnh báo đỏ `🚨 [CẢNH BÁO HẠ TẦNG]` về các lỗi:
