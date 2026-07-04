@@ -60,6 +60,9 @@ spec:
               kubernetes.io/hostname: worker-local-1
             secrets:
               - alertmanager-telegram-secrets
+            env:
+              - name: TZ
+                value: "Asia/Ho_Chi_Minh"
             resources:
               requests:
                 cpu: 10m
@@ -95,7 +98,7 @@ spec:
                       <b>Namespace:</b> <code>{{ .Labels.namespace }}</code>
                       <b>Pod liên quan:</b> <code>{{ .Labels.pod }}</code>
                       <b>Chi tiết:</b> {{ .Annotations.summary }}
-                      <b>Thời gian:</b> {{ .StartsAt.Local }}
+                      <b>Thời gian:</b> {{ .StartsAt.Local.Format "2006-01-02 15:04:05" }} ICT
                       {{ end }}
 
         prometheusOperator:
