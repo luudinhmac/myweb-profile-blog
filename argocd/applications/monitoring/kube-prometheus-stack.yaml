@@ -60,9 +60,11 @@ spec:
               kubernetes.io/hostname: worker-local-1
             secrets:
               - alertmanager-telegram-secrets
-            env:
-              - name: TZ
-                value: "Asia/Ho_Chi_Minh"
+            containers:
+              - name: alertmanager
+                env:
+                  - name: TZ
+                    value: "Asia/Ho_Chi_Minh"
             resources:
               requests:
                 cpu: 10m
