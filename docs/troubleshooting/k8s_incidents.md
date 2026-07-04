@@ -411,4 +411,38 @@ spec:
   * **Staging (`blog-staging`)**: Khóa mới đã được cập nhật thành công (Bắt đầu bằng: `25NN...`, kết thúc bằng: `...PGg=`).
 * Đảm bảo không còn bất kỳ khóa JWT_SECRET dạng văn bản trần nào hoạt động trên hệ thống.
 
+---
+
+## Sự Cố 8: Grafana Bị Kẹt Trạng Thái CrashLoopBackOff Sau Khi Uncordon Node VM Local
+
+### 1. Hiện tượng (Symptom)
+* Sau khi hoàn tất bảo trì và chạy lệnh `kubectl uncordon worker-local-1`, Pod Grafana (`monitoring-grafana-*`) được khởi tạo lại trên Worker Node nhưng bị kẹt ở trạng thái **`Init:CrashLoopBackOff`**.
+* Logs của init-container `init-chown-data` liên tục báo lỗi phân quyền khi thực thi lệnh thay đổi quyền sở hữu:
+  ```log
+  chown: /var/lib/grafana/png: Permission denied
+  chown: /var/lib/grafana/pdf: Permission denied
+  chown: /var/lib/grafana/csv: Permission denied
+  ```
+
+### 2. Nguyên nhân gốc rễ (Root Cause Analysis)
+1. **Ràng buộc bảo mật của Init Container**: Init-container `init-chown-data` chạy dưới quyền Root (UID `0`) nhưng bị cấu hình loại bỏ toàn bộ các quyền hạn Linux (`drop: ["ALL"]`) và chỉ bổ sung lại duy nhất quyền `CHOWN` trong `securityContext`.
+2. **Thiếu quyền truy cập thư mục nâng cao (CAP_DAC_OVERRIDE)**: 
+   * Do Grafana trước đó đã tạo ra các thư mục con (`png`, `pdf`, `csv`) với owner là UID `472` (user `grafana`) và quyền truy cập cực kỳ hạn chế là `700` (`drwx------`).
+   * Việc loại bỏ `ALL` capabilities đồng nghĩa với việc Root trong container **bị mất quyền `CAP_DAC_OVERRIDE`** (quyền bỏ qua cơ chế kiểm soát quyền truy cập tệp tin DAC).
+   * Khi mất quyền này, đối với các thư mục có quyền `700` thuộc sở hữu của UID `472`, Root (UID `0`) sẽ bị hệ điều hành đối xử như đối tượng "Other" (không có quyền đọc/ghi/truy cập `---`). Do đó, lệnh `chown -R 472:472 /var/lib/grafana` bị từ chối truy cập (`Permission denied`) khi cố gắng đi vào các thư mục con này.
+
+### 3. Giải pháp khắc phục (Remediation)
+1. **Nâng cấp quyền trên thư mục host của Node**: 
+   Truy cập vào Node `worker-local-1` và tạm thời cấp quyền đọc/truy cập sâu hơn (`755` thay vì `700`) cho thư mục dữ liệu tương ứng của Grafana trên ổ cứng host:
+   ```bash
+   sudo chmod -R 755 /opt/local-path-provisioner/pvc-3376cf71-2016-4f51-8e85-0f70d1e04284_monitoring_monitoring-grafana
+   ```
+2. **Tái tạo Pod**: 
+   Thực hiện xóa Pod Grafana cũ để Kubernetes tạo lại một Pod mới. Init-container lúc này có thể duyệt qua tất cả các thư mục con và thực thi `chown` thành công:
+   ```bash
+   kubectl delete pod -n monitoring -l app.kubernetes.io/name=grafana
+   ```
+3. **Kết quả**: 
+   Pod Grafana khởi chạy hoàn tất và chuyển sang trạng thái **`3/3 Running`** hoàn toàn khỏe mạnh.
+
 
