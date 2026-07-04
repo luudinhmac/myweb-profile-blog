@@ -127,7 +127,7 @@ QoS Class:                   Burstable
 
 
 
-## 🔄 Quy Trình CI/CD & Smoke Test (CI/CD & Smoke Test Workflow)
+## 🔄 Quy Trình CI/CD & Hiệu Năng Vận Hành (CI/CD & Operational Performance)
 
 Pipeline CI/CD thực thi các bước kiểm tra chất lượng và bảo mật nghiêm ngặt trước khi triển khai:
 
@@ -140,6 +140,17 @@ Pipeline CI/CD thực thi các bước kiểm tra chất lượng và bảo mậ
     *   **Public Read Query Tests**: Xác thực các endpoints API (sắp xếp, lọc dữ liệu, phân trang) trên cả hai môi trường.
     *   **Write Flow & Autoclean (Staging)**: Kiểm thử an toàn luồng API đăng ký/đăng nhập/ghi dữ liệu, sau đó đăng nhập bằng quyền Super Admin để tự động dọn dẹp các user test vừa tạo.
     *   **Network Timeouts**: Rào chắn lỗi treo luồng bằng cách áp dụng kết nối/phản hồi timeout cho lệnh curl.
+
+### 📊 Tóm tắt Hiệu năng Đo lường (DORA Metrics Overview)
+
+Hệ thống GitOps giúp tăng tốc độ phát triển và giảm thiểu đáng kể rủi ro vận hành thủ công:
+
+*   **Thời gian triển khai kỹ thuật**: **~6 - 8 phút** (Giảm ước tính **75% - 85%** thời gian so với quy trình triển khai thủ công vốn thường tốn từ 30 - 60 phút do phụ thuộc tốc độ mạng local, các thao tác cơ học và rủi ro gõ nhầm lệnh).
+*   **Tần suất triển khai (Deployment Frequency)**: Tăng đáng kể nhờ tự động hóa hoàn toàn sau lệnh `git push`.
+*   **Vết kiểm toán (Audit Trail)**: Minh bạch 100% qua Git commit, GitLab CI và lịch sử ArgoCD.
+*   **Phê duyệt thủ công (Manual Approval)**: Quy trình deploy Production được kiểm soát chặt chẽ qua nút bấm duyệt trên GitLab UI (thời gian thực tế phụ thuộc hoàn toàn vào nhân sự vận hành/leader).
+*   **Khôi phục (Rollback)**: Thực hiện bằng `git revert` và để ArgoCD đồng bộ tự động thay vì thao tác `kubectl` thủ công.
+*   *Chi tiết báo cáo đo lường thực tế xem tại:* **[CI/CD & GitOps Performance Audit](docs/deployment/cicd-performance-audit.md)**.
 
 ---
 
@@ -182,6 +193,7 @@ Giao diện điều khiển tập trung hiển thị danh sách các pod đang c
 *   **[System Architecture](docs/architecture/system-architecture.md)**: Sơ đồ kiến trúc mạng, phân chia namespace, và cơ chế co giãn HPA.
 *   **[Architecture Decision Records (ADR)](docs/architecture/adr/README.md)**: Nhật ký quyết định kiến trúc của dự án.
 *   **[GitOps & CI/CD Workflow](docs/deployment/gitops-workflow.md)**: Quy trình CI/CD từ code push đến đồng bộ ArgoCD.
+*   **[CI/CD & GitOps Performance Audit](docs/deployment/cicd-performance-audit.md)**: Báo cáo đo lường, phân tích hiệu năng CI/CD và so sánh DORA metrics.
 *   **[Zero-Downtime Strategy](docs/deployment/zero-downtime-strategy.md)**: Thiết lập RollingUpdate, Liveness/Readiness probes và HPA.
 *   **[Disaster Recovery & Backups](docs/operations/disaster-recovery.md)**: Cấu hình Velero, snapshot etcd và quy trình khôi phục.
 *   **[Cloudflare Zero Trust Access](docs/security/cloudflare-zero-trust.md)**: Bảo vệ hệ thống thông qua Cloudflare Access và OTP.

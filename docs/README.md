@@ -21,6 +21,7 @@ docs/
 │       └── 003-clean-architecture-refactor.md # Tái cấu trúc Domain Isolation
 ├── deployment/
 │   ├── gitops-workflow.md            # Sơ đồ pipeline GitLab CI/CD & ArgoCD flow
+│   ├── cicd-performance-audit.md     # Báo cáo đo lường & so sánh hiệu năng CI/CD vs Manual
 │   ├── zero-downtime-strategy.md     # Chiến lược RollingUpdate, liveness/readiness
 │   └── staging-vs-production.md      # Chính sách khác biệt cấu hình Staging vs Prod
 ├── operations/
