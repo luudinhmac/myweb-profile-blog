@@ -70,7 +70,7 @@ spec:
                 cpu: 10m
                 memory: 32Mi
               limits:
-                cpu: 50m
+                cpu: 100m
                 memory: 64Mi
           config:
             global:
@@ -83,7 +83,11 @@ spec:
               receiver: 'telegram-infra-alerts'
               routes:
                 - matchers:
-                    - alertname = Watchdog
+                    - alertname =~ "Watchdog|InfoInhibitor|KubeControllerManagerInstanceUnreachable|KubeSchedulerInstanceUnreachable|KubeProxyInstanceUnreachable|KubeControllerManagerDown|KubeSchedulerDown|KubeProxyDown|etcdInsufficientMembers|etcdMembersDown|KubeCPUOvercommit|CPUThrottlingHigh"
+                  receiver: 'null'
+                - matchers:
+                    - alertname = TargetDown
+                    - job =~ "kube-etcd|kube-controller-manager|kube-scheduler"
                   receiver: 'null'
             receivers:
               - name: 'null'
@@ -139,10 +143,10 @@ spec:
           hostPort: 9101
           resources:
             requests:
-              cpu: 10m
+              cpu: 50m
               memory: 16Mi
             limits:
-              cpu: 50m
+              cpu: 200m
               memory: 32Mi
 
         # Disable control plane monitoring which is not needed on single-node VPS
