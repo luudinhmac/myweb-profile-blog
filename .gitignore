@@ -69,4 +69,6 @@ get_tags.py
 resolver.yaml
 scratch_sync.sh
 temp_cert.pem
-test_redis.js
+test_redis.js
+permission_support.md
+
