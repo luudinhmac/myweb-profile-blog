@@ -478,4 +478,37 @@ spec:
    * Các Job cũ bị xóa hoàn toàn khỏi namespace `trivy-system`.
    * `kube-state-metrics` ngừng xuất chỉ số lỗi, cảnh báo trên Alertmanager tự động chuyển sang trạng thái **`Resolved`** sau vài phút.
 
+---
 
+## Sự Cố 10: Tràn Cảnh Báo CPUThrottlingHigh (Info) Cho Các Exporters & Redis
+
+### 1. Hiện tượng (Symptom)
+* Kênh Telegram liên tục nhận các cảnh báo `🚨 [CẢNH BÁO HẠ TẦNG] CPUThrottlingHigh` độ nghiêm trọng `info` liên quan đến các Pod:
+  * `postgres-exporter-*` (namespace `blog-prod`)
+  * `redis-master-0` (cả `blog-prod` và `blog-staging`)
+  * `monitoring-prometheus-node-exporter-*` (namespace `monitoring`)
+
+### 2. Nguyên nhân gốc rễ (Root Cause Analysis)
+1. **Thiết lập CPU limit quá thấp**:
+   * Các Pod phụ trợ như Exporter chỉ được giới hạn `50m` CPU. Pod Redis Master được giới hạn `100m` CPU.
+   * Khi các tác vụ thu thập metrics định kỳ (scrape) hoặc xử lý lệnh của Redis diễn ra, các container này cần một lượng CPU ngắn (burst) vượt quá giới hạn trên trong chu kỳ 100ms, dẫn đến Kernel kích hoạt cơ chế bóp CPU (CFS Throttling).
+2. **Alertmanager chưa được phân loại tắt cảnh báo info**:
+   * Mặc dù tài nguyên vật lý của cụm rất nhàn rỗi (Node CPU usage < 25%), các cảnh báo bóp CPU mức `info` vẫn liên tục gửi về kênh Telegram gây loãng thông tin giám sát.
+
+### 3. Giải pháp khắc phục (Remediation)
+1. **Nâng giới hạn CPU (CPU Limits)**:
+   Tôi đã cập nhật cấu hình tài nguyên cho các ứng dụng trong repository GitOps:
+   * **Redis Master (Production)**: Limit CPU nâng lên `250m` (request `100m`).
+   * **Redis Master (Staging)**: Limit CPU nâng lên `200m` (request `50m`).
+   * **Postgres Exporter**: Limit CPU nâng lên `150m` (request `25m`).
+   * **Node Exporter**: Limit CPU nâng lên `200m` (request `50m`).
+2. **Ẩn cảnh báo CPUThrottlingHigh trong Alertmanager**:
+   Bổ sung rule lọc vào Alertmanager routes trong file `kube-prometheus-stack.yaml` để điều hướng cảnh báo `CPUThrottlingHigh` vào receiver `null` (bỏ qua thông báo):
+   ```yaml
+   routes:
+     - matchers:
+         - alertname =~ "Watchdog|InfoInhibitor|KubeControllerManagerInstanceUnreachable|KubeSchedulerInstanceUnreachable|KubeProxyInstanceUnreachable|KubeControllerManagerDown|KubeSchedulerDown|KubeProxyDown|etcdInsufficientMembers|etcdMembersDown|KubeCPUOvercommit|CPUThrottlingHigh"
+       receiver: 'null'
+   ```
+3. **Đồng bộ hóa**:
+   Đẩy các thay đổi lên Gitlab và để ArgoCD tự động áp dụng. Quá trình rollout StatefulSet và DaemonSet diễn ra thành công. Throttling đã giảm sâu và không còn gửi cảnh báo rác về Telegram.
