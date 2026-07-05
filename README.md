@@ -35,7 +35,7 @@ Mặc dù thư mục này hiển thị toàn bộ các thành phần để thu�
 ## 💎 Điểm Nổi Bật & Tính Năng Cốt Lõi (Key Features & Highlights)
 
 *   **✅ Zero-Downtime Deployments**: Cập nhật dạng Rolling update với `maxUnavailable: 0` kết hợp đầu dò startup/readiness tự động để đảm bảo không định tuyến lưu lượng đến các container chưa sẵn sàng.
-*   **🛡️ Security-First**: Các container chạy dưới quyền non-root, truy cập bảo mật qua Cloudflare Zero Trust, quét lỗ hổng bảo mật tự động (Trivy) và quản lý Sealed Secrets.
+*   **🛡️ Security-First**: Các container chạy dưới quyền non-root, truy cập bảo mật qua Cloudflare Zero Trust, quét lỗ hổng bảo mật tự động (Trivy & Trivy Operator) và quản lý Sealed Secrets.
 *   **📊 Self-Healing & Observability**: Tự phục hồi qua các đầu dò liveness/readiness, tự động co giãn tài nguyên HPA và gửi cảnh báo thời gian thực qua Prometheus/Grafana.
 *   **⚡ Disaster Recovery**: Lịch trình sao lưu tự động hàng ngày cho dữ liệu ứng dụng (Velero) và trạng thái cụm (etcd) đẩy lên Cloudflare R2.
 *   **🔔 Smart Notifications**: Cảnh báo thông minh gửi tới MS Teams/Telegram phân loại theo trạng thái pipeline (chỉ chạy cho các bước quan trọng trên staging/prod).
@@ -202,6 +202,9 @@ Giao diện điều khiển tập trung hiển thị danh sách các pod đang c
 *   **[Smoke Test Strategy](docs/testing/smoke-test-strategy.md)**: Nội dung script smoke test và phân tích các bước kiểm thử.
 *   **[Kubernetes Incident Playbook](docs/troubleshooting/k8s_incidents.md)**: Nhật ký xử lý sự cố hạ tầng thực tế (Velero, OOM, Trivy CPU Spike, JWT secret rotation).
 *   **[Local Development Onboarding](docs/onboarding/local-development.md)**: Hướng dẫn cài đặt môi trường chạy local, SSH Config, và cấu hình `.env`.
+*   **[Trivy Operator Setup](trivy-operator/Readme.md)**: Tài liệu hướng dẫn triển khai Trivy Operator trên cụm Kubernetes nội bộ.
+*   **[Uptime Kuma Service](infra/monitoring/uptime-kuma/)**: Cấu hình và manifests triển khai dịch vụ giám sát trạng thái Uptime Kuma.
+
 
 ---
 *Dự án được duy trì bởi **Lưu Đình Mác** (luumac2801@gmail.com).*
