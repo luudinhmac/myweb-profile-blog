@@ -14,33 +14,59 @@ spec:
       values: |
         grafana:
           adminPassword: admin
-          nodeSelector:
-            kubernetes.io/hostname: worker-local-1
+          nodeSelector: {}
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-type
+                        operator: In
+                        values:
+                          - local
           persistence:
             enabled: true
             size: 2Gi
-            storageClassName: local-path
+            storageClassName: longhorn
           initChownData:
             enabled: false
           resources:
             requests:
-              cpu: 50m
+              cpu: 100m
               memory: 256Mi
             limits:
-              cpu: 300m
+              cpu: 500m
               memory: 512Mi
+          livenessProbe:
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
 
         prometheus:
           prometheusSpec:
-            nodeSelector:
-              kubernetes.io/hostname: worker-local-1
+            nodeSelector: {}
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: node-type
+                          operator: In
+                          values:
+                            - local
             scrapeInterval: 60s
             evaluationInterval: 60s
             retention: 2d
             storageSpec:
               volumeClaimTemplate:
                 spec:
-                  storageClassName: local-path
+                  storageClassName: longhorn
                   accessModes:
                     - ReadWriteOnce
                   resources:
@@ -56,8 +82,17 @@ spec:
 
         alertmanager:
           alertmanagerSpec:
-            nodeSelector:
-              kubernetes.io/hostname: worker-local-1
+            nodeSelector: {}
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: node-type
+                          operator: In
+                          values:
+                            - local
             secrets:
               - alertmanager-telegram-secrets
             containers:
@@ -115,8 +150,17 @@ spec:
                       {{ end }}
 
         prometheusOperator:
-          nodeSelector:
-            kubernetes.io/hostname: worker-local-1
+          nodeSelector: {}
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-type
+                        operator: In
+                        values:
+                          - local
           resources:
             requests:
               cpu: 20m
@@ -126,8 +170,17 @@ spec:
               memory: 100Mi
 
         kube-state-metrics:
-          nodeSelector:
-            kubernetes.io/hostname: worker-local-1
+          nodeSelector: {}
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-type
+                        operator: In
+                        values:
+                          - local
           resources:
             requests:
               cpu: 10m
