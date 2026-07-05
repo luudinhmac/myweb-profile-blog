@@ -23,4 +23,8 @@ sealedSecret:
 podSecurityContext:
   fsGroup: 70
 
+nodeSelector:
+  kubernetes.io/hostname: worker-local-1
+
+
 
