@@ -14,32 +14,64 @@ spec:
       values: |
         grafana:
           adminPassword: admin
+          nodeSelector: {}
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-type
+                        operator: In
+                        values:
+                          - local
           persistence:
             enabled: true
             size: 2Gi
+            storageClassName: longhorn
           initChownData:
             enabled: false
           resources:
             requests:
-              cpu: 50m
+              cpu: 100m
               memory: 256Mi
             limits:
-              cpu: 300m
+              cpu: 500m
               memory: 512Mi
+          livenessProbe:
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
 
         prometheus:
           prometheusSpec:
+            nodeSelector: {}
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: node-type
+                          operator: In
+                          values:
+                            - local
             scrapeInterval: 60s
             evaluationInterval: 60s
             retention: 2d
             storageSpec:
               volumeClaimTemplate:
                 spec:
+                  storageClassName: longhorn
                   accessModes:
                     - ReadWriteOnce
                   resources:
                     requests:
-                      storage: 5Gi
+                      storage: 2Gi
             resources:
               requests:
                 cpu: 50m
@@ -50,15 +82,85 @@ spec:
 
         alertmanager:
           alertmanagerSpec:
+            nodeSelector: {}
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: node-type
+                          operator: In
+                          values:
+                            - local
+            secrets:
+              - alertmanager-telegram-secrets
+            containers:
+              - name: alertmanager
+                env:
+                  - name: TZ
+                    value: "Asia/Ho_Chi_Minh"
             resources:
               requests:
                 cpu: 10m
                 memory: 32Mi
               limits:
-                cpu: 50m
+                cpu: 100m
                 memory: 64Mi
+          config:
+            global:
+              resolve_timeout: 5m
+            route:
+              group_by: ['alertname', 'namespace', 'job']
+              group_wait: 30s
+              group_interval: 5m
+              repeat_interval: 4h
+              receiver: 'telegram-infra-alerts'
+              routes:
+                - matchers:
+                    - alertname =~ "Watchdog|InfoInhibitor|KubeControllerManagerInstanceUnreachable|KubeSchedulerInstanceUnreachable|KubeProxyInstanceUnreachable|KubeControllerManagerDown|KubeSchedulerDown|KubeProxyDown|etcdInsufficientMembers|etcdMembersDown|KubeCPUOvercommit|CPUThrottlingHigh"
+                  receiver: 'null'
+                - matchers:
+                    - alertname = TargetDown
+                    - job =~ "kube-etcd|kube-controller-manager|kube-scheduler"
+                  receiver: 'null'
+            receivers:
+              - name: 'null'
+              - name: 'telegram-infra-alerts'
+                telegram_configs:
+                  - bot_token_file: '/etc/alertmanager/secrets/alertmanager-telegram-secrets/telegram_bot_token'
+                    chat_id: -5015102629
+                    parse_mode: 'HTML'
+                    send_resolved: true
+                    message: |
+                      {{ range .Alerts -}}
+                      {{ if eq .Status "firing" }}🚨 <b>[CẢNH BÁO HẠ TẦNG] {{ .Labels.alertname }}</b>
+                      <b>Độ nghiêm trọng:</b> <code>{{ .Labels.severity }}</code>
+                      <b>Namespace:</b> <code>{{ .Labels.namespace }}</code>
+                      {{ if .Labels.pod }}<b>Pod liên quan:</b> <code>{{ .Labels.pod }}</code>
+                      {{ end }}<b>Chi tiết:</b> {{ .Annotations.summary }}
+                      <b>Thời gian xảy ra:</b> {{ .StartsAt.Local.Format "2006-01-02 15:04:05" }} ICT{{ else }}✅ <b>[ĐÃ PHỤC HỒI] {{ .Labels.alertname }}</b>
+                      <b>Độ nghiêm trọng:</b> <code>{{ .Labels.severity }}</code>
+                      <b>Namespace:</b> <code>{{ .Labels.namespace }}</code>
+                      {{ if .Labels.pod }}<b>Pod liên quan:</b> <code>{{ .Labels.pod }}</code>
+                      {{ end }}<b>Chi tiết:</b> {{ .Annotations.summary }}
+                      <b>Thời gian xảy ra:</b> {{ .StartsAt.Local.Format "2006-01-02 15:04:05" }} ICT
+                      <b>Thời gian phục hồi:</b> {{ .EndsAt.Local.Format "2006-01-02 15:04:05" }} ICT
+                      <b>Thời gian khắc phục:</b> <code>{{ (.EndsAt.Sub .StartsAt).Truncate 1000000000 }}</code>{{ end }}
+                      {{ end }}
 
         prometheusOperator:
+          nodeSelector: {}
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-type
+                        operator: In
+                        values:
+                          - local
           resources:
             requests:
               cpu: 20m
@@ -68,6 +170,17 @@ spec:
               memory: 100Mi
 
         kube-state-metrics:
+          nodeSelector: {}
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-type
+                        operator: In
+                        values:
+                          - local
           resources:
             requests:
               cpu: 10m
@@ -83,10 +196,10 @@ spec:
           hostPort: 9101
           resources:
             requests:
-              cpu: 10m
+              cpu: 50m
               memory: 16Mi
             limits:
-              cpu: 50m
+              cpu: 200m
               memory: 32Mi
 
         # Disable control plane monitoring which is not needed on single-node VPS
