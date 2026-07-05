@@ -63,3 +63,10 @@ docs/archive/infra_implementation_plan.md
 secrets.txt
 secrets.text
 krr/
+
+# Scratch & temporary files
+get_tags.py
+resolver.yaml
+scratch_sync.sh
+temp_cert.pem
+test_redis.js
