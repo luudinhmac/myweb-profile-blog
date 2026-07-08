@@ -28,7 +28,7 @@ graph TD
 | **4. Security** | `trivy_scan`<br>`generate_sbom` | Quét lỗ hổng image, file hệ thống, quét lộ bí mật (secrets) bằng **Trivy (v0.70.0)**. Xuất file đặc tả phần mềm SBOM CycloneDX. | **45 - 70s** | Cache database lỗ hổng của Trivy `.trivycache`, không cần tải lại DB mỗi lần chạy. |
 | **5. Publish** | `sign_image`<br>`publish_staging` | Ký số bảo mật hình ảnh bằng **Cosign** (OIDC Keyless). Sao chép (promote) image sang tag staging bằng công cụ siêu nhẹ **crane**. | **10 - 30s** | Sử dụng `crane copy` thay thế cho `docker pull/tag/push`, thời gian phụ thuộc vào registry/network. |
 | **6. Deploy** | `deploy_staging` / `deploy_production` | **GitOps Manifest Update (~20s)**: Clone repo cấu hình `infra`, dùng công cụ `yq` sửa tag image mới và push lên Git.<br>**Rollout & Sync (~30-120s)**: ArgoCD phát hiện thay đổi và đồng bộ (apply manifest), Kubernetes Deployment Controller thực hiện Rolling Update để cập nhật các Pod. | **~50s - 140s** | Sử dụng cờ `[skip ci]` để tránh lặp pipeline repo infra. Điều phối đồng bộ tránh xung đột bằng `resource_group`. |
-| **7. Post-Deploy**| `smoke_test`<br>`after_script (notify)` | Đợi các Pod rollout thành công, chạy script CURL xác thực các API Gateway cốt lõi và gửi kết quả về Telegram/Teams. | **~160s** *(sleep 150s)* | Hiện tại sử dụng sleep 150s làm bộ đệm chờ rollout. Gửi thông báo tự động đính kèm log lỗi và thống kê Trivy. |
+| **7. Post-Deploy**| `smoke_test`<br>`after_script (notify)` | Đợi các Pod sẵn sàng bằng cơ chế Dynamic HTTP Polling, chạy script CURL xác thực các API Gateway cốt lõi và gửi kết quả về Telegram/Teams. | **~10 - 300s** *(dynamic)* | Sử dụng cơ chế Dynamic HTTP Polling (thử tối đa 60 lần, mỗi lần 5s) thay thế cho sleep cứng. Tiết kiệm thời gian khi dịch vụ sẵn sàng sớm. |
 
 ---
 
@@ -123,39 +123,30 @@ Phân tích thời gian thực tế dựa trên chênh lệch timestamp giữa *
 
 ## 6. So sánh các Chiến lược chờ Rollout (Smoke Test Wait Strategies)
 
-Để thực hiện kiểm thử khói (Smoke Test) sau triển khai, hệ thống cần đợi ứng dụng hoàn tất cập nhật (Rollout) và chuyển sang trạng thái Healthy. Dưới đây là phân tích so sánh 3 chiến lược chờ:
+Để thực hiện kiểm thử khói (Smoke Test) sau triển khai, hệ thống cần đợi ứng dụng hoàn tất cập nhật (Rollout) và chuyển sang trạng thái Healthy. Dưới đây là phân tích so sánh các chiến lược chờ:
 
-### Chiến lược 1: Chờ tĩnh bằng lệnh `sleep 150` (Hiện tại)
-* **Nguyên lý**: Runner dừng cố định 150 giây rồi tiến hành chạy test.
-* **Ưu điểm**: Đơn giản nhất, không yêu cầu cài đặt CLI hay cấu hình quyền truy cập (Credentials) cho Runner.
-* **Nhược điểm**: 
-  * *Lãng phí thời gian*: Nếu ứng dụng sẵn sàng sau 30s, pipeline vẫn phải đợi thêm 120s vô ích.
-  * *Rủi ro lỗi giả (False Failure)*: Nếu cụm K8s bị nghẽn (ví dụ do pull image chậm) và Pod mất 180s để khởi động, Smoke Test sẽ chạy ở giây 150 và báo lỗi thất bại dù thực tế Pod vẫn đang lên bình thường.
+### Chiến lược 1: Chờ tĩnh bằng lệnh `sleep 150` (Đã loại bỏ)
+* **Nguyên lý**: Runner dừng cố định 150-180 giây rồi tiến hành chạy test.
+* **Nhược điểm**: Lãng phí thời gian (nếu ứng dụng sẵn sàng sau 30s vẫn phải đợi thêm) hoặc gây lỗi giả (nếu cụm bị nghẽn và Pod khởi động lâu hơn thời gian sleep).
 
-### Chiến lược 2: Chờ động qua Kubernetes CLI (`kubectl rollout status`)
-* **Nguyên lý**: Runner sử dụng lệnh sau để kiểm tra chủ động trạng thái:
-  ```bash
-  kubectl rollout status deployment/portfolio-backend -n blog-prod --timeout=180s
-  ```
-* **Ưu điểm**: Nhận biết ngay lập tức khi Kubernetes Deployment Controller hoàn thành Rolling Update (không bị lãng phí thời gian chờ dư thừa).
-* **Nhược điểm**: **Rủi ro Bảo mật cao**. Đòi hỏi phải cấu hình và truyền file khóa truy cập cụm (`KUBECONFIG` hoặc Service Account Token) vào trong CI Runner. Nếu Runner bị tấn công, kẻ tấn công sẽ có quyền kiểm soát trực tiếp cụm Kubernetes.
-
-### Chiến lược 3: Chờ động qua ArgoCD CLI (`argocd app wait`) (Đề xuất tối ưu)
-* **Nguyên lý**: Sử dụng CLI của ArgoCD để truy vấn trực tiếp trạng thái đồng bộ và sức khỏe ứng dụng:
-  ```bash
-  argocd app wait portfolio \
-    --health \
-    --sync \
-    --timeout 180
-  ```
-  Lệnh này sẽ giám sát 3 giai đoạn:
-  1. Chờ ArgoCD phát hiện commit mới đẩy lên Repo Infra.
-  2. Chờ ArgoCD thực hiện đồng bộ (Sync) xong các manifest.
-  3. Chờ toàn bộ các tài nguyên của Application đạt trạng thái `Healthy` (tất cả các Pod mới đều chạy tốt và pass qua probe).
+### Chiến lược 2: Chờ động qua Dynamic HTTP Polling bằng `curl` (Đang áp dụng)
+* **Nguyên lý**: Script smoke test tự động chạy vòng lặp ping endpoint health check (`/api/v1/health` của backend hoặc trang chủ của frontend) tối đa 60 lần, mỗi lần cách nhau 5 giây (tối đa 5 phút).
 * **Ưu điểm**:
-  * **An toàn Bảo mật tuyệt đối**: Runner không cần tiếp xúc với Kubernetes API Server (không cần file `kubeconfig`). Nó chỉ cần gọi API của ArgoCD Server thông qua Token (`ARGOCD_AUTH_TOKEN`) được giới hạn quyền chỉ đọc (Read-only) hoặc giới hạn chỉ được thao tác trên ứng dụng được chỉ định.
-  * **Chính xác & Đầy đủ**: Theo dõi toàn diện cả trạng thái đồng bộ manifest lẫn trạng thái sức khỏe thực tế của ứng dụng (K8s rollout hoàn tất và container chạy ổn định).
-* **Nhược điểm**: Yêu cầu cài đặt thêm công cụ `argocd` CLI trên image chạy CI của Runner và cấu hình biến môi trường (`ARGOCD_SERVER`, `ARGOCD_AUTH_TOKEN`).
+  * **Tối ưu thời gian (Zero-latency)**: Khi Pod vừa ready và pass qua probe, smoke test sẽ chạy ngay lập tức.
+  * **Tránh lỗi giả**: Kiên nhẫn chờ đến 5 phút nếu cụm K8s pull image chậm hoặc khởi động lâu.
+  * **Chính xác (Version & Commit Match)**: Script so khớp phiên bản thực tế trả về từ response JSON (`.version`) với commit tag/hash dự kiến để đảm bảo Pod mới đã thực sự tiếp nhận traffic (tránh rolling update overlap).
+  * **Bảo mật & Độc lập**: Không cần nhúng token ArgoCD hay file `kubeconfig` vào CI Runner.
+* **Nhược điểm**: Chỉ kiểm tra được endpoint HTTP ở mức ứng dụng, không đại diện cho trạng thái của toàn bộ tài nguyên K8s khác (như Jobs, CronJobs nếu có).
 
-### Kết luận đề xuất:
-Nên lập kế hoạch nâng cấp Stage 7 (Post-Deploy) sang **Chiến lược 3 (ArgoCD app wait)** để tối ưu hóa thời gian chạy pipeline (tiết kiệm trung bình 1.5 - 2 phút chờ dư thừa mỗi lần deploy) và đảm bảo tính an toàn bảo mật cao nhất cho chuỗi cung ứng phần mềm.
+### Chiến lược 3: Chờ động qua Kubernetes CLI (`kubectl rollout status`)
+* **Nguyên lý**: Runner sử dụng lệnh `kubectl rollout status deployment/...` để giám sát controller.
+* **Ưu điểm**: Nhận biết chính xác trạng thái Kubernetes deployment.
+* **Nhược điểm**: Rủi ro bảo mật cực cao vì yêu cầu cấp quyền truy cập cụm (`KUBECONFIG`) cho Runner.
+
+### Chiến lược 4: Chờ động qua ArgoCD CLI (`argocd app wait`)
+* **Nguyên lý**: Sử dụng ArgoCD CLI truy vấn trạng thái sync và health.
+* **Ưu điểm**: An toàn hơn kubectl (dùng token ArgoCD read-only), theo dõi toàn diện trạng thái sync và sức khỏe tài nguyên.
+* **Nhược điểm**: Yêu cầu cài đặt thêm công cụ `argocd` CLI trên Runner và cấu hình biến môi trường (`ARGOCD_SERVER`, `ARGOCD_AUTH_TOKEN`).
+
+### Kết luận:
+Hệ thống hiện tại đã chuyển đổi thành công sang **Chiến lược 2 (Dynamic HTTP Polling)**. Đây là chiến lược cân bằng hoàn hảo giữa bảo mật (không yêu cầu thêm credentials), độ tin cậy (kiên nhẫn chờ khi khởi động lâu) và hiệu năng (tiết kiệm trung bình 1.5 - 2 phút chờ dư thừa mỗi lần deploy).

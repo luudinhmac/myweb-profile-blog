@@ -12,6 +12,8 @@ spec:
     helm:
       releaseName: velero
       values: |
+        nodeSelector:
+          kubernetes.io/hostname: k8s-prod
         configuration:
           backupStorageLocation:
             - name: default

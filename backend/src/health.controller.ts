@@ -23,7 +23,7 @@ export class HealthController {
       status: dbStatus === 'connected' ? 'ok' : 'degraded',
       database: dbStatus,
       timestamp: new Date().toISOString(),
-      version: '1.0.0',
+      version: process.env.VERSION || '1.0.0',
     });
   }
 }

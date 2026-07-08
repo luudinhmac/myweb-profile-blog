@@ -442,8 +442,6 @@ smoke_test_staging:
   before_script:
     - apk add --no-cache curl
   script:
-    - echo "Waiting 150 seconds for ArgoCD to sync and roll out staging frontend pods..."
-    - sleep 150
     - sh .gitlab-ci/smoke_test.sh https://staging.luumac.io.vn staging
 
 smoke_test_production:
@@ -458,6 +456,4 @@ smoke_test_production:
   before_script:
     - apk add --no-cache curl
   script:
-    - echo "Waiting 150 seconds for ArgoCD to sync and roll out production frontend pods..."
-    - sleep 180
     - sh .gitlab-ci/smoke_test.sh https://blog.luumac.io.vn production

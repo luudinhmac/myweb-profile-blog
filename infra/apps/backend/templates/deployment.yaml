@@ -76,6 +76,8 @@ spec:
           value: {{ .Values.env.tz | quote }}
         - name: PORT
           value: {{ .Values.env.port | quote }}
+        - name: VERSION
+          value: {{ .Values.image.tag | quote }}
         {{- if .Values.redis.enabled }}
         - name: REDIS_PASSWORD
           valueFrom:

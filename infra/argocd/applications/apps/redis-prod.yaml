@@ -20,6 +20,8 @@ spec:
           existingSecret: redis-credentials
           existingSecretPasswordKey: redis-password
         master:
+          nodeSelector:
+            kubernetes.io/hostname: k8s-prod
           resources:
             limits:
               cpu: 250m
