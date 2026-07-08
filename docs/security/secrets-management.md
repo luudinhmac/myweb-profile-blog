@@ -54,7 +54,28 @@ stringData:
 ```
 
 ### Bước 2: Tiến hành mã hóa (Seal) bằng công cụ `kubeseal`
-Chạy lệnh sau để mã hóa file thô thành SealedSecret sử dụng chứng chỉ công khai (Public Key) lấy từ cụm:
+
+Bạn có thể chọn một trong hai phương pháp mã hóa dưới đây:
+
+#### Cách A: Mã hóa ngoại tuyến (Offline - Khuyên dùng cho Developer)
+Phương pháp này không yêu cầu máy tính của bạn phải kết nối trực tiếp với API của cụm Kubernetes (không cần file `kubeconfig`). Bạn chỉ cần sử dụng chứng chỉ công khai (`sealed-cert.pem`) đã được export sẵn trong repository `portfolio-infrastructure`:
+
+```bash
+# Thực hiện mã hóa bằng file certificate công khai
+kubeseal --cert sealed-cert.pem --format yaml < secret-raw.yaml > secret-sealed.yaml
+```
+
+> [!TIP]
+> Để cập nhật hoặc lấy chứng chỉ công khai này từ cụm (chỉ cần chạy một lần bởi Admin):
+> ```bash
+> kubeseal --controller-name=sealed-secrets-controller \
+>          --controller-namespace=kube-system \
+>          --fetch-cert > sealed-cert.pem
+> ```
+
+#### Cách B: Mã hóa trực tuyến (Yêu cầu kết nối trực tiếp tới cụm K8s)
+Nếu bạn có cấu hình kết nối trực tiếp tới cụm (`kubectl` hoạt động bình thường), bạn có thể lấy public key trực tiếp từ controller đang chạy trên cụm:
+
 ```bash
 kubeseal --controller-name=sealed-secrets-controller \
          --controller-namespace=kube-system \
