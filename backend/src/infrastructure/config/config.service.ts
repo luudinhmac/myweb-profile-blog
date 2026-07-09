@@ -39,7 +39,9 @@ export class InfrastructureConfigService {
   }
 
   get redisHost(): string {
-    return process.env.REDIS_HOST || 'redis-master.production.svc.cluster.local';
+    return (
+      process.env.REDIS_HOST || 'redis-master.production.svc.cluster.local'
+    );
   }
 
   get redisPort(): number {

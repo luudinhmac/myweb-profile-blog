@@ -39,9 +39,13 @@ done
 
 if [ $READY -ne 1 ]; then
     echo "Error: Service failed to become ready within ${TIMEOUT_SECONDS} seconds."
+    echo "failed_step=1" > smoke_result.txt
+    echo "failed_title=Homepage Reachability Check" >> smoke_result.txt
+    echo "failed_reason=Service failed to return 200 OK or contains server crash/exceptions" >> smoke_result.txt
     exit 1
 fi
 
+echo "status=success" > smoke_result.txt
 echo "========================================================="
 echo "ALL FRONTEND SMOKE TESTS PASSED SUCCESSFULLY!"
 echo "========================================================="

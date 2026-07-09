@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import slugify from 'slugify';
 import {
   ICategoriesRepository,
@@ -19,7 +24,9 @@ export class UpdateCategoryUseCase {
 
     if (data.parent_id !== undefined && data.parent_id !== null) {
       if (data.parent_id === id) {
-        throw new BadRequestException('Danh mục không thể làm cha của chính nó');
+        throw new BadRequestException(
+          'Danh mục không thể làm cha của chính nó',
+        );
       }
       const parent = await this.categoryRepository.findById(data.parent_id);
       if (!parent) {

@@ -1,6 +1,6 @@
 # 🔐 Secrets Management (Sealed Secrets)
 
-Tài liệu này đặc tả quy trình quản lý thông tin nhạy cảm (Secrets) trong dự án tuân theo triết lý **GitOps**. Chúng tôi sử dụng giải pháp **Bitnami Sealed Secrets** để mã hóa các thông tin nhạy cảm trước khi đẩy lên Git.
+Tài liệu này đặc tả quy trình quản lý thông tin nhạy cảm (Secrets) trong dự án tuân theo triết lý **GitOps**. Ta sử dụng giải pháp **Bitnami Sealed Secrets** để mã hóa các thông tin nhạy cảm trước khi đẩy lên Git.
 
 ---
 

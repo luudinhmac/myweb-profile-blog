@@ -14,7 +14,11 @@ import { InfrastructureConfigService } from './infrastructure/config/config.serv
             socket: {
               host: configService.redisHost,
               port: configService.redisPort,
-              connectTimeout: 3000,
+              connectTimeout: 10000,
+              reconnectStrategy: (retries) => {
+                // Retry connection with exponential backoff capped at 5 seconds
+                return Math.min(retries * 500, 5000);
+              },
             },
             password: configService.redisPassword || undefined,
             ttl: 600000, // 10 minutes (600,000 milliseconds)
@@ -23,16 +27,23 @@ import { InfrastructureConfigService } from './infrastructure/config/config.serv
           // Register error event listener on client to prevent runtime crashes
           const client = store.client;
           if (client) {
-            client.on('error', (err: any) => {
-              console.error('Redis client error:', err.message || err);
+            client.on('error', (err: unknown) => {
+              console.error(
+                'Redis client error:',
+                err instanceof Error ? err.message : String(err),
+              );
             });
           }
 
           return { store };
-        } catch (error: any) {
-          console.warn('Could not initialize Redis cache store. Falling back to in-memory cache.', error.message || error);
+        } catch (error) {
+          console.warn(
+            'Could not initialize Redis cache store. Falling back to in-memory cache.',
+            error instanceof Error ? error.message : String(error),
+          );
           return {
-            ttl: 600,
+            store: 'memory',
+            ttl: 600000,
           };
         }
       },
