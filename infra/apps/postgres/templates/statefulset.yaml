@@ -45,3 +45,8 @@ spec:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: {{ include "postgres.fullname" . }}-pvc # CAUTION: Manual backup recommended before PVC migration
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+

@@ -62,3 +62,13 @@ docs/archive/infra_implementation_plan.md
 # Local Secrets
 secrets.txt
 secrets.text
+krr/
+
+# Scratch & temporary files
+get_tags.py
+resolver.yaml
+scratch_sync.sh
+temp_cert.pem
+test_redis.js
+permission_support.md
+

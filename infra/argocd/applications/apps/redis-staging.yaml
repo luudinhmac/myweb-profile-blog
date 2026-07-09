@@ -20,9 +20,11 @@ spec:
           existingSecret: redis-credentials
           existingSecretPasswordKey: redis-password
         master:
+          nodeSelector:
+            kubernetes.io/hostname: worker-local-1
           resources:
             limits:
-              cpu: 100m
+              cpu: 200m
               memory: 128Mi
             requests:
               cpu: 50m

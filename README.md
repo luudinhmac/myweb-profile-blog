@@ -16,15 +16,6 @@
 
 Repository này trình bày một nền tảng Kubernetes hoàn chỉnh, sẵn sàng cho môi trường production, được xây dựng dựa trên GitOps, quét bảo mật tự động và khả năng tự phục hồi (self-healing). Đây vừa là một trang blog thực tế, vừa là bản trình diễn toàn diện về kỹ thuật hạ tầng hiện đại, chứng minh các phương pháp vận hành DevOps tốt nhất trong một môi trường thực tế có tính sẵn sàng cao.
 
-## 💎 Điểm Nổi Bật & Tính Năng Cốt Lõi (Key Features & Highlights)
-
-*   **✅ Zero-Downtime Deployments**: Cập nhật dạng Rolling update với `maxUnavailable: 0` kết hợp đầu dò startup/readiness tự động để đảm bảo không định tuyến lưu lượng đến các container chưa sẵn sàng.
-*   **🛡️ Security-First**: Các container chạy dưới quyền non-root, truy cập bảo mật qua Cloudflare Zero Trust, quét lỗ hổng bảo mật tự động (Trivy) và quản lý Sealed Secrets.
-*   **📊 Self-Healing & Observability**: Tự phục hồi qua các đầu dò liveness/readiness, tự động co giãn tài nguyên HPA và gửi cảnh báo thời gian thực qua Prometheus/Grafana.
-*   **⚡ Disaster Recovery**: Lịch trình sao lưu tự động hàng ngày cho dữ liệu ứng dụng (Velero) và trạng thái cụm (etcd) đẩy lên Cloudflare R2.
-*   **🔔 Smart Notifications**: Cảnh báo thông minh gửi tới MS Teams/Telegram phân loại theo trạng thái pipeline (chỉ chạy cho các bước quan trọng trên staging/prod).
-
----
 
 ## 📂 Kiến Trúc Đa Kho Lưu Trữ (Multi-Repository Architecture)
 
@@ -39,6 +30,15 @@ Mặc dù thư mục này hiển thị toàn bộ các thành phần để thu�
 3.  **Infrastructure Repository ([`infra/`](infra))**:
     *   Chứa toàn bộ mã nguồn cấu hình hạ tầng GitOps (Kubernetes manifests, Helm values.yaml cho Staging và Production), Ansible Playbook cấu hình hệ điều hành máy chủ và các cấu hình Cloudflare Tunnel.
     *   Đây là kho lưu trữ trung tâm mà ArgoCD lắng nghe để đồng bộ hóa trạng thái ứng dụng lên cụm Kubernetes.
+
+---
+## 💎 Điểm Nổi Bật & Tính Năng Cốt Lõi (Key Features & Highlights)
+
+*   **✅ Zero-Downtime Deployments**: Cập nhật dạng Rolling update với `maxUnavailable: 0` kết hợp đầu dò startup/readiness tự động để đảm bảo không định tuyến lưu lượng đến các container chưa sẵn sàng.
+*   **🛡️ Security-First**: Các container chạy dưới quyền non-root, truy cập bảo mật qua Cloudflare Zero Trust, quét lỗ hổng bảo mật tự động (Trivy & Trivy Operator) và quản lý Sealed Secrets.
+*   **📊 Self-Healing & Observability**: Tự phục hồi qua các đầu dò liveness/readiness, tự động co giãn tài nguyên HPA và gửi cảnh báo thời gian thực qua Prometheus/Grafana.
+*   **⚡ Disaster Recovery**: Lịch trình sao lưu tự động hàng ngày cho dữ liệu ứng dụng (Velero) và trạng thái cụm (etcd) đẩy lên Cloudflare R2.
+*   **🔔 Smart Notifications**: Cảnh báo thông minh gửi tới MS Teams/Telegram phân loại theo trạng thái pipeline (chỉ chạy cho các bước quan trọng trên staging/prod).
 
 ---
 
@@ -123,11 +123,11 @@ QoS Class:                   Burstable
 *   **`Restart Count: 0`**: Chứng minh sự ổn định thời gian chạy của ứng dụng. Không có hiện tượng rò rỉ bộ nhớ (memory leaks) hay các ngoại lệ nghiêm trọng chưa được xử lý dẫn đến việc container engine trên node phải khởi động lại pod.
 *   **`QoS Class: Burstable`**: Pod định cấu hình mức requests vừa phải (`100m` CPU, `256Mi` Memory) và giới hạn limits rộng rãi (`500m` CPU, `512Mi` Memory). Điều này cho phép Kubernetes scheduler lập lịch phân bổ pod tối ưu, trong khi vẫn cho phép bùng nổ tài nguyên (resource bursts) khi lưu lượng truy cập tăng đột biến.
 *   **`Image Tag: f902622`**: Thay vì sử dụng thẻ mutable `latest` dễ thay đổi, deployment khóa cứng theo mã Git Short-SHA để đảm bảo quá trình build mang tính nhất quán và có khả năng tái lặp.
-*   **`Liveness & Readiness Probes`**: Kiểm tra liveness liên tục theo dõi để phát hiện các lỗi deadlock hoặc trạng thái không phản hồi nhằm kích hoạt tự phục hồi (self-healing), trong khi đầu dò readiness đảm bảo lưu lượng truy cập chỉ được định tuyến đến pod khi các tài nguyên phụ thuộc (như database và cache) đã kết nối thành công.
+*   **`Liveness & Readiness Probes`**: Liveness probe liên tục kiểm tra để phát hiện các lỗi deadlock hoặc trạng thái không phản hồi, kích hoạt tự phục hồi (self-healing). Readiness probe đảm bảo lưu lượng truy cập chỉ được định tuyến đến pod khi các tài nguyên phụ thuộc (như database và cache) đã kết nối thành công.
 
 
 
-## 🔄 Quy Trình CI/CD & Smoke Test (CI/CD & Smoke Test Workflow)
+## 🔄 Quy Trình CI/CD & Hiệu Năng Vận Hành (CI/CD & Operational Performance)
 
 Pipeline CI/CD thực thi các bước kiểm tra chất lượng và bảo mật nghiêm ngặt trước khi triển khai:
 
@@ -140,6 +140,17 @@ Pipeline CI/CD thực thi các bước kiểm tra chất lượng và bảo mậ
     *   **Public Read Query Tests**: Xác thực các endpoints API (sắp xếp, lọc dữ liệu, phân trang) trên cả hai môi trường.
     *   **Write Flow & Autoclean (Staging)**: Kiểm thử an toàn luồng API đăng ký/đăng nhập/ghi dữ liệu, sau đó đăng nhập bằng quyền Super Admin để tự động dọn dẹp các user test vừa tạo.
     *   **Network Timeouts**: Rào chắn lỗi treo luồng bằng cách áp dụng kết nối/phản hồi timeout cho lệnh curl.
+
+### 📊 Tóm tắt Hiệu năng Đo lường (DORA Metrics Overview)
+
+Hệ thống GitOps giúp tăng tốc độ phát triển và giảm thiểu đáng kể rủi ro vận hành thủ công:
+
+*   **Thời gian triển khai kỹ thuật**: **~6 - 8 phút** (Giảm ước tính **75% - 85%** thời gian so với quy trình triển khai thủ công vốn thường tốn từ 30 - 60 phút do phụ thuộc tốc độ mạng local, các thao tác cơ học và rủi ro gõ nhầm lệnh).
+*   **Tần suất triển khai (Deployment Frequency)**: Tăng đáng kể nhờ tự động hóa hoàn toàn sau lệnh `git push`.
+*   **Vết kiểm toán (Audit Trail)**: Minh bạch 100% qua Git commit, GitLab CI và lịch sử ArgoCD.
+*   **Phê duyệt thủ công (Manual Approval)**: Quy trình deploy Production được kiểm soát chặt chẽ qua nút bấm duyệt trên GitLab UI (thời gian thực tế phụ thuộc hoàn toàn vào nhân sự vận hành/leader).
+*   **Khôi phục (Rollback)**: Thực hiện bằng `git revert` và để ArgoCD đồng bộ tự động thay vì thao tác `kubectl` thủ công.
+*   *Chi tiết báo cáo đo lường thực tế xem tại:* **[CI/CD & GitOps Performance Audit](docs/deployment/cicd-performance-audit.md)**.
 
 ---
 
@@ -182,11 +193,18 @@ Giao diện điều khiển tập trung hiển thị danh sách các pod đang c
 *   **[System Architecture](docs/architecture/system-architecture.md)**: Sơ đồ kiến trúc mạng, phân chia namespace, và cơ chế co giãn HPA.
 *   **[Architecture Decision Records (ADR)](docs/architecture/adr/README.md)**: Nhật ký quyết định kiến trúc của dự án.
 *   **[GitOps & CI/CD Workflow](docs/deployment/gitops-workflow.md)**: Quy trình CI/CD từ code push đến đồng bộ ArgoCD.
+*   **[CI/CD & GitOps Performance Audit](docs/deployment/cicd-performance-audit.md)**: Báo cáo đo lường, phân tích hiệu năng CI/CD và so sánh DORA metrics.
 *   **[Zero-Downtime Strategy](docs/deployment/zero-downtime-strategy.md)**: Thiết lập RollingUpdate, Liveness/Readiness probes và HPA.
 *   **[Disaster Recovery & Backups](docs/operations/disaster-recovery.md)**: Cấu hình Velero, snapshot etcd và quy trình khôi phục.
 *   **[Cloudflare Zero Trust Access](docs/security/cloudflare-zero-trust.md)**: Bảo vệ hệ thống thông qua Cloudflare Access và OTP.
+*   **[Secrets Management](docs/security/secrets-management.md)**: Hướng dẫn quản lý và mã hóa dữ liệu nhạy cảm bằng Sealed Secrets.
+*   **[Monitoring & Dashboards](docs/operations/monitoring-dashboards.md)**: Giám sát tài nguyên hệ thống và cấu hình các cảnh báo Prometheus/Grafana.
 *   **[Smoke Test Strategy](docs/testing/smoke-test-strategy.md)**: Nội dung script smoke test và phân tích các bước kiểm thử.
+*   **[Kubernetes Incident Playbook](docs/troubleshooting/k8s_incidents.md)**: Nhật ký xử lý sự cố hạ tầng thực tế (Velero, OOM, Trivy CPU Spike, JWT secret rotation).
 *   **[Local Development Onboarding](docs/onboarding/local-development.md)**: Hướng dẫn cài đặt môi trường chạy local, SSH Config, và cấu hình `.env`.
+*   **[Trivy Operator Setup](trivy-operator/Readme.md)**: Tài liệu hướng dẫn triển khai Trivy Operator trên cụm Kubernetes nội bộ.
+*   **[Uptime Kuma Service](infra/monitoring/uptime-kuma/)**: Cấu hình và manifests triển khai dịch vụ giám sát trạng thái Uptime Kuma.
+
 
 ---
 *Dự án được duy trì bởi **Lưu Đình Mác** (luumac2801@gmail.com).*

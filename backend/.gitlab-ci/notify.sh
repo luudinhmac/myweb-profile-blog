@@ -9,14 +9,13 @@ USER_NAME=${GITLAB_USER_NAME:-"Unknown"}
 PROJECT_NAME=${CI_PROJECT_NAME:-"Portfolio"}
 JOB_NAME=${CI_JOB_NAME:-"Job"}
 PIPELINE_URL=${CI_PIPELINE_URL}
+JOB_URL=${CI_JOB_URL}
 COMMIT_MSG=${CI_COMMIT_MESSAGE:-"No message"}
 
 # Calculate Job and Pipeline Durations
 JOB_DURATION_TEXT="N/A"
 if [ -n "$CI_JOB_STARTED_AT" ]; then
-    # Strip Z and T to get simple format YYYY-MM-DD HH:MM:SS
     CLEANED_DATE=$(echo "$CI_JOB_STARTED_AT" | sed 's/Z//' | sed 's/T/ /')
-    # Use -u to parse in UTC
     START_EPOCH=$(date -u -d "$CLEANED_DATE" +%s 2>/dev/null)
     if [ -z "$START_EPOCH" ]; then
         START_EPOCH=$(TZ=UTC date -d "$CLEANED_DATE" +%s 2>/dev/null)
@@ -36,9 +35,7 @@ fi
 
 PIPELINE_DURATION_TEXT="N/A"
 if [ -n "$CI_PIPELINE_CREATED_AT" ]; then
-    # Strip Z and T to get simple format YYYY-MM-DD HH:MM:SS
     CLEANED_DATE=$(echo "$CI_PIPELINE_CREATED_AT" | sed 's/Z//' | sed 's/T/ /')
-    # Use -u to parse in UTC
     PIPE_START_EPOCH=$(date -u -d "$CLEANED_DATE" +%s 2>/dev/null)
     if [ -z "$PIPE_START_EPOCH" ]; then
         PIPE_START_EPOCH=$(TZ=UTC date -d "$CLEANED_DATE" +%s 2>/dev/null)
@@ -81,22 +78,82 @@ if ! command -v curl >/dev/null 2>&1; then
     fi
 fi
 
-# Debugging
-echo "--- Notification Debug ---"
-echo "Project: $PROJECT_NAME, Job: $JOB_NAME, Status: $STATUS"
-if [ -z "$TELEGRAM_BOT_TOKEN" ]; then echo "⚠️ TELEGRAM_BOT_TOKEN is missing"; else echo "✅ TELEGRAM_BOT_TOKEN is set"; fi
-if [ -z "$TELEGRAM_CHAT_ID" ]; then echo "⚠️ TELEGRAM_CHAT_ID is missing"; else echo "✅ TELEGRAM_CHAT_ID is set"; fi
-if [ -z "$TEAMS_WEBHOOK_URL" ]; then echo "⚠️ TEAMS_WEBHOOK_URL is missing"; else echo "✅ TEAMS_WEBHOOK_URL is set"; fi
-echo "--------------------------"
-
 # Escape for JSON
 ESC_COMMIT_MSG=$(echo "$COMMIT_MSG" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
 ESC_USER_NAME=$(echo "$USER_NAME" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
-# Determine Environment
+# Determine Environment & Badges
 ENV_TEXT="staging"
+ENV_BADGE="🟡 Staging"
 if [ -n "$CI_COMMIT_TAG" ]; then
     ENV_TEXT="production"
+    ENV_BADGE="🟢 Production"
+fi
+
+# Application URL
+APP_URL=""
+if [ "$PROJECT_NAME" = "portfolio-backend" ] || [ "$PROJECT_NAME" = "backend" ]; then
+    if [ "$ENV_TEXT" = "production" ]; then
+        APP_URL="https://api.luumac.io.vn"
+    else
+        APP_URL="https://api-staging.luumac.io.vn"
+    fi
+else
+    if [ "$ENV_TEXT" = "production" ]; then
+        APP_URL="https://blog.luumac.io.vn"
+    else
+        APP_URL="https://staging.luumac.io.vn"
+    fi
+fi
+
+# Check for Rollback
+IS_ROLLBACK=0
+if echo "$JOB_NAME" | grep -iq "rollback" || [ "$TYPE" = "rollback" ]; then
+    IS_ROLLBACK=1
+fi
+
+FAILED_VERSION="N/A"
+ROLLBACK_TO="N/A"
+if [ $IS_ROLLBACK -eq 1 ] && [ -f "rollback.env" ]; then
+    # Load rollback versions
+    FAILED_VERSION=$(grep "FAILED_VERSION=" rollback.env | cut -d'=' -f2)
+    ROLLBACK_TO=$(grep "ROLLBACK_TO=" rollback.env | cut -d'=' -f2)
+fi
+
+# Smoke Test parsing
+SMOKE_FAILED_STEP=""
+SMOKE_FAILED_TITLE=""
+SMOKE_FAILED_REASON=""
+SMOKE_SUMMARY=""
+if [ -f "smoke_result.txt" ]; then
+    SMOKE_STATUS=$(grep "status=" smoke_result.txt | cut -d'=' -f2)
+    if [ "$SMOKE_STATUS" != "success" ]; then
+        SMOKE_FAILED_STEP=$(grep "failed_step=" smoke_result.txt | cut -d'=' -f2)
+        SMOKE_FAILED_TITLE=$(grep "failed_title=" smoke_result.txt | cut -d'=' -f2)
+        SMOKE_FAILED_REASON=$(grep "failed_reason=" smoke_result.txt | cut -d'=' -f2)
+    fi
+fi
+
+if [ -n "$SMOKE_FAILED_STEP" ]; then
+    S1="✅"; S2="✅"; S3="✅"; S4="✅"; S5="✅"; S6="✅"; S7="✅"
+    if [ "$SMOKE_FAILED_STEP" -eq 1 ]; then S1="❌"; S2="➖"; S3="➖"; S4="➖"; S5="➖"; S6="➖"; S7="➖"; fi
+    if [ "$SMOKE_FAILED_STEP" -eq 2 ]; then S2="❌"; S3="➖"; S4="➖"; S5="➖"; S6="➖"; S7="➖"; fi
+    if [ "$SMOKE_FAILED_STEP" -eq 3 ]; then S3="❌"; S4="➖"; S5="➖"; S6="➖"; S7="➖"; fi
+    if [ "$SMOKE_FAILED_STEP" -eq 4 ]; then S4="❌"; S5="➖"; S6="➖"; S7="➖"; fi
+    if [ "$SMOKE_FAILED_STEP" -eq 5 ]; then S5="❌"; S6="➖"; S7="➖"; fi
+    if [ "$SMOKE_FAILED_STEP" -eq 6 ]; then S6="❌"; S7="➖"; fi
+    if [ "$SMOKE_FAILED_STEP" -eq 7 ]; then S7="❌"; fi
+    
+    SMOKE_SUMMARY="• Step 1 (Health): ${S1}%0A• Step 2 (Categories): ${S2}%0A• Step 3 (Posts): ${S3}%0A• Step 4 (Auth Restriction): ${S4}%0A• Step 5 (Register): ${S5}%0A• Step 6 (Login): ${S6}%0A• Step 7 (Profile): ${S7}"
+    SMOKE_SUMMARY_TEAMS="• Step 1 (Health): ${S1}\n• Step 2 (Categories): ${S2}\n• Step 3 (Posts): ${S3}\n• Step 4 (Auth Restriction): ${S4}\n• Step 5 (Register): ${S5}\n• Step 6 (Login): ${S6}\n• Step 7 (Profile): ${S7}"
+elif [ "$STATUS" = "success" ] && [ "$TYPE" = "post-deploy" ]; then
+    SMOKE_SUMMARY="• Step 1 (Health): ✅%0A• Step 2 (Categories): ✅%0A• Step 3 (Posts): ✅%0A• Step 4 (Auth Restriction): ✅%0A• Step 5 (Register): ✅%0A• Step 6 (Login): ✅%0A• Step 7 (Profile): ✅"
+    SMOKE_SUMMARY_TEAMS="• Step 1 (Health): ✅\n• Step 2 (Categories): ✅\n• Step 3 (Posts): ✅\n• Step 4 (Auth Restriction): ✅\n• Step 5 (Register): ✅\n• Step 6 (Login): ✅\n• Step 7 (Profile): ✅"
+fi
+
+IMAGE_TAG="dev-${CI_COMMIT_SHORT_SHA}"
+if [ -n "$CI_COMMIT_TAG" ]; then
+    IMAGE_TAG="${CI_COMMIT_TAG}"
 fi
 
 # Completed time
@@ -110,52 +167,66 @@ elif [ -n "$CI_OPEN_MERGE_REQUESTS" ]; then
     MR_IID=$(echo "$CI_OPEN_MERGE_REQUESTS" | cut -d'!' -f2 | cut -d',' -f1)
 fi
 
-# Branch or Tag info
-BRANCH_OR_VERSION_TITLE="Branch"
-BRANCH_OR_VERSION_VALUE="${CI_COMMIT_BRANCH}"
-if [ -n "$CI_COMMIT_TAG" ]; then
-    BRANCH_OR_VERSION_TITLE="Version"
-    BRANCH_OR_VERSION_VALUE="${CI_COMMIT_TAG}"
-fi
-
-TEAMS_MR_FACT=""
-if [ -n "$MR_IID" ]; then
-    TEAMS_MR_FACT=", { \"title\": \"Merge Request:\", \"value\": \"[!${MR_IID}](${CI_PROJECT_URL}/-/merge_requests/${MR_IID})\" }"
-fi
-
-ICON="✅"
-STATUS_TEXT="THÀNH CÔNG"
-if [ "$STATUS" = "failed" ]; then
+# Build Message Headers & Icons
+if [ "$STATUS" = "success" ] || [ "$STATUS" = "successful" ]; then
+    if [ $IS_ROLLBACK -eq 1 ]; then
+        ICON="⚠️"
+        TITLE="AUTO ROLLBACK COMPLETED"
+        TEAMS_COLOR="E67E22" # Orange
+    else
+        ICON="🟢"
+        TITLE="DEPLOYMENT SUCCESS"
+        TEAMS_COLOR="2ECC71" # Green
+    fi
+else
     ICON="❌"
-    STATUS_TEXT="THẤT BẠI"
-elif [ "$STATUS" = "canceled" ]; then
-    ICON="⚠️"
-    STATUS_TEXT="BỊ HỦY"
+    if [ $IS_ROLLBACK -eq 1 ]; then
+        TITLE="AUTO ROLLBACK FAILED"
+    else
+        TITLE="DEPLOYMENT FAILED"
+    fi
+    TEAMS_COLOR="E74C3C" # Red
 fi
 
 # Telegram Notification
-TELEGRAM_MSG="<b>${ICON} CI/CD PIPELINE ${STATUS_TEXT}</b>%0A%0A"
+TELEGRAM_MSG="<b>${ICON} ${TITLE}</b>%0A%0A"
 TELEGRAM_MSG="${TELEGRAM_MSG}📦 <b>Dự án:</b> ${PROJECT_NAME}%0A"
-TELEGRAM_MSG="${TELEGRAM_MSG}🌍 <b>Môi trường:</b> ${ENV_TEXT}%0A%0A"
+TELEGRAM_MSG="${TELEGRAM_MSG}🌍 <b>Môi trường:</b> ${ENV_BADGE}%0A"
+
+if [ $IS_ROLLBACK -eq 1 ]; then
+    TELEGRAM_MSG="${TELEGRAM_MSG}🔴 <b>Failed Version:</b> <code>${FAILED_VERSION}</code>%0A"
+    TELEGRAM_MSG="${TELEGRAM_MSG}🔄 <b>Rollback To:</b> <code>${ROLLBACK_TO}</code>%0A"
+    TELEGRAM_MSG="${TELEGRAM_MSG}⏱ <b>Thời gian Rollback:</b> ${JOB_DURATION_TEXT}%0A%0A"
+else
+    TELEGRAM_MSG="${TELEGRAM_MSG}🔖 <b>Version:</b> <code>${IMAGE_TAG}</code>%0A"
+    TELEGRAM_MSG="${TELEGRAM_MSG}📝 <b>Commit:</b> ${ESC_COMMIT_MSG}%0A"
+    TELEGRAM_MSG="${TELEGRAM_MSG}⏱ <b>Thời gian Pipeline:</b> ${PIPELINE_DURATION_TEXT}%0A"
+    TELEGRAM_MSG="${TELEGRAM_MSG}⚡ <b>Thời gian Job:</b> ${JOB_DURATION_TEXT}%0A"
+    if [ "$STATUS" = "success" ]; then
+        TELEGRAM_MSG="${TELEGRAM_MSG}💻 <b>Application:</b> <a href='${APP_URL}'>${APP_URL}</a>%0A"
+    fi
+    TELEGRAM_MSG="${TELEGRAM_MSG}%0A"
+fi
+
+if [ -n "$SMOKE_FAILED_STEP" ]; then
+    TELEGRAM_MSG="${TELEGRAM_MSG}🚫 <b>Failed Step:</b> Step ${SMOKE_FAILED_STEP} - ${SMOKE_FAILED_TITLE}%0A"
+    TELEGRAM_MSG="${TELEGRAM_MSG}⚠️ <b>Reason:</b> <code>${SMOKE_FAILED_REASON}</code>%0A%0A"
+fi
+
+if [ -n "$SMOKE_SUMMARY" ]; then
+    TELEGRAM_MSG="${TELEGRAM_MSG}📊 <b>Smoke Test Summary:</b>%0A${SMOKE_SUMMARY}%0A%0A"
+fi
+
 TELEGRAM_MSG="${TELEGRAM_MSG}👤 <b>Người thực hiện:</b> ${ESC_USER_NAME}%0A"
 TELEGRAM_MSG="${TELEGRAM_MSG}🕒 <b>Hoàn thành lúc:</b> ${COMPLETED_AT}%0A%0A"
-TELEGRAM_MSG="${TELEGRAM_MSG}🔄 <b>Tiến trình:</b>%0A"
-TELEGRAM_MSG="${TELEGRAM_MSG}• Stage: ${TYPE}%0A"
-TELEGRAM_MSG="${TELEGRAM_MSG}• Job: ${JOB_NAME}%0A%0A"
-if [ -n "$CI_COMMIT_TAG" ]; then
-    TELEGRAM_MSG="${TELEGRAM_MSG}🔖 <b>Version:</b> ${CI_COMMIT_TAG}%0A"
-else
-    TELEGRAM_MSG="${TELEGRAM_MSG}🌿 <b>Branch:</b> ${CI_COMMIT_BRANCH}%0A"
-fi
-TELEGRAM_MSG="${TELEGRAM_MSG}🔖 <b>Commit SHA:</b> ${CI_COMMIT_SHORT_SHA}%0A%0A"
-TELEGRAM_MSG="${TELEGRAM_MSG}⏱ <b>Thời gian Pipeline:</b> ${PIPELINE_DURATION_TEXT}%0A"
-TELEGRAM_MSG="${TELEGRAM_MSG}⚡ <b>Thời gian Job:</b> ${JOB_DURATION_TEXT}%0A%0A"
+
 if [ -n "$MR_IID" ]; then
     TELEGRAM_MSG="${TELEGRAM_MSG}🔗 <b>Merge Request:</b> <a href='${CI_PROJECT_URL}/-/merge_requests/${MR_IID}'>!${MR_IID}</a>%0A"
 fi
-TELEGRAM_MSG="${TELEGRAM_MSG}🔗 <b>Pipeline:</b> <a href='${PIPELINE_URL}'>#${CI_PIPELINE_ID}</a>"
+TELEGRAM_MSG="${TELEGRAM_MSG}🔗 <b>Pipeline:</b> <a href='${PIPELINE_URL}'>#${CI_PIPELINE_ID}</a>%0A"
+TELEGRAM_MSG="${TELEGRAM_MSG}🔗 <b>View Job:</b> <a href='${JOB_URL}'>#${CI_JOB_ID}</a>"
 
-if { [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; } && [ -f "$LOG_FILE" ]; then
+if { [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; } && [ -f "$LOG_FILE" ] && [ -z "$SMOKE_FAILED_STEP" ]; then
     LOG_TAIL=$(tail -n 15 "$LOG_FILE" | sed "s/$(printf '\033')\[[0-9;]*[a-zA-Z]//g" | sed 's/<[^>]*>//g' | sed 's/&/\&amp;/g' | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')
     TELEGRAM_MSG="${TELEGRAM_MSG}%0A%0A📑 <b>Log lỗi:</b>%0A<code>${LOG_TAIL}</code>"
 fi
@@ -180,7 +251,7 @@ if [ ! -z "$TEAMS_WEBHOOK_URL" ]; then
     echo "Sending to MS Teams (Adaptive Card)..."
     
     LOG_CONTENT=""
-    if { [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; } && [ -f "$LOG_FILE" ]; then
+    if { [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; } && [ -f "$LOG_FILE" ] && [ -z "$SMOKE_FAILED_STEP" ]; then
         LOG_TAIL=$(tail -n 15 "$LOG_FILE" | sed "s/$(printf '\033')\[[0-9;]*[a-zA-Z]//g" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
         LOG_CONTENT="**Log lỗi:**\n\n${LOG_TAIL}"
     fi
@@ -188,6 +259,44 @@ if [ ! -z "$TEAMS_WEBHOOK_URL" ]; then
     TRIVY_TEAMS_CONTENT=""
     if [ -f "trivy_summary.txt" ]; then
         TRIVY_TEAMS_CONTENT=$(cat trivy_summary.txt | sed 's/<b>/**/g' | sed 's/<\/b>/**/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | tr -d '\r')
+    fi
+
+    # Build adaptive card facts dynamically
+    FACTS="{\"title\": \"Dự án:\", \"value\": \"${PROJECT_NAME}\"}, {\"title\": \"Môi trường:\", \"value\": \"${ENV_BADGE}\"}"
+    if [ $IS_ROLLBACK -eq 1 ]; then
+        FACTS="${FACTS}, {\"title\": \"Failed Version:\", \"value\": \"${FAILED_VERSION}\"}"
+        FACTS="${FACTS}, {\"title\": \"Rollback To:\", \"value\": \"${ROLLBACK_TO}\"}"
+        FACTS="${FACTS}, {\"title\": \"Thời gian Rollback:\", \"value\": \"${JOB_DURATION_TEXT}\"}"
+    else
+        FACTS="${FACTS}, {\"title\": \"Version:\", \"value\": \"${IMAGE_TAG}\"}"
+        FACTS="${FACTS}, {\"title\": \"Commit:\", \"value\": \"${ESC_COMMIT_MSG}\"}"
+        FACTS="${FACTS}, {\"title\": \"Thời gian Pipeline:\", \"value\": \"${PIPELINE_DURATION_TEXT}\"}"
+        FACTS="${FACTS}, {\"title\": \"Thời gian Job:\", \"value\": \"${JOB_DURATION_TEXT}\"}"
+        if [ "$STATUS" = "success" ]; then
+            FACTS="${FACTS}, {\"title\": \"Application:\", \"value\": \"[${APP_URL}](${APP_URL})\"}"
+        fi
+    fi
+    FACTS="${FACTS}, {\"title\": \"Người thực hiện:\", \"value\": \"${ESC_USER_NAME}\"}"
+    FACTS="${FACTS}, {\"title\": \"Hoàn thành lúc:\", \"value\": \"${COMPLETED_AT}\"}"
+    
+    if [ -n "$MR_IID" ]; then
+        FACTS="${FACTS}, {\"title\": \"Merge Request:\", \"value\": \"[!${MR_IID}](${CI_PROJECT_URL}/-/merge_requests/${MR_IID})\"}"
+    fi
+
+    SMOKE_TEXT_BLOCK=""
+    if [ -n "$SMOKE_FAILED_STEP" ]; then
+        SMOKE_TEXT_BLOCK=", {\"type\": \"TextBlock\", \"text\": \"**Failed Step:** Step ${SMOKE_FAILED_STEP} - ${SMOKE_FAILED_TITLE}\\n**Reason:** ${SMOKE_FAILED_REASON}\", \"color\": \"Attention\", \"wrap\": true}"
+    fi
+    
+    if [ -n "$SMOKE_SUMMARY_TEAMS" ]; then
+        ESC_SMOKE_SUMMARY=$(echo "$SMOKE_SUMMARY_TEAMS" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+        SMOKE_TEXT_BLOCK="${SMOKE_TEXT_BLOCK}, {\"type\": \"TextBlock\", \"text\": \"**Smoke Test Summary:**\\n${ESC_SMOKE_SUMMARY}\", \"wrap\": true}"
+    fi
+
+    # Build action buttons
+    ACTIONS="{\"type\": \"Action.OpenUrl\", \"title\": \"Xem Pipeline\", \"url\": \"${PIPELINE_URL}\"}, {\"type\": \"Action.OpenUrl\", \"title\": \"Xem Job\", \"url\": \"${JOB_URL}\"}"
+    if [ "$STATUS" = "success" ] && [ $IS_ROLLBACK -ne 1 ]; then
+        ACTIONS="{\"type\": \"Action.OpenUrl\", \"title\": \"Mở App\", \"url\": \"${APP_URL}\"}, ${ACTIONS}"
     fi
 
     PAYLOAD=$(cat <<EOF
@@ -203,7 +312,7 @@ if [ ! -z "$TEAMS_WEBHOOK_URL" ]; then
                         "type": "TextBlock",
                         "size": "Medium",
                         "weight": "Bolder",
-                        "text": "${ICON} CI/CD PIPELINE ${STATUS_TEXT}"
+                        "text": "${ICON} ${TITLE}"
                     },
                     {
                         "type": "TextBlock",
@@ -212,20 +321,9 @@ if [ ! -z "$TEAMS_WEBHOOK_URL" ]; then
                     },
                     {
                         "type": "FactSet",
-                        "facts": [
-                            { "title": "Dự án:", "value": "${PROJECT_NAME}" },
-                            { "title": "Môi trường:", "value": "${ENV_TEXT}" },
-                            { "title": "Người thực hiện:", "value": "${ESC_USER_NAME}" },
-                            { "title": "Hoàn thành lúc:", "value": "${COMPLETED_AT}" },
-                            { "title": "Stage:", "value": "${TYPE}" },
-                            { "title": "Job:", "value": "${JOB_NAME}" },
-                            { "title": "${BRANCH_OR_VERSION_TITLE}:", "value": "${BRANCH_OR_VERSION_VALUE}" },
-                            { "title": "Commit SHA:", "value": "${CI_COMMIT_SHORT_SHA}" },
-                            { "title": "Thời gian Pipeline:", "value": "${PIPELINE_DURATION_TEXT}" },
-                            { "title": "Thời gian Job:", "value": "${JOB_DURATION_TEXT}" }
-                            ${TEAMS_MR_FACT}
-                        ]
-                    },
+                        "facts": [ ${FACTS} ]
+                    }
+                    ${SMOKE_TEXT_BLOCK},
                     {
                         "type": "TextBlock",
                         "text": "${LOG_CONTENT}",
@@ -234,13 +332,7 @@ if [ ! -z "$TEAMS_WEBHOOK_URL" ]; then
                         "size": "Small"
                     }
                 ],
-                "actions": [
-                    {
-                        "type": "Action.OpenUrl",
-                        "title": "Xem Pipeline",
-                        "url": "${PIPELINE_URL}"
-                    }
-                ],
+                "actions": [ ${ACTIONS} ],
                 "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                 "version": "1.2"
             }

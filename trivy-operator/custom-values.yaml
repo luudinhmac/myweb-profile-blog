@@ -1,0 +1,30 @@
+operator:
+  # Limit the number of concurrent scan jobs to 5 to speed up scanning on local VM
+  scanJobsConcurrentLimit: 5
+
+# Resource limits for the operator pod itself (prevent CPU throttling)
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+trivy:
+  # Run scanning at full speed on dedicated local VM
+  slow: false
+  
+  # Resource limits for the scanner pods created by the operator
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+trivyOperator:
+  scanJobNodeSelector:
+    workload: scanner
+

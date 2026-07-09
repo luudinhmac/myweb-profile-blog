@@ -58,10 +58,7 @@ export class MonitoringService {
    */
   private async getCpuUsage(): Promise<number> {
     try {
-      if (
-        !process.env.NODE_ENV ||
-        process.env.NODE_ENV === 'development'
-      )
+      if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development')
         return 0;
 
       const cpus = os.cpus();

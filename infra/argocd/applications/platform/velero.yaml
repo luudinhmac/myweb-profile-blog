@@ -12,6 +12,8 @@ spec:
     helm:
       releaseName: velero
       values: |
+        nodeSelector:
+          kubernetes.io/hostname: k8s-prod
         configuration:
           backupStorageLocation:
             - name: default
@@ -23,7 +25,7 @@ spec:
                 s3Url: https://a8823974263cfbb734616640f1b9dd55.r2.cloudflarestorage.com
           # Default to using File System Backup (restic/kopia) for all PVs
           defaultVolumesToFsBackup: true
-          defaultRepoMaintainFrequency: "24h"
+          defaultRepoMaintainFrequency: "1h"
           extraArgs:
             - --maintenance-job-cpu-limit=500m
             - --maintenance-job-cpu-request=100m
