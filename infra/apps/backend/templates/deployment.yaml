@@ -27,6 +27,8 @@ spec:
       labels:
         {{- include "backend.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "backend.fullname" . }}-sa
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1001 # Hardened: Run as non-privileged service user
         fsGroup: 1001 # Ensure volume permissions match service user

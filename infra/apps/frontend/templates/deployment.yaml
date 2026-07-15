@@ -22,6 +22,8 @@ spec:
       labels:
         {{- include "frontend.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "frontend.fullname" . }}-sa
+      automountServiceAccountToken: false
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
