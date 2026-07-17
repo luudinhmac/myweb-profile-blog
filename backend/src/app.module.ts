@@ -27,6 +27,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { SetupModule } from './modules/setup/setup.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { CacheConfigModule } from './cache-config.module';
+import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
+import { AccessLogMiddleware } from './common/middleware/access-log.middleware';
 
 @Module({
   imports: [
@@ -77,6 +79,10 @@ export class AppModule {
     console.log('--- BACKEND STARTING: CACHE TOTALLY DISABLED (v3.0) ---');
   }
   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestContextMiddleware, AccessLogMiddleware)
+      .forRoutes('*');
+
     consumer
       .apply(StatsMiddleware)
       .forRoutes({ path: '*path', method: RequestMethod.ALL });
