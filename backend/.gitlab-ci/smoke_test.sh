@@ -72,6 +72,10 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
         STATUS=$(echo "$HEALTH_RESP" | jq -r '.status' 2>/dev/null | tr -d '\r' || true)
         DATABASE=$(echo "$HEALTH_RESP" | jq -r '.database' 2>/dev/null | tr -d '\r' || true)
         DEPLOYED_VERSION=$(echo "$HEALTH_RESP" | jq -r '.version' 2>/dev/null | tr -d '\r' || true)
+        REDIS_STATUS=$(echo "$HEALTH_RESP" | jq -r '.redis // "n/a"' 2>/dev/null | tr -d '\r' || true)
+        REDIS_ERROR=$(echo "$HEALTH_RESP" | jq -r '.redisError // empty' 2>/dev/null | tr -d '\r' || true)
+        STORAGE_STATUS=$(echo "$HEALTH_RESP" | jq -r '.storage // "n/a"' 2>/dev/null | tr -d '\r' || true)
+        STORAGE_ERROR=$(echo "$HEALTH_RESP" | jq -r '.storageError // empty' 2>/dev/null | tr -d '\r' || true)
         
         VERSION_MATCHED=1
         if [ -n "$EXPECTED_VERSION" ]; then
@@ -90,7 +94,9 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
             READY=1
             break
         else
-            echo "Service response not fully healthy/ready yet (status: $STATUS, database: $DATABASE, version: $DEPLOYED_VERSION)."
+            echo "Service response not fully healthy/ready yet (status: $STATUS, db: $DATABASE, redis: $REDIS_STATUS, storage: $STORAGE_STATUS, version: $DEPLOYED_VERSION)."
+            [ -n "$REDIS_ERROR" ] && echo "  Redis error: $REDIS_ERROR"
+            [ -n "$STORAGE_ERROR" ] && echo "  Storage error: $STORAGE_ERROR"
         fi
     else
         echo "Service is unreachable or timed out."
@@ -104,7 +110,7 @@ if [ $READY -ne 1 ]; then
     echo "Error: Service failed to become ready and match expected version within ${TIMEOUT_SECONDS} seconds."
     echo "failed_step=1" > smoke_result.txt
     echo "failed_title=Health Endpoint Check" >> smoke_result.txt
-    echo "failed_reason=Service response not fully healthy/ready (status: $STATUS, database: $DATABASE, version: $DEPLOYED_VERSION)" >> smoke_result.txt
+    echo "failed_reason=Service response not fully healthy/ready (status: $STATUS, db: $DATABASE, redis: $REDIS_STATUS, storage: $STORAGE_STATUS, version: $DEPLOYED_VERSION)" >> smoke_result.txt
     exit 1
 fi
 
@@ -143,7 +149,7 @@ if [ "$POSTS_STATUS" -ne 200 ]; then
     echo "failed_reason=HTTP Status: $POSTS_STATUS" >> smoke_result.txt
     exit 1
 fi
-if ! echo "$POSTS_BODY" | jq -e 'type == "object" and (has("data") or has("posts"))' >/dev/null 2>&1; then
+if ! echo "$POSTS_BODY" | jq -e 'type == "array" or (type == "object" and (has("items") or has("data") or has("posts") or (has("total") and has("page") and has("limit") and has("totalPages"))))' >/dev/null 2>&1; then
     echo "Posts response body is not valid JSON or missing expected structure! Response: $POSTS_BODY"
     echo "failed_step=3" > smoke_result.txt
     echo "failed_title=Public Posts Endpoint" >> smoke_result.txt
@@ -162,7 +168,7 @@ if [ "$POSTS_QUERY_STATUS" -ne 200 ]; then
     echo "failed_reason=HTTP Status: $POSTS_QUERY_STATUS" >> smoke_result.txt
     exit 1
 fi
-if ! echo "$POSTS_QUERY_BODY" | jq -e 'type == "object" and (has("data") or has("posts"))' >/dev/null 2>&1; then
+if ! echo "$POSTS_QUERY_BODY" | jq -e 'type == "array" or (type == "object" and (has("items") or has("data") or has("posts") or (has("total") and has("page") and has("limit") and has("totalPages"))))' >/dev/null 2>&1; then
     echo "Posts query response body is not valid JSON or missing expected structure! Response: $POSTS_QUERY_BODY"
     echo "failed_step=3" > smoke_result.txt
     echo "failed_title=Public Posts Endpoint (Query)" >> smoke_result.txt

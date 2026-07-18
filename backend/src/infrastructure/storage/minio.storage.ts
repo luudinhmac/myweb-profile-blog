@@ -100,4 +100,20 @@ export class MinioStorageService implements IStorageService, OnModuleInit {
 
     return `${protocol}://${endpoint}:${port}/${bucket}/${fileKey}`;
   }
+
+  async checkConnection(): Promise<{ status: string; error?: string }> {
+    if (this.config.storageType !== 'minio') {
+      return { status: 'local' };
+    }
+    try {
+      const bucket = this.config.minioBucket;
+      await this.minioClient.bucketExists(bucket);
+      return { status: 'connected' };
+    } catch (error) {
+      return {
+        status: 'disconnected',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
 }

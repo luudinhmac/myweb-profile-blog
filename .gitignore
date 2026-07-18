@@ -72,3 +72,5 @@ temp_cert.pem
 test_redis.js
 permission_support.md
 
+ssh-k8s-prod.ps1
+report.json

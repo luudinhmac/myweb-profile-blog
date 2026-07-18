@@ -5,7 +5,7 @@
 # ==============================================================================
 
 image:
-  tag: "dev-f9026225"
+  tag: "dev-4a6cca09"
 ingress:
   enabled: true
   issuer: letsencrypt-prod
@@ -26,7 +26,3 @@ env:
   tz: "Asia/Ho_Chi_Minh"
   nodeEnv: "production"
   internalApiUrl: "http://portfolio-backend-staging:3001/api/v1"
-
-nodeSelector:
-  kubernetes.io/hostname: worker-local-1
-

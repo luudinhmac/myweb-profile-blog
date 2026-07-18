@@ -26,6 +26,6 @@ import { InfrastructureConfigService } from '../config/config.service';
     LocalStorageService,
     MinioStorageService,
   ],
-  exports: [STORAGE_SERVICE, InfrastructureConfigService],
+  exports: [STORAGE_SERVICE, InfrastructureConfigService, MinioStorageService],
 })
 export class StorageModule {}

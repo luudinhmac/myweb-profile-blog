@@ -91,18 +91,29 @@ spec:
         - name: REDIS_PORT
           value: "6379"
         {{- end }}
+        startupProbe:
+          httpGet:
+            path: /api/v1/health/ready
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds | default 15 }}
+          periodSeconds: {{ .Values.startupProbe.periodSeconds | default 5 }}
+          failureThreshold: {{ .Values.startupProbe.failureThreshold | default 15 }}
         livenessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/v1/health/live
             port: {{ .Values.service.port }}
-          initialDelaySeconds: 15 # Allow Prisma initialization and DB connection warm-up
-          periodSeconds: 10
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds | default 15 }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds | default 10 }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds | default 5 }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold | default 5 }}
         readinessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/v1/health/ready
             port: {{ .Values.service.port }}
-          initialDelaySeconds: 15 # Ensure API is ready to serve traffic before joining Service
-          periodSeconds: 5
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds | default 15 }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds | default 5 }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds | default 5 }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold | default 5 }}
         volumeMounts:
         - name: uploads-storage
           mountPath: /app/uploads

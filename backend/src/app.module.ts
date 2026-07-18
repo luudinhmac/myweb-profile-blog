@@ -20,6 +20,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { StatsModule } from './modules/stats/stats.module';
 import { StatsMiddleware } from './modules/stats/stats.middleware';
 import { HealthController } from './health.controller';
+import { HealthService } from './health.service';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
@@ -68,6 +69,7 @@ import { AccessLogMiddleware } from './common/middleware/access-log.middleware';
   ],
   controllers: [HealthController],
   providers: [
+    HealthService,
     {
       provide: APP_GUARD,
       useClass: CustomThrottlerGuard,
@@ -81,7 +83,7 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(RequestContextMiddleware, AccessLogMiddleware)
-      .forRoutes('*');
+      .forRoutes({ path: '*path', method: RequestMethod.ALL });
 
     consumer
       .apply(StatsMiddleware)
