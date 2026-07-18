@@ -1,0 +1,27 @@
+# Description: ArgoCD Application manifest for the PostgreSQL staging database in K3s.
+# Defines the source repository, branch, value file, and destination namespace.
+# Last Updated: 2026-07-18
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: portfolio-postgres-staging-k3s
+  namespace: argocd
+spec:
+  project: apps-project
+  source:
+    repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
+    targetRevision: feature/staging-k3s
+    path: apps/postgres
+    helm:
+      valueFiles:
+        - /environments/staging/postgres-values-k3s.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: portfolio
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

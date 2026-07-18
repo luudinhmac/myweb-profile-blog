@@ -1,0 +1,156 @@
+# Description: Ansible tasks for installing and configuring K3s, ArgoCD, and Sealed Secrets.
+# Environment: Staging K3s
+# Last Updated: 2026-07-18
+
+---
+- name: Check if K3s is already installed
+  command: which k3s
+  register: k3s_check
+  failed_when: false
+  changed_when: false
+
+- name: Install K3s using official script
+  shell: |
+    curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
+  when: k3s_check.rc != 0
+  environment:
+    INSTALL_K3S_EXEC: "--write-kubeconfig-mode 644"
+
+- name: Ensure .kube directory exists in operator home
+  file:
+    path: "{{ user_home }}/.kube"
+    state: directory
+    owner: "{{ ansible_operator_user }}"
+    group: "{{ ansible_operator_user }}"
+    mode: '0755'
+
+- name: Copy K3s kubeconfig to user home
+  copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "{{ user_home }}/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_operator_user }}"
+    group: "{{ ansible_operator_user }}"
+    mode: '0600'
+
+- name: Update server address in local kubeconfig
+  replace:
+    path: "{{ user_home }}/.kube/config"
+    regexp: '127\.0\.0\.1'
+    replace: "{{ ansible_host }}"
+
+- name: Wait for K3s node to be Ready
+  shell: kubectl get nodes | grep -i Ready
+  register: node_status
+  until: node_status.rc == 0
+  retries: 10
+  delay: 5
+  changed_when: false
+
+- name: Install Longhorn host dependencies (Debian/Ubuntu)
+  apt:
+    name:
+      - open-iscsi
+      - nfs-common
+    state: present
+    update_cache: yes
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Enable and start iscsid service
+  systemd:
+    name: iscsid
+    enabled: yes
+    state: started
+
+- name: Add Longhorn Helm repo on K3s node
+  become: yes
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    helm repo add longhorn https://charts.longhorn.io
+    helm repo update
+  changed_when: true
+
+- name: Deploy Longhorn Storage System via Helm
+  become: yes
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    helm upgrade --install longhorn longhorn/longhorn \
+      --namespace longhorn-system \
+      --create-namespace \
+      --set defaultSettings.defaultReplicaCount=1 \
+      --set defaultSettings.replicaAutoBalance=disabled \
+      --set longhornManager.resources.limits.cpu=300m \
+      --set longhornManager.resources.limits.memory=512Mi \
+      --set longhornManager.resources.requests.cpu=100m \
+      --set longhornManager.resources.requests.memory=256Mi \
+      --set longhornDriver.resources.limits.cpu=200m \
+      --set longhornDriver.resources.limits.memory=256Mi \
+      --set longhornDriver.resources.requests.cpu=50m \
+      --set longhornDriver.resources.requests.memory=128Mi \
+      --wait --timeout 10m
+  changed_when: true
+
+- name: Create namespaces
+  command: kubectl create namespace "{{ item }}"
+  failed_when: false
+  loop:
+    - "{{ k8s_namespace }}"
+    - argocd
+
+- name: Add Helm repos on K3s node
+  become: yes
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    helm repo add argo https://argoproj.github.io/argo-helm
+    helm repo add sealed-secrets https://bitnami.github.io/sealed-secrets
+    helm repo update
+  changed_when: true
+
+- name: Deploy ArgoCD via Helm
+  become: yes
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    helm upgrade --install argocd argo/argo-cd \
+      --namespace argocd \
+      --set server.service.type=ClusterIP \
+      --set "server.extraArgs={--insecure}" \
+      --wait
+  changed_when: true
+
+- name: Deploy Sealed Secrets Controller via Helm
+  become: yes
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    helm upgrade --install sealed-secrets sealed-secrets/sealed-secrets \
+      --namespace kube-system \
+      --wait
+  changed_when: true
+
+- name: Create Ingress for ArgoCD Server
+  become: yes
+  become_user: "{{ ansible_operator_user }}"
+  shell: |
+    cat <<EOF | kubectl apply -f -
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: argocd-server-ingress
+      namespace: argocd
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+    spec:
+      ingressClassName: traefik
+      rules:
+      - host: argocd-k3s.luumac.io.vn
+        http:
+          paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+    EOF
+  changed_when: true

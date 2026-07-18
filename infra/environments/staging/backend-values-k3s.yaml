@@ -1,0 +1,63 @@
+# ==============================================================================
+# ENVIRONMENT: Staging K3s (Backend)
+# PURPOSE: Integration testing and sandbox preview
+# UPDATE POLICY: Automated CI/CD image tag updates
+# ==============================================================================
+
+replicaCount: 1
+image:
+  tag: "dev-4b1a5bf7"
+ingress:
+  enabled: true
+  rateLimit:
+    enabled: true
+    average: 100
+    burst: 50
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: portfolio-portfolio-backend-staging-k3s-rate-limit@kubernetescrd
+  hosts:
+    - host: api-k3s.luumac.io.vn
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: portfolio-backend-staging-k3s-tls
+      hosts:
+        - api-k3s.luumac.io.vn
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+persistence:
+  storageClassName: "longhorn"
+env:
+  tz: "Asia/Ho_Chi_Minh"
+  port: "3001"
+sealedSecret:
+  enabled: true
+  encryptedData:
+    DATABASE_URL: "AgB6/4mKeoPix0PSRXdIPVG/mK3WO7P1y3g8ZKtyH4ykUYRx4crwbzqeEv/p5+svFGSnnKLkDCBz7hPbRK37NYLhhJpbIEE+ukAkwiX8W7vkUGV8t9b6oSe/O6HMcrn02LFYv3AIiyx44IndYVCw8bd8vr3U/9SnvriWFOSYbKT8dDS5Ml/3riPHqAH8/QtCWO6lcf9TivBHc34tqUKdV6gicaGVaSzlTAZRy/kqz0Y+vqQR2LtbusiGohMmGhUkDqRq8zUSsd1/9VrtMbZTXiSdEPAEtKWjb5TxJ3M4zvx5/CIRYEIzmP2txPmOBJj+nubTJXyrTHRAWbqn8Smjj197PlWYNE41bLls+dwX0YV4tbEhZO/he7sBvP86tf949qJN+wS3O48cuXJdk0SfcSz6Jvf33EjKWp1Ju33MWTpbRcYuFbsOLlzbsze4ykF8Y0wbyNYyt/WnoHriURYMU7osXF6xJEHh4QAtISJdwXItpGFSPI4fYX+SXQtm3Q9FoD6KPkkTRxU16qm3fwqUncaFllztxV0pL1DI1OEfJD0/JzwTqPNbSxS+sUdrf7Bk1zgZ4xPWEMoyc75KHPON4314qtuKVtb3jp/8jnek0H25NGpXf3XY749fJ7Np/56K0sLl8FovfMkfqJI5Ur292G7SLty2LDH1U77Wm4x13t3vUQDuMxr2SOs1OtODqnIvVIANtYa/BQBxLeJD9V92nfrABQ9+by7GV6Z++zVuIhXkVgivOZHY4kSIa31+MfX7KJYZFz/rBpOR4UWMUsX196pl7RutngBkWLI7ab8+uSzKiAsiH9IRgy3939sp9pmFl9z6oVs="
+    JWT_SECRET: "AgBDKD0iG17zWPa7vGcF6b/Yy4S/DdjOGcnRMsiZJ6AaaLT4nWhoeA+B+T31t9I79BEsA3vEDDPJmlperqphXZFhkFYdLlFp4PI+SaKrjx+60Nh9UIDbwomuaB7rVl4NO8GUjALiML43IZ+nUncW+YuPhuxSurNjmImgOa3Pxm+H9jGely45qFom4L7jDNTTzByxjjGqABmnqS5eKmQjAsNAmnsbI9DjWh/yaUGar92tzP0UfPYeHNjFR1RnYgmPYuUtqn8Keay4SS9ZknzSsNEXHtI0qZPla2hnZmbnVHoOE2SybYfvf5QF0fE/gSfxlH7qBWSIocaBXFe5a3MhdelVZVEhGZsWVycpp0KxvZjNP0mvc37xheaxDfdcX1hr51APVNmENlwcSLiduNN4tqHCMXAdHY8jjx8qISgiGRrVeIrj8dWJvPI5XVY4m7op7TY0cXs9haUbka7DrXhIKuGqcCb+KEa+vtbipjhLfR686J/c4LQX/Fb2j9w2N1+GU0xAGCyCpwT/2VZCLJNJiTFG/1ECkJ3xlqD56VmaktEvIRFRFwbYGmpoV9rpdlrSLz/PqW03jdx3GbKhN4UjkVFdoJ7frWipwM3AzV7fUuA9LgeTOsfkV9atpxYzUMo9banIGiw4m9bg5VYigTmkPbbJINmf2U2+nQB9nDfOyMLFPIBs8b9LFMopFqM2/QeAe7qwLk2KfrJwLKw3DlhkJvLorlZ+qXwiqsL/0aYHb2CfDI3+vWhXZ7gDdM7lNQ=="
+    STORAGE_TYPE: "AgAsrVwpBcUxHphdMXlg6V7xvdq+WeALg4HAGY8g5LVuX1stBZUu14sn0oLFZUnyKyR0kGqhFEMXA6XJrSPS5EapTEN3Yaaa2aT380N46GNgnya8o6QL4apYlljkiYPsVmXHcv9HN2xIue1/jeN79O1ed9mwlGdcfrca5IccxOdqh0FHTujmyjzOdfwk5WdLvq3YXDIQSTspCF0VOzKvA/PyCMi1HSOvMc6K1QgrMO8rSh5TC6uYIUYvdG+a+d7s8DjT6g5XAQYs0vqKezHyj2WrA8Hd0YUaZctW2GZYwUAyCC4USyZrLXPCop5+6cj2hlP6PyZtPUGn8QrB6FWYa/gZMVYZSkY5YjlbTAVg+Hbz5fivLnhXfdH5TMMHa3QV2/pfcPYsyp1R7OkL8F96uuluFhoOgM2lCg6gYKYReA1zoD8FFw6nDkePS2s27JjPRcBjAX2Gku2oGqTSQdonCfMPHlNVGLERoYJB/Qi0bi5DRGtzAP4sRhW7M2KloWAt6RZwNseZHlfIJbmVDvWw0yIqNS6Lem2zR5QJLsNc80kc/ehF06rUiiLVuGLWlmPCGshVkZXKOiGy0QYPQgCjwlkyv59DU1v93+UWl5I1DiJ6scr4P2Cw9eQWeuI0b9azbptHrxkr8loo0MfF6HAo/bEYqt68Fgsi0I2Baodkmas8bYfAuDuVDcp6vdRywkFr/lArZuN0MA=="
+redis:
+  enabled: true
+  encryptedPassword: "AgB1G2WrnSb3z6FPzbcA6uvmwP8Js5FWbausWP0SHbcOTehDfBOhAd0L+DLfqvV7kWphUewaWW46wjRRMTfC9kxLTxRqNIZGgrwxa6c1+BGUGZlSBA+vELB3oeDztdxBDzmv+XPhvkBCk6zbsYo+1rnG9MGAAAwg+BWV1Oyw/itwlA6+0tX0D3bsQJEUkAyAIaKKuvF+05bInBD5ps+HDb84O6PVxR4CkpPs4fVZj5wPL21l/i9AsUoTcPziyiY5dRgnSosn4joFxRsP9cZqMh3HBU5hjfenRWQjtY1+cpI3VQ3pC5LQjRM3jOoCc2Hf5mN9u39PtVGIbwiK5t2GZqO4ijKrnce8/W9g6P43PMNXaGr5dyNqKbZcJMxkxvKQRADYq/fnGWLIqmRwbVGUbaDicBcIPVEMEVjZgfHzwF+W20qOXQh4jf05Au+KUcSCz1qAdsx1F/r30X8ug605vo/gSQgNfqyNucZ0DpkKIV06N7Wg23QPy1bkCi9KdgeScPfnPt0I48nnT0BDbWRXfC5AR//2vkNLgH77VuwFZYv1lEQfFSM9Un7jmPooUrzxIiUiDaP+fbEmtXMCtTqePXNUAyhmL/Ro/alV5G+CsdD4MEImQCisx3eq1b0hC/F5xjjxI2YuwoN8AtRTjIRr5n6uyzT0Nr3sBsOq477JZogZN9rwIJemhSg/P9EXKrTLNM9NvDTQazbrinfi7nUOsK2E"
+startupProbe:
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  failureThreshold: 15
+livenessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 15
+  timeoutSeconds: 2
+  failureThreshold: 3
+readinessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3

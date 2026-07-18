@@ -1,0 +1,31 @@
+# Description: Group variables for the new K3s Staging environment.
+# Environment: Staging K3s
+
+env: staging-k3s
+is_production: false
+ansible_become_password: "admin"
+
+# K3s Node Roles
+k8s_role: master
+node_labels:
+  - env=staging-k3s
+  - role=master
+
+# Security & Network
+ssh_port: 22
+fail2ban_enabled: false
+
+# Infrastructure Services
+traefik_enabled: true
+cert_manager_enabled: false # Cloudflare Tunnel handles SSL termination
+argo_cd_enabled: true
+
+# Project Configuration
+project_name: portfolio
+k8s_namespace: portfolio
+
+# SSH Configuration
+ansible_port: 22
+ansible_operator_user: macld
+user_home: "/home/{{ ansible_operator_user }}"
+ansible_ssh_key_path: "{{ user_home }}/.ssh/id_ed25519_ansible"

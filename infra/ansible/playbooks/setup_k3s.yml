@@ -1,0 +1,17 @@
+# Description: Ansible playbook to set up a K3s-based single-node cluster.
+# Orchestrates pre-check, common, and k3s roles.
+# Last Updated: 2026-07-18
+
+---
+- name: Setup K3s Cluster on Local Staging VM
+  hosts: staging_k3s
+  become: yes
+  vars_files:
+    - "../vars/secrets.yml"
+  roles:
+    - role: pre-check
+      tags: [pre-check, diagnostic]
+    - role: common
+      tags: [common, base]
+    - role: k3s
+      tags: [k3s, cluster]

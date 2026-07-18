@@ -1,0 +1,27 @@
+# ==============================================================================
+# ENVIRONMENT: Staging K3s (Frontend)
+# PURPOSE: Integration testing and sandbox preview
+# UPDATE POLICY: Automated CI/CD image tag updates
+# ==============================================================================
+
+image:
+  tag: "dev-4a6cca09"
+ingress:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: infra-infra-compress@kubernetescrd
+  host: web-k3s.luumac.io.vn
+  secretName: portfolio-frontend-staging-k3s-tls
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+env:
+  tz: "Asia/Ho_Chi_Minh"
+  nodeEnv: "production"
+  internalApiUrl: "http://portfolio-backend-staging-k3s:3001/api/v1"

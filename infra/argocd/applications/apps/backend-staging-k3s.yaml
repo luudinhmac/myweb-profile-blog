@@ -1,0 +1,27 @@
+# Description: ArgoCD Application manifest for the backend staging service in K3s.
+# Defines the source repository, branch, value file, and destination namespace.
+# Last Updated: 2026-07-18
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: portfolio-backend-staging-k3s
+  namespace: argocd
+spec:
+  project: apps-project
+  source:
+    repoURL: https://gitlab.com/portfolio-macld/portfolio-infratructure.git
+    targetRevision: feature/staging-k3s
+    path: apps/backend
+    helm:
+      valueFiles:
+        - /environments/staging/backend-values-k3s.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: portfolio
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
