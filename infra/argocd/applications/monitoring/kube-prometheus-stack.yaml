@@ -13,6 +13,8 @@ spec:
       releaseName: monitoring
       values: |
         grafana:
+          serviceMonitor:
+            enabled: false
           adminPassword: admin
           nodeSelector: {}
           affinity:
@@ -42,12 +44,20 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 10
             failureThreshold: 30
+            timeoutSeconds: 10
           readinessProbe:
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 30
+            timeoutSeconds: 10
 
         prometheus:
+          serviceMonitor:
+            selfMonitor: true
+            metricRelabelings:
+              - action: keep
+                sourceLabels: [__name__]
+                regex: 'prometheus_tsdb_.*|prometheus_engine_.*|prometheus_sd_.*|up'
           prometheusSpec:
             nodeSelector: {}
             affinity:
@@ -81,6 +91,8 @@ spec:
                 memory: 512Mi
 
         alertmanager:
+          serviceMonitor:
+            enabled: false
           alertmanagerSpec:
             nodeSelector: {}
             affinity:
@@ -150,6 +162,8 @@ spec:
                       {{ end }}
 
         prometheusOperator:
+          serviceMonitor:
+            enabled: false
           nodeSelector: {}
           affinity:
             nodeAffinity:
@@ -205,12 +219,28 @@ spec:
         # Disable control plane monitoring which is not needed on single-node VPS
         kubeEtcd:
           enabled: false
+          serviceMonitor:
+            enabled: false
         kubeControllerManager:
           enabled: false
+          serviceMonitor:
+            enabled: false
         kubeScheduler:
           enabled: false
+          serviceMonitor:
+            enabled: false
         kubeProxy:
           enabled: false
+          serviceMonitor:
+            enabled: false
+
+        kubeApiServer:
+          enabled: true
+          serviceMonitor:
+            metricRelabelings:
+              - action: keep
+                sourceLabels: [__name__]
+                regex: 'apiserver_request_total|apiserver_request_duration_seconds_.*|apiserver_current_inflight_requests|up'
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
