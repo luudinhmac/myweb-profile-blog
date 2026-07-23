@@ -28,7 +28,7 @@ Mặc dù thư mục này hiển thị toàn bộ các thành phần để thu�
     *   Chứa mã nguồn NestJS API, cấu hình ORM Prisma và mã nguồn migrations.
     *   Sở hữu pipeline CI/CD riêng để build/test/scan Docker image của backend.
 3.  **Infrastructure Repository ([`infra/`](infra))**:
-    *   Chứa toàn bộ mã nguồn cấu hình hạ tầng GitOps (Kubernetes manifests, Helm values.yaml cho Staging và Production), Ansible Playbook cấu hình hệ điều hành máy chủ và các cấu hình Cloudflare Tunnel.
+    *   Chứa mã nguồn hạ tầng tự động hóa Terraform (Cloudflare R2 Buckets, Argo Tunnel, Zero Trust Access), Kubernetes manifests, Helm values.yaml cho Staging và Production, Ansible Playbooks cấu hình máy chủ và cấu hình CI/CD.
     *   Đây là kho lưu trữ trung tâm mà ArgoCD lắng nghe để đồng bộ hóa trạng thái ứng dụng lên cụm Kubernetes.
 
 ---
@@ -154,6 +154,21 @@ Hệ thống GitOps giúp tăng tốc độ phát triển và giảm thiểu đ�
 
 ---
 
+## 🛠️ Tự Động Hóa Hạ Tầng Bằng Terraform (Infrastructure as Code - IaC)
+
+Toàn bộ hạ tầng điện toán đám mây Cloudflare của dự án được khai báo và quản lý hoàn toàn bằng **Terraform** theo kiến trúc **Modular & Môi trường phân tách** (Modular Architecture & Environment Separation):
+
+*   **Kiến trúc Modular ([`infra/terraform/modules/`](infra/terraform/modules))**:
+    *   **`cloudflare-r2`**: Quản lý 5 lưu trữ R2 Buckets (`blog-upload-prod`, `blog-upload-staging`, `cluster-etcd-backup-prod`, `velero-k8s-prod`, `terraform-state-blog`).
+    *   **`cloudflare-zero-trust`**: Khai báo và quản lý Cloudflare Tunnel (`k8s-prod`) và các quy tắc Zero Trust Access Applications/Policies bảo vệ các cổng quản trị (`argocd`, `grafana`, `k8s.luumac.io.vn`).
+*   **Remote Backend tập trung trên Cloudflare R2**:
+    *   Tệp trạng thái (`terraform.tfstate`) được lưu trữ và khóa tập trung trên Cloudflare R2 (S3 API compatible) tại bucket `terraform-state-blog`, loại bỏ hoàn toàn rủi ro mất mát state ở máy local.
+*   **Bảo mật biến & bí mật (Secrets Management)**:
+    *   Tách biệt các biến nhạy cảm qua `backend.tfvars` và `terraform.tfvars` (được bảo vệ qua `.gitignore`), chỉ commit các file mẫu `.example`.
+*   *Chi tiết cẩm nang vận hành xem tại:* **[Terraform & R2 Infrastructure Guide](infra/docs/terraform-r2.md)**.
+
+---
+
 ## 📸 Hình Ảnh Minh Họa Hệ Thống (System & Operations Gallery)
 
 ### 1. Quản lý trạng thái ứng dụng bằng ArgoCD (ArgoCD GitOps Dashboard)
@@ -184,12 +199,18 @@ Thông báo tự động gửi về kênh chat MS Teams của đội ngũ vận 
 Giao diện điều khiển tập trung hiển thị danh sách các pod đang chạy và tình trạng cấp phát tài nguyên cho các cấu phần ứng dụng trong cụm.
 ![Kubernetes Dashboard](images/k8s-dashboard-pod.png)
 
+### 7. Quản lý hạ tầng bằng Terraform (Terraform IaC Execution)
+Quá trình khởi tạo, lập kế hoạch (`terraform plan`) và kiểm chứng đồng bộ tài nguyên Cloudflare R2, Argo Tunnel và Zero Trust Access Applications (`terraform apply`).
+![Terraform Plan Verification](images/tf-plan.png)
+![Terraform Apply Success](images/tf-apply.png)
+
 ---
 
 ## 📚 Liên Kết Tài Liệu Chi Tiết (Links to Deep Dives)
 
 Để tìm hiểu chi tiết về các quyết định thiết kế, cẩm nang phục hồi hệ thống và hướng dẫn cài đặt, hãy truy cập [Documentation Portal](docs/README.md) của chúng tôi:
 
+*   **[Terraform Infrastructure & R2 Guide](infra/docs/terraform-r2.md)**: Hướng dẫn chi tiết cấu hình IaC cho Cloudflare R2, Argo Tunnel và Zero Trust Access.
 *   **[System Architecture](docs/architecture/system-architecture.md)**: Sơ đồ kiến trúc mạng, phân chia namespace, và cơ chế co giãn HPA.
 *   **[Architecture Decision Records (ADR)](docs/architecture/adr/README.md)**: Nhật ký quyết định kiến trúc của dự án.
 *   **[GitOps & CI/CD Workflow](docs/deployment/gitops-workflow.md)**: Quy trình CI/CD từ code push đến đồng bộ ArgoCD.
