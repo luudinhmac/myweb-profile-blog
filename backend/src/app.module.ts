@@ -57,7 +57,7 @@ import { CacheConfigModule } from './cache-config.module';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 60, // 60 requests per minute
+        limit: process.env.NODE_ENV === 'production' ? 60 : 100000, // 60 req/min in prod, 10000 in dev
       },
     ]),
     SetupModule,
