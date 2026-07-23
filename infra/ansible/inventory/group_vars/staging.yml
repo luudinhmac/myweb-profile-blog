@@ -22,7 +22,7 @@ argo_cd_enabled: true
 
 # Traefik Configuration
 # Using v2 compatible flags for staging if necessary
-traefik_additional_arguments: "{--entrypoints.web.http.compress=true,--entrypoints.websecure.http.compress=true,--accesslog=true,--accesslog.format=json}"
+traefik_additional_arguments: "{--entrypoints.web.http.compress=true,--entrypoints.websecure.http.compress=true,--accesslog=true,--accesslog.format=json,--accesslog.fields.headers.names.x-request-id=keep,--accesslog.fields.headers.names.cf-ray=keep}"
 
 # Project Configuration
 project_name: portfolio

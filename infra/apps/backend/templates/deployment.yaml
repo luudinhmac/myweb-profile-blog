@@ -27,6 +27,8 @@ spec:
       labels:
         {{- include "backend.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "backend.fullname" . }}-sa
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1001 # Hardened: Run as non-privileged service user
         fsGroup: 1001 # Ensure volume permissions match service user
@@ -76,6 +78,8 @@ spec:
           value: {{ .Values.env.tz | quote }}
         - name: PORT
           value: {{ .Values.env.port | quote }}
+        - name: VERSION
+          value: {{ .Values.image.tag | quote }}
         {{- if .Values.redis.enabled }}
         - name: REDIS_PASSWORD
           valueFrom:
@@ -87,18 +91,29 @@ spec:
         - name: REDIS_PORT
           value: "6379"
         {{- end }}
+        startupProbe:
+          httpGet:
+            path: /api/v1/health/ready
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds | default 15 }}
+          periodSeconds: {{ .Values.startupProbe.periodSeconds | default 5 }}
+          failureThreshold: {{ .Values.startupProbe.failureThreshold | default 15 }}
         livenessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/v1/health/live
             port: {{ .Values.service.port }}
-          initialDelaySeconds: 15 # Allow Prisma initialization and DB connection warm-up
-          periodSeconds: 10
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds | default 15 }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds | default 10 }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds | default 5 }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold | default 5 }}
         readinessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/v1/health/ready
             port: {{ .Values.service.port }}
-          initialDelaySeconds: 15 # Ensure API is ready to serve traffic before joining Service
-          periodSeconds: 5
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds | default 15 }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds | default 5 }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds | default 5 }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold | default 5 }}
         volumeMounts:
         - name: uploads-storage
           mountPath: /app/uploads
@@ -108,3 +123,8 @@ spec:
       - name: uploads-storage
         persistentVolumeClaim:
           claimName: {{ include "backend.fullname" . }}-pvc # WARNING: Data loss risk if PVC is deleted
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+

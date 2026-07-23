@@ -17,7 +17,7 @@ cert_manager_enabled: true
 argo_cd_enabled: true
 
 # Traefik Configuration
-traefik_additional_arguments: "{--accesslog=true,--accesslog.format=json,--serversTransport.insecureSkipVerify=true,--providers.kubernetescrd.allowcrossnamespace=true}"
+traefik_additional_arguments: "{--accesslog=true,--accesslog.format=json,--serversTransport.insecureSkipVerify=true,--providers.kubernetescrd.allowcrossnamespace=true,--accesslog.fields.headers.names.x-request-id=keep,--accesslog.fields.headers.names.cf-ray=keep}"
 
 # Project Configuration
 project_name: portfolio
