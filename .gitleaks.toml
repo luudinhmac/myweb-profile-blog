@@ -1,0 +1,16 @@
+# Gitleaks Configuration for Root Repository
+[allowlist]
+description = "Ignore SOPS encrypted YAML files, example docs, and sample configuration templates"
+paths = [
+  '''environments/.*\.yaml$''',
+  '''infra/environments/.*\.yaml$''',
+  '''docs/.*''',
+  '''infra/docs/.*''',
+  '''ansible/vars/secrets\.yml\.example$''',
+  '''infra/ansible/vars/secrets\.yml\.example$''',
+  '''backend/README\.md$''',
+  '''platform/argocd/sealed-secret-repo\.yaml$''',
+  '''infra/platform/argocd/sealed-secret-repo\.yaml$''',
+  '''monitoring/grafana/ingress/alertmanager-sealed-secret\.yaml$''',
+  '''infra/monitoring/grafana/ingress/alertmanager-sealed-secret\.yaml$'''
+]
