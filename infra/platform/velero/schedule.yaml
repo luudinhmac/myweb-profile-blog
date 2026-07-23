@@ -1,7 +1,7 @@
 apiVersion: velero.io/v1
 kind: Schedule
 metadata:
-  name: daily-backup
+  name: prod-backup
   namespace: velero
 spec:
   # Chạy vào lúc 2h sáng hàng ngày giờ Việt Nam (tức 19:00 giờ UTC)
@@ -9,15 +9,43 @@ spec:
   template:
     # Thời gian lưu trữ bản backup (7 ngày)
     ttl: 168h0m0s
-    # Backup tất cả các namespace
     includedNamespaces:
-      - '*'
-    # Loại trừ các namespace hệ thống không cần thiết
-    excludedNamespaces:
-      - kube-system
-      - kube-public
-      - kube-node-lease
-      - velero
+      - blog-prod
+    storageLocation: default
+    # Tự động backup mọi persistent volume (DB) bằng Node Agent
+    defaultVolumesToFsBackup: true
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: staging-backup
+  namespace: velero
+spec:
+  # Chạy vào lúc 23h00 Thứ 6 hàng tuần giờ Việt Nam (tức 16:00 giờ UTC)
+  schedule: "0 16 * * 5"
+  template:
+    # Thời gian lưu trữ bản backup (7 ngày)
+    ttl: 168h0m0s
+    includedNamespaces:
+      - blog-staging
+    storageLocation: default
+    # Tự động backup mọi persistent volume (DB) bằng Node Agent
+    defaultVolumesToFsBackup: true
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: infra-backup
+  namespace: velero
+spec:
+  # Chạy vào lúc 23h00 Thứ 7 hàng tuần giờ Việt Nam (tức 16:00 giờ UTC)
+  schedule: "0 16 * * 6"
+  template:
+    # Thời gian lưu trữ bản backup (7 ngày)
+    ttl: 168h0m0s
+    includedNamespaces:
+      - argocd
+      - infra
     storageLocation: default
     # Tự động backup mọi persistent volume (DB) bằng Node Agent
     defaultVolumesToFsBackup: true

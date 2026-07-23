@@ -120,3 +120,93 @@ velero restore describe <restore-name>
 > Do sử dụng Local Path Provisioner, Node Agent của Velero sẽ khôi phục trực tiếp các tệp dữ liệu vào thư mục volume của Pod mới.
 > 1. Tránh chạy ghi đè khi Pod database đang hoạt động tích cực để ngăn ngừa lỗi bất đồng bộ file.
 > 2. Khuyên dùng: Scale Down các Deployment liên quan (`replicas=0`), thực hiện Restore, sau đó Scale Up trở lại.
+
+---
+
+## 6. Hướng Dẫn Sử Dụng AWS CLI Để Quản Lý Cloudflare R2 Bucket
+
+Bạn có thể sử dụng **AWS CLI** tương thích với chuẩn S3 API để kiểm tra, tải về hoặc dọn dẹp trực tiếp dữ liệu trên Cloudflare R2.
+
+### Bước 6.1: Cấu hình AWS CLI Profile cho Cloudflare R2
+Tạo hoặc cập nhật cấu hình profile `r2` trong máy cá nhân (Local):
+
+* **File `%USERPROFILE%\.aws\config` (hoặc `~/.aws/config`)** *(Dành cho AWS CLI > v2.13)*:
+  ```ini
+  [default]
+  region = auto
+  output = json
+
+  [profile r2]
+  region = auto
+  output = json
+  services = r2
+
+  [services r2]
+  s3 =
+    endpoint_url = https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+    addressing_style = path
+  ```
+
+* **File `%USERPROFILE%\.aws\credentials` (hoặc `~/.aws/credentials`)**:
+  ```ini
+  [r2]
+  aws_access_key_id = <YOUR_R2_ACCESS_KEY_ID>
+  aws_secret_access_key = <YOUR_R2_SECRET_ACCESS_KEY>
+  ```
+
+---
+
+### Bước 6.2: Các Lệnh Quản Lý S3 Thường Dùng
+
+#### 1. Kiểm tra cấu trúc thư mục gốc trong Bucket
+```bash
+aws s3 ls s3://velero-k8s-prod --profile r2
+```
+*Kết quả:*
+```text
+                           PRE backups/
+                           PRE kopia/
+```
+
+#### 2. Liệt kê danh sách bản Backup Velero
+```bash
+aws s3 ls s3://velero-k8s-prod/backups/ --profile r2
+```
+
+#### 3. Liệt kê các Snapshot Kopia
+```bash
+aws s3 ls s3://velero-k8s-prod/kopia/ --profile r2
+```
+
+#### 4. Thống kê tổng dung lượng toàn bộ Bucket
+```bash
+aws s3 ls s3://velero-k8s-prod --recursive --human-readable --summarize --profile r2
+```
+
+#### 5. Thống kê dung lượng của từng Folder trong Bucket
+* **Xem dung lượng thư mục Velero Backups (`backups/`)**:
+  ```bash
+  aws s3 ls s3://velero-k8s-prod/backups/ --recursive --human-readable --summarize --profile r2
+  ```
+
+* **Xem dung lượng thư mục Kopia Volume Snapshots (`kopia/`)**:
+  ```bash
+  aws s3 ls s3://velero-k8s-prod/kopia/ --recursive --human-readable --summarize --profile r2
+  ```
+
+* **Xem dung lượng của 1 bản backup cụ thể**:
+  ```bash
+  aws s3 ls s3://velero-k8s-prod/backups/prod-backup-20260718190054/ --recursive --human-readable --summarize --profile r2
+  ```
+
+#### 6. Tải một bản backup về máy local (Download)
+```bash
+aws s3 cp s3://velero-k8s-prod/backups/prod-backup-20260718190054/ C:\local_backups\prod-backup\ --recursive --profile r2
+```
+
+#### 7. Xóa thủ công một thư mục bản backup cũ (Manual Cleanup)
+```bash
+aws s3 rm s3://velero-k8s-prod/backups/test-prod-backup-1/ --recursive --profile r2
+```
+
+

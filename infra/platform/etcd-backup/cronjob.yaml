@@ -76,6 +76,9 @@ spec:
                   
                   echo "Uploading snapshot to Cloudflare R2..."
                   mc cp "$BACKUP_FILE" r2/cluster-etcd-backup-prod/etcd-backups/
+                  
+                  echo "Cleaning up Cloudflare R2 backups older than 7 days..."
+                  mc rm --recursive --force --older-than 7d r2/cluster-etcd-backup-prod/etcd-backups/
                 else
                   echo "Error: Access Key or Secret Key not found in decrypted credentials!"
                 fi
