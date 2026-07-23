@@ -22,5 +22,3 @@ sealedSecret:
 
 podSecurityContext:
   fsGroup: 70
-
-

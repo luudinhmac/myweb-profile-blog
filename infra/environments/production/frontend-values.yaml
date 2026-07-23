@@ -3,7 +3,7 @@
 # Last Updated: 2026-05-12
 
 image:
-  tag: "v0.0.20@sha256:675474196a2aefbe1deb4a6d45a4793938a5af80569f12095593ec58c189d948"
+  tag: "v1.0.0@sha256:e7a8d006aefa08c86afd3385ce87a57061a3b8fbd9b3e913114a6eef3104f339"
 ingress:
   enabled: true
   annotations:
@@ -20,3 +20,5 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
+nodeSelector:
+  kubernetes.io/hostname: k8s-prod
