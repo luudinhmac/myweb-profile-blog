@@ -1,0 +1,11 @@
+# Gitleaks Configuration for Infrastructure Repository
+[allowlist]
+description = "Ignore SOPS encrypted YAML files, example docs, and sample configuration templates"
+paths = [
+  '''environments/.*\.yaml$''',
+  '''infra/environments/.*\.yaml$''',
+  '''docs/.*''',
+  '''infra/docs/.*''',
+  '''ansible/vars/secrets\.yml\.example$''',
+  '''backend/README\.md$'''
+]

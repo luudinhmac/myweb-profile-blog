@@ -1,0 +1,9 @@
+# Copy file nay thanh backend.tfvars va dien thong tin cua ban.
+# KHONG duoc commit file backend.tfvars len Git.
+
+bucket   = "bucket-name"
+endpoints = {
+  s3 = "Endpoint s3/r2"
+}
+access_key = "input <access_key>"
+secret_key = "input <secret_key>"

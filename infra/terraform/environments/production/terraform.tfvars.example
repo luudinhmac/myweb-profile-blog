@@ -1,0 +1,17 @@
+# Copy file nay thanh terraform.tfvars va dien thong tin thuc te cua ban.
+# KHONG duoc commit file terraform.tfvars len Git.
+
+# Cloudflare Account ID (lay tu Cloudflare Dashboard)
+cloudflare_account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID_HERE"
+
+# Cloudflare Zone ID (lay tu Overview trang quan tri domain)
+cloudflare_zone_id = "YOUR_CLOUDFLARE_ZONE_ID_HERE"
+
+# Cloudflare API Token (My Profile > API Tokens > Create Token > Custom Token)
+cloudflare_api_token = "YOUR_CLOUDFLARE_API_TOKEN_HERE"
+
+# Secret key cua Cloudflare Tunnel (chuoi Base64 >= 32 ky tu)
+cloudflare_tunnel_secret = "YOUR_TUNNEL_SECRET_HERE"
+
+# Danh sach email Admin cho phep truy cap Zero Trust Access
+admin_emails = ["admin@example.com"]
