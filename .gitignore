@@ -50,11 +50,9 @@ context.md
 admin.conf
 info_connect.md
 quytac.md
-
-# 
-admin.conf
 ZMigrate/
 scratch/
+project_structure.txt
 
 docs/onboarding/cv/*
 docs/archive/infra_implementation_plan.md
