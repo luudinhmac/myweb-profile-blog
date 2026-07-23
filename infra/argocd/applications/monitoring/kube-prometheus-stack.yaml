@@ -13,6 +13,7 @@ spec:
       releaseName: monitoring
       values: |
         grafana:
+          replicas: 0
           serviceMonitor:
             enabled: false
           adminPassword: admin
@@ -92,7 +93,7 @@ spec:
 
         alertmanager:
           serviceMonitor:
-            enabled: false
+            selfMonitor: false
           alertmanagerSpec:
             nodeSelector: {}
             affinity:
@@ -163,7 +164,7 @@ spec:
 
         prometheusOperator:
           serviceMonitor:
-            enabled: false
+            selfMonitor: false
           nodeSelector: {}
           affinity:
             nodeAffinity:
