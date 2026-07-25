@@ -105,7 +105,7 @@ Hạ tầng được thiết kế theo dạng Single-Node Kubernetes chạy trê
     *   **Quản lý Bí mật (Bitnami Sealed Secrets):**
         *   Sử dụng giải pháp mã hóa một chiều để lưu trữ an toàn các tệp Secret trực tiếp trên Git GitOps.
         *   Controller chạy trên namespace `kube-system` tự động giải mã các tài nguyên `SealedSecret` sang `Secret` tiêu chuẩn bằng private key trong cụm.
-        *   *Xác minh:* [infra-services/tasks/main.yml:127-132](../../infra/ansible/roles/infra-services/tasks/main.yml#L127-L132) và tệp chứng chỉ mã hóa [sealed-cert.pem](../../infra/sealed-cert.pem).
+        *   *Xác minh:* [infra-services/tasks/main.yml:127-132](../../infra/ansible/roles/infra-services/tasks/main.yml#L127-L132) và tệp chứng chỉ mã hóa [sealed-cert.pem](../../infra/certs/sealed-cert.pem).
     *   **Giám sát & Cảnh báo (Prometheus & Grafana):**
         *   Triển khai bộ **kube-prometheus-stack v85.1.3** thông qua ArgoCD (bao gồm Prometheus Operator, Grafana để vẽ dashboard, Alertmanager để gửi cảnh báo Telegram/Email).
         *   Tắt tính năng giám sát control plane mặc định (như kube-scheduler, kube-controller-manager) để tiết kiệm tài nguyên trên VPS cấu hình thấp.
