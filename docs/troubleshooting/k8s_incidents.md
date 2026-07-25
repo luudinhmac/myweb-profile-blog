@@ -282,7 +282,7 @@ spec:
 
 ### 3. Giải pháp khắc phục (Remediation)
 1. **Rotate khóa bảo mật:** Tạo ra 2 khóa bảo mật JWT ngẫu nhiên mới, có độ dài tối thiểu 256-bit (32 bytes) và được mã hóa Base64 cho mỗi môi trường Production và Staging.
-2. **Mã hóa an toàn qua GitOps (Sealed Secrets):** Sử dụng công cụ `kubeseal` kết hợp với public certificate của controller (`infra/sealed-cert.pem`) để mã hóa thô (raw-encrypt) các khóa này trước khi lưu trữ vào repository GitOps.
+2. **Mã hóa an toàn qua GitOps (Sealed Secrets):** Sử dụng công cụ `kubeseal` kết hợp với public certificate của controller (`infra/certs/sealed-cert.pem`) để mã hóa thô (raw-encrypt) các khóa này trước khi lưu trữ vào repository GitOps.
 3. **Đồng bộ hóa qua ArgoCD:** Commit và push các thay đổi cấu hình lên nhánh `main` để ArgoCD tự động áp dụng và giải mã các SealedSecret vào cụm Kubernetes.
 4. **Tái khởi động Workload:** Restart Rolling các pod backend ở cả 2 môi trường để áp dụng khóa mới ngay lập tức.
 
@@ -359,7 +359,7 @@ spec:
        script_dir = os.path.dirname(os.path.abspath(__file__))
        infra_dir = os.path.dirname(script_dir)
        
-       cert_path = os.path.join(infra_dir, "sealed-cert.pem")
+       cert_path = os.path.join(infra_dir, "certs", "sealed-cert.pem")
        prod_values_path = os.path.join(infra_dir, "environments", "production", "backend-values.yaml")
        staging_values_path = os.path.join(infra_dir, "environments", "staging", "backend-values.yaml")
        
