@@ -1,0 +1,13 @@
+gitleaks_scan:
+  extends:
+    - .node_template
+  stage: validate
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  before_script:
+    - apk add --no-cache wget tar git
+    - wget -qO- https://github.com/gitleaks/gitleaks/releases/download/v8.23.0/gitleaks_8.23.0_linux_x64.tar.gz | tar -xzf - gitleaks
+    - mv gitleaks /usr/local/bin/gitleaks
+  script:
+    - gitleaks detect --source . --verbose --log-opts="HEAD" --report-path gitleaks-report.json --report-format json
+  allow_failure: false

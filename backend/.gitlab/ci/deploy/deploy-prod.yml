@@ -1,0 +1,55 @@
+manual_approval:
+  stage: deploy
+  image: alpine:3.21
+  tags:
+    - agent-1
+  needs:
+    - fetch_image
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.*/'
+  when: manual
+  allow_failure: false
+  script:
+    - echo "Production deployment approved for version ${CI_COMMIT_TAG}"
+  after_script: []
+
+deploy_production:
+  extends:
+    - .gitops_template
+  stage: deploy
+  resource_group: production
+  needs:
+    - fetch_image
+    - manual_approval
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.*/'
+  script:
+    - cd infra-repo
+    - export FULL_IMAGE="${CI_COMMIT_TAG}@${IMAGE_DIGEST}"
+    - yq -i '.image.tag = env(FULL_IMAGE)' environments/production/backend-values.yaml
+    - git add .
+    - 'git commit -m "chore(prod): deploy backend ${FULL_IMAGE} [skip ci]" || echo "No changes"'
+    - |
+      for i in {1..5}; do
+        echo "Pushing production changes (attempt $i)..."
+        git pull --rebase origin main && git push origin main && break
+        echo "Conflict detected, retrying in 5 seconds..."
+        sleep 5
+        [ $i -eq 5 ] && exit 1
+      done
+    - |
+      if [ -n "$ARGOCD_SERVER" ] && [ -n "$ARGOCD_TOKEN" ]; then
+        echo "Installing ArgoCD CLI..."
+        wget -qO /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        chmod +x /usr/local/bin/argocd
+        echo "Triggering ArgoCD Sync for portfolio-backend-production..."
+        export ARGOCD_AUTH_TOKEN="$ARGOCD_TOKEN"
+        argocd app sync portfolio-backend-production --insecure --grpc-web \
+          -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+          -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+        argocd app wait portfolio-backend-production --sync --health --timeout 300 --insecure --grpc-web \
+          -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+          -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+      else
+        echo "WARNING: ARGOCD_SERVER or ARGOCD_TOKEN is not set. Skipping ArgoCD Wait."
+      fi

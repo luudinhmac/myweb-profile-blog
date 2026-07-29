@@ -1,0 +1,3 @@
+default:
+  after_script:
+    - sh .gitlab/scripts/notify.sh $CI_JOB_STATUS $CI_JOB_STAGE

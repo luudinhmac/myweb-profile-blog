@@ -1,0 +1,25 @@
+variables:
+  TZ: Asia/Ho_Chi_Minh
+
+  # =====================================================
+  # REGISTRY
+  # =====================================================
+  CI_REGISTRY: docker.io
+  IMAGE_NAME: $CI_REGISTRY_USER/portfolio-backend
+
+  # =====================================================
+  # BUILD
+  # =====================================================
+  BUILDKITD_FLAGS: --oci-worker-no-process-sandbox
+
+  # =====================================================
+  # CACHE & DEPENDENCIES
+  # =====================================================
+  PNPM_CACHE_DIR: .pnpm-store
+  TRIVY_CACHE_DIR: .trivycache
+  DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+
+  # =====================================================
+  # IMAGE REFERENCES
+  # =====================================================
+  BUILD_IMAGE: $IMAGE_NAME:build-$CI_COMMIT_SHA
