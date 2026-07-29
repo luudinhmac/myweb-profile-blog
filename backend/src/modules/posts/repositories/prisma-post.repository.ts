@@ -75,7 +75,7 @@ export class PrismaPostRepository implements IPostRepository {
           where: { parent_id: cat.id },
           select: { id: true },
         });
-        const categoryIds = [cat.id, ...childCats.map(c => c.id)];
+        const categoryIds = [cat.id, ...childCats.map((c) => c.id)];
         where.category_id = { in: categoryIds };
       } else {
         where.category_id = -1;
