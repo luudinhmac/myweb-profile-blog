@@ -1,0 +1,19 @@
+# ==============================================================================
+# COMPONENT: ArgoCD Helm Values
+# ROLE: Base configurations for ArgoCD Server, Accounts, and RBAC policies
+# ==============================================================================
+
+configs:
+  cm:
+    accounts.gitlab-ci: apiKey
+  rbac:
+    policy.csv: |
+      p, role:gitlab-ci-role, applications, get, apps-project/*, allow
+      p, role:gitlab-ci-role, applications, sync, apps-project/*, allow
+      g, gitlab-ci, role:gitlab-ci-role
+
+server:
+  service:
+    type: ClusterIP
+  extraArgs:
+    - --insecure

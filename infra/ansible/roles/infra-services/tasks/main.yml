@@ -155,9 +155,9 @@
     helm upgrade --install argocd argo/argo-cd
     --namespace argocd
     --create-namespace
-    --set server.service.type=ClusterIP
-    --set "server.extraArgs={--insecure}"
+    -f {{ role_path }}/files/argocd-values.yaml
     --wait --timeout 10m
+
 
 - name: Install Local Path Provisioner
   become_user: "{{ ansible_operator_user }}"
