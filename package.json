@@ -1,15 +1,1 @@
-{
-  "name": "portfolio-monolith-standalone",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "concurrently \"pnpm --prefix backend start:dev\" \"pnpm --prefix frontend dev\"",
-    "backend": "pnpm --prefix backend start:dev",
-    "frontend": "pnpm --prefix frontend dev",
-    "install:all": "pnpm --prefix backend install && pnpm --prefix frontend install",
-    "build": "pnpm --prefix backend build && pnpm --prefix frontend build"
-  },
-  "devDependencies": {
-    "concurrently": "^9.2.1"
-  }
-}
+{"dependencies": {"axios": "^1.7.2"}, "pnpm": {"overrides": {"postcss": "^8.5.10"}}}
