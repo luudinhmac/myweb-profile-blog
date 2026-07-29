@@ -1,0 +1,28 @@
+trivy_scan:
+  stage: security
+  image:
+    name: aquasec/trivy:0.72.0
+    entrypoint: [""]
+  tags:
+    - agent-1
+  needs:
+    - build_image
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  cache:
+    key: trivy-cache
+    paths:
+      - .trivycache/
+  before_script:
+    - apk add --no-cache python3
+  script:
+    - trivy image --cache-dir .trivycache --download-db-only
+    - trivy image --cache-dir .trivycache --severity HIGH,CRITICAL --format json --output trivy-image.json --quiet ${BUILD_IMAGE} || true
+    - trivy fs --cache-dir .trivycache --severity HIGH,CRITICAL --format json --output trivy-fs.json --quiet . || true
+    - trivy config --cache-dir .trivycache --severity HIGH,CRITICAL --format json --output trivy-config.json --quiet . || true
+    - python3 .gitlab/scripts/parse_trivy.py
+  artifacts:
+    when: always
+    paths:
+      - trivy-report.html
+    expire_in: 1 week

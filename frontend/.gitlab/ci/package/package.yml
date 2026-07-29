@@ -1,0 +1,30 @@
+publish_staging:
+  extends:
+    - .crane_template
+  stage: publish
+  needs:
+    - sign_image
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  script:
+    - export STAGING_IMAGE=${IMAGE_NAME}:dev-${CI_COMMIT_SHORT_SHA}
+    - crane copy ${BUILD_IMAGE} ${STAGING_IMAGE}
+
+fetch_image:
+  extends:
+    - .crane_template
+  stage: publish
+  resource_group: production
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.*/'
+  script:
+    - export STAGING_IMAGE=${IMAGE_NAME}:dev-${CI_COMMIT_SHORT_SHA}
+    - export PROD_IMAGE=${IMAGE_NAME}:${CI_COMMIT_TAG}
+    - echo "Promoting staging image ${STAGING_IMAGE} to production image ${PROD_IMAGE}"
+    - crane copy ${STAGING_IMAGE} ${PROD_IMAGE}
+    - export IMAGE_DIGEST=$(crane digest ${PROD_IMAGE})
+    - echo "IMAGE_DIGEST=${IMAGE_DIGEST}" >> prod.env
+    - echo "PROD_IMAGE=${PROD_IMAGE}" >> prod.env
+  artifacts:
+    reports:
+      dotenv: prod.env

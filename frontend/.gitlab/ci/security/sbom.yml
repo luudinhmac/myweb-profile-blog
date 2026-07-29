@@ -1,0 +1,17 @@
+generate_sbom:
+  stage: security
+  image:
+    name: aquasec/trivy:0.72.0
+    entrypoint: [""]
+  tags:
+    - agent-1
+  needs:
+    - build_image
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  script:
+    - trivy image --format cyclonedx --output sbom.cdx.json ${BUILD_IMAGE}
+  artifacts:
+    paths:
+      - sbom.cdx.json
+    expire_in: 1 week

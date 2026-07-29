@@ -1,0 +1,60 @@
+sync_api:
+  extends:
+    - .node_template
+    - .cache_template
+  stage: validate
+  needs:
+    - gitleaks_scan
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  script:
+    - pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+    - |
+      if [ -n "$BACKEND_SWAGGER_URL" ]; then
+        curl -sSL $BACKEND_SWAGGER_URL -o backend-swagger.json
+        export SWAGGER_PATH="./backend-swagger.json"
+      fi
+    - pnpm run api:sync
+  artifacts:
+    paths:
+      - src/types/api.generated.ts
+    expire_in: 1 hour
+
+install_dependencies:
+  extends:
+    - .node_template
+    - .cache_template
+  stage: validate
+  needs:
+    - sync_api
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  script:
+    - pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+
+lint:
+  extends:
+    - .node_template
+    - .cache_template
+  stage: validate
+  needs:
+    - install_dependencies
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  script:
+    - pnpm install --frozen-lockfile --prefer-offline
+    - pnpm run lint
+  allow_failure: false
+
+typecheck:
+  extends:
+    - .node_template
+    - .cache_template
+  stage: validate
+  needs:
+    - install_dependencies
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  script:
+    - pnpm install --frozen-lockfile --prefer-offline
+    - pnpm exec tsc --noEmit

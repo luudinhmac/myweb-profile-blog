@@ -1,0 +1,42 @@
+deploy_staging:
+  extends:
+    - .gitops_template
+  stage: deploy
+  resource_group: staging
+  needs:
+    - publish_staging
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  script:
+    - cd infra-repo
+    - export IMAGE_TAG=dev-${CI_COMMIT_SHORT_SHA}
+    - yq -i '.image.tag = env(IMAGE_TAG)' environments/staging/frontend-values.yaml
+    - git add .
+    - 'git commit -m "chore(staging): deploy frontend ${IMAGE_TAG} [skip ci]" || echo "No changes"'
+    - |
+      for i in {1..5}; do
+        echo "Pushing staging changes (attempt $i)..."
+        git pull --rebase origin main && git push origin main && break
+        echo "Conflict detected, retrying in 5 seconds..."
+        sleep 5
+        [ $i -eq 5 ] && exit 1
+      done
+    - |
+      if [ -n "$ARGOCD_SERVER" ] && [ -n "$ARGOCD_TOKEN" ]; then
+        echo "Debugging: Checking GitLab Runner's Public IP..."
+        apk add --no-cache curl
+        curl -s icanhazip.com || echo "Cannot fetch IP"
+        echo "Installing ArgoCD CLI..."
+        wget -qO /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        chmod +x /usr/local/bin/argocd
+        echo "Triggering ArgoCD Sync for portfolio-frontend-staging..."
+        export ARGOCD_AUTH_TOKEN="$ARGOCD_TOKEN"
+        argocd app sync portfolio-frontend-staging --insecure --grpc-web \
+          -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+          -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+        argocd app wait portfolio-frontend-staging --sync --health --timeout 300 --insecure --grpc-web \
+          -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+          -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+      else
+        echo "WARNING: ARGOCD_SERVER or ARGOCD_TOKEN is not set. Skipping ArgoCD Wait."
+      fi
