@@ -7,6 +7,24 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { requestContextStorage } from '../middleware/request-context.middleware';
+
+const BOT_SCAN_PATTERNS = [
+  /^\/\.env(\..*)?$/,
+  /^\/\.git(\/.*)?$/,
+  /^\/\.aws(\/.*)?$/,
+  /^\/wp-admin(\/.*)?$/,
+  /^\/wp-login\.php$/,
+  /^\/phpmyadmin(\/.*)?$/,
+  /^\/vendor(\/.*)?$/,
+  /^\/actuator(\/.*)?$/,
+  /^\/server-status(\/.*)?$/,
+  /^\/graphql$/,
+  /^\/swagger-ui(\/.*)?$/,
+];
+
+const logDampeningCache = new Map<string, number>();
+const DAMPENING_PERIOD_MS = 60000;
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -67,17 +85,46 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       path: (request as any).url,
     };
 
+    // Tách path sạch để test regex, giữ url đầy đủ để log
+    const requestPath = (request as any).path || '';
+    const requestUrl = (request as any).url || '';
+    const clientIp = (request as any).ip || (request as any).headers?.['x-original-client-ip'] || (request as any).headers?.['x-forwarded-for'] || '';
+
+    const isBotScan = status === HttpStatus.NOT_FOUND && 
+      BOT_SCAN_PATTERNS.some(regex => regex.test(requestPath));
+
+    const context = requestContextStorage.getStore();
+    const requestId = context?.requestId || 'N/A';
+    const cfRay = context?.cfRay || 'N/A';
+
     // Log the error
     if (status >= 500) {
       this.logger.error(
-        `${(request as any).method} ${(request as any).url} ${status} - Error: ${
+        `[ReqID: ${requestId}] [CF-Ray: ${cfRay}] ${(request as any).method} ${requestUrl} ${status} - Error: ${
           exception instanceof Error ? exception.message : 'Unknown error'
         }`,
         exception instanceof Error ? exception.stack : undefined,
       );
+    } else if (isBotScan) {
+      // Rate-limit log INFO cho bot scan
+      const cacheKey = `${clientIp}:${requestPath}`;
+      const now = Date.now();
+      const lastLogged = logDampeningCache.get(cacheKey);
+
+      if (!lastLogged || (now - lastLogged > DAMPENING_PERIOD_MS)) {
+        this.logger.log(
+          `[ReqID: ${requestId}] [CF-Ray: ${cfRay}] [BotScan] ${(request as any).method} ${requestUrl} ${status} - Ignored (Rate-limited)`
+        );
+        logDampeningCache.set(cacheKey, now);
+
+        if (logDampeningCache.size > 1000) {
+          const oldestKey = logDampeningCache.keys().next().value;
+          logDampeningCache.delete(oldestKey);
+        }
+      }
     } else {
       this.logger.warn(
-        `${(request as any).method} ${(request as any).url} ${status} - ${JSON.stringify(message)}`,
+        `[ReqID: ${requestId}] [CF-Ray: ${cfRay}] ${(request as any).method} ${requestUrl} ${status} - ${JSON.stringify(message)}`,
       );
     }
 

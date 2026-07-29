@@ -1,4 +1,6 @@
 import { PrismaClient } from './generated/prisma-client';
+declare const process: any;
+
 
 const prisma = new PrismaClient();
 

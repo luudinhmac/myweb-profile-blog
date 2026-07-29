@@ -20,6 +20,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { StatsModule } from './modules/stats/stats.module';
 import { StatsMiddleware } from './modules/stats/stats.middleware';
 import { HealthController } from './health.controller';
+import { HealthService } from './health.service';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
@@ -27,6 +28,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { SetupModule } from './modules/setup/setup.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { CacheConfigModule } from './cache-config.module';
+import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
+import { AccessLogMiddleware } from './common/middleware/access-log.middleware';
 
 @Module({
   imports: [
@@ -57,7 +60,7 @@ import { CacheConfigModule } from './cache-config.module';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: process.env.NODE_ENV === 'production' ? 60 : 100000, // 60 req/min in prod, 10000 in dev
+        limit: 60, // 60 requests per minute
       },
     ]),
     SetupModule,
@@ -66,6 +69,7 @@ import { CacheConfigModule } from './cache-config.module';
   ],
   controllers: [HealthController],
   providers: [
+    HealthService,
     {
       provide: APP_GUARD,
       useClass: CustomThrottlerGuard,
@@ -77,6 +81,10 @@ export class AppModule {
     console.log('--- BACKEND STARTING: CACHE TOTALLY DISABLED (v3.0) ---');
   }
   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestContextMiddleware, AccessLogMiddleware)
+      .forRoutes({ path: '*path', method: RequestMethod.ALL });
+
     consumer
       .apply(StatsMiddleware)
       .forRoutes({ path: '*path', method: RequestMethod.ALL });

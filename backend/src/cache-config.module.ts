@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-yet';
+import { Keyv } from 'keyv';
+import KeyvRedis from '@keyv/redis';
 import { InfrastructureConfigService } from './infrastructure/config/config.service';
 
 @Global()
@@ -10,29 +11,44 @@ import { InfrastructureConfigService } from './infrastructure/config/config.serv
       isGlobal: true,
       useFactory: async (configService: InfrastructureConfigService) => {
         try {
-          const store = await redisStore({
-            socket: {
-              host: configService.redisHost,
-              port: configService.redisPort,
-              connectTimeout: 3000,
-            },
-            password: configService.redisPassword || undefined,
-            ttl: 600000, // 10 minutes (600,000 milliseconds)
+          const redisHost = configService.redisHost;
+          const redisPort = configService.redisPort;
+          const redisPassword = configService.redisPassword || undefined;
+
+          // Build Redis connection URL
+          const authPart = redisPassword
+            ? `:${encodeURIComponent(redisPassword)}@`
+            : '';
+          const redisUrl = `redis://${authPart}${redisHost}:${redisPort}`;
+
+          const keyvRedis = new KeyvRedis(redisUrl, {
+            connectionTimeout: 10000,
           });
 
           // Register error event listener on client to prevent runtime crashes
-          const client = store.client;
-          if (client) {
-            client.on('error', (err: any) => {
-              console.error('Redis client error:', err.message || err);
-            });
-          }
+          keyvRedis.on('error', (err: unknown) => {
+            console.error(
+              'Redis client error:',
+              err instanceof Error ? err.message : String(err),
+            );
+          });
 
-          return { store };
-        } catch (error: any) {
-          console.warn('Could not initialize Redis cache store. Falling back to in-memory cache.', error.message || error);
           return {
-            ttl: 600,
+            stores: [
+              new Keyv({
+                store: keyvRedis,
+                namespace: 'cache',
+                ttl: 600000, // 10 minutes (600,000 milliseconds)
+              }),
+            ],
+          };
+        } catch (error) {
+          console.warn(
+            'Could not initialize Redis cache store. Falling back to in-memory cache.',
+            error instanceof Error ? error.message : String(error),
+          );
+          return {
+            ttl: 600000,
           };
         }
       },

@@ -1,29 +1,32 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { PrismaService } from './prisma/prisma.service';
+import { HealthService } from './health.service';
 
 @ApiTags('Health')
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly healthService: HealthService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Check system health status' })
+  @ApiOperation({ summary: 'Check system health status (Readiness)' })
   async check(@Res() res: Response) {
-    let dbStatus = 'connected';
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-    } catch (error) {
-      dbStatus = 'disconnected';
-    }
+    const state = this.healthService.getReadiness();
+    const statusCode = state.status === 'ok' ? 200 : 503;
+    return res.status(statusCode).json(state);
+  }
 
-    const status = dbStatus === 'connected' ? 200 : 503;
-    return res.status(status).json({
-      status: dbStatus === 'connected' ? 'ok' : 'degraded',
-      database: dbStatus,
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-    });
+  @Get('live')
+  @ApiOperation({ summary: 'Liveness probe check' })
+  async live(@Res() res: Response) {
+    return res.status(200).json(this.healthService.getLiveness());
+  }
+
+  @Get('ready')
+  @ApiOperation({ summary: 'Readiness probe check' })
+  async ready(@Res() res: Response) {
+    const state = this.healthService.getReadiness();
+    const statusCode = state.status === 'ok' ? 200 : 503;
+    return res.status(statusCode).json(state);
   }
 }
