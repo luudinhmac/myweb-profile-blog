@@ -53,7 +53,7 @@ RUN npx prisma generate
 # STAGE 3: Final Runner stage
 # ==========================================
 FROM node:22-alpine AS runner
-RUN apk add --no-cache openssl
+RUN apk update && apk upgrade --no-cache && apk add --no-cache openssl
 # Remove npm and npx to eliminate base image security vulnerabilities
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 WORKDIR /app

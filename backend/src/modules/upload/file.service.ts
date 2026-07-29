@@ -3,7 +3,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import sharp from 'sharp';
-import { IStorageService, STORAGE_SERVICE } from '../../infrastructure/storage/storage.interface';
+import {
+  IStorageService,
+  STORAGE_SERVICE,
+} from '../../infrastructure/storage/storage.interface';
 
 @Injectable()
 export class FileService {
@@ -88,7 +91,9 @@ export class FileService {
     if (!fileUrl) return false;
     try {
       await this.storageService.deleteFile(fileUrl);
-      this.logger.log(`File deleted successfully via storage service: ${fileUrl}`);
+      this.logger.log(
+        `File deleted successfully via storage service: ${fileUrl}`,
+      );
       return true;
     } catch (error) {
       this.logger.error(`Error deleting file ${fileUrl}: ${error.message}`);
