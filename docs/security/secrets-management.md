@@ -78,3 +78,56 @@ kubeseal --controller-name=sealed-secrets-controller \
     kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-private-keys.yaml
     ```
     *Cất giữ file `sealed-secrets-private-keys.yaml` này ở nơi tuyệt đối an toàn và ngoại tuyến.*
+
+---
+
+## 5. Ví dụ thực tế: Cấu hình Cloudflare Turnstile CAPTCHA
+
+Tính năng bảo vệ CAPTCHA bằng Cloudflare Turnstile yêu cầu cấu hình các biến môi trường và bí mật sau trên Staging và Production.
+
+### 5.1 Khởi tạo Widget qua Terraform (IaC)
+Widget Turnstile được cấu hình tự động thông qua Terraform module `cloudflare-zero-trust` tại tệp `infra/terraform/modules/cloudflare-zero-trust/turnstile.tf`:
+```hcl
+resource "cloudflare_turnstile_widget" "portfolio_widget" {
+  account_id     = var.cloudflare_account_id
+  name           = "portfolio-turnstile-widget"
+  domains        = ["blog.luumac.io.vn", "staging.luumac.io.vn"]
+  mode           = "managed"
+}
+```
+Sau khi chạy `terraform apply`, Terraform sẽ xuất ra (outputs) các giá trị:
+*   `turnstile_site_key` (Public Key)
+*   `turnstile_secret_key` (Secret Key - Nhạy cảm)
+
+### 5.2 Cấu hình Frontend (Next.js)
+Frontend sử dụng Site Key (Public) để hiển thị widget Turnstile. Đặt biến này trong tệp values của frontend:
+*   **Staging**: [frontend-values.yaml](file:///d:/DATA/Portfolio/infra/environments/staging/frontend-values.yaml)
+*   **Production**: [frontend-values.yaml](file:///d:/DATA/Portfolio/infra/environments/production/frontend-values.yaml)
+
+```yaml
+env:
+  nextPublicTurnstileSiteKey: "0x4AAAAAAEE7aDdQIdRp6_w4" # Giá trị Site Key từ Terraform output
+```
+
+### 5.3 Mã hóa Secret Key cho Backend (NestJS) bằng `kubeseal`
+Do `TURNSTILE_SECRET_KEY` là thông tin nhạy cảm, nó bắt buộc phải được mã hóa trước khi đưa vào GitOps values file:
+
+1.  **Lấy Secret Key thô từ Terraform**:
+    ```bash
+    terraform output -raw turnstile_secret_key
+    ```
+2.  **Mã hóa thô (Raw sealing)**:
+    *   **Production** (namespace `blog-prod`):
+        ```powershell
+        [System.Text.Encoding]::UTF8.GetBytes("0x4AAAAAAEE7aBA6QoIdO6yRpamnCc8iF6E") | .\kubeseal.exe --cert .\infra\sealed-cert.pem --raw --name portfolio-secrets --namespace blog-prod
+        ```
+    *   **Staging** (namespace `blog-staging`):
+        ```powershell
+        [System.Text.Encoding]::UTF8.GetBytes("0x4AAAAAAEE7aBA6QoIdO6yRpamnCc8iF6E") | .\kubeseal.exe --cert .\infra\sealed-cert.pem --raw --name portfolio-secrets --namespace blog-staging
+        ```
+3.  **Cập nhật giá trị mã hóa** vào trường `TURNSTILE_SECRET_KEY` dưới mục `sealedSecret.encryptedData` trong tệp `backend-values.yaml` của môi trường tương ứng.
+
+### 5.4 Cơ chế Bypass Turnstile trong môi trường Testing/CI
+Để phục vụ kịch bản kiểm thử khói tự động (`smoke-test.sh`) chạy trong GitLab CI/CD (không có môi trường trình duyệt để giải CAPTCHA), backend hỗ trợ cấu hình biến `BYPASS_TURNSTILE`:
+*   **Staging**: Đặt `bypassTurnstile: "true"` trong [backend-values.yaml](file:///d:/DATA/Portfolio/infra/environments/staging/backend-values.yaml).
+*   **Production**: Mặc định là `"false"` để luôn bắt buộc bảo vệ CAPTCHA chống Spam.

@@ -25,16 +25,25 @@ export class JsonLogger implements LoggerService {
       }
 
       if (stack) {
-        logObject.stack = typeof stack === 'object' ? JSON.stringify(stack) : String(stack);
+        logObject.stack =
+          typeof stack === 'object' ? JSON.stringify(stack) : String(stack);
       }
 
       process.stdout.write(JSON.stringify(logObject) + '\n');
     } else {
-      const color = level === 'error' ? '\x1b[31m' : level === 'warn' ? '\x1b[33m' : '\x1b[32m';
+      const color =
+        level === 'error'
+          ? '\x1b[31m'
+          : level === 'warn'
+            ? '\x1b[33m'
+            : '\x1b[32m';
       const reset = '\x1b[0m';
       const time = new Date().toLocaleTimeString();
-      const msgStr = typeof message === 'object' ? JSON.stringify(message) : message;
-      console.log(`[${time}] ${color}${level.toUpperCase()}${reset} [${context || 'App'}] [ReqID: ${requestId}] [CF-Ray: ${cfRay}] ${msgStr}`);
+      const msgStr =
+        typeof message === 'object' ? JSON.stringify(message) : message;
+      console.log(
+        `[${time}] ${color}${level.toUpperCase()}${reset} [${context || 'App'}] [ReqID: ${requestId}] [CF-Ray: ${cfRay}] ${msgStr}`,
+      );
       if (stack) console.error(stack);
     }
   }

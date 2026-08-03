@@ -31,6 +31,7 @@ env:
   tz: "Asia/Ho_Chi_Minh"
   nodeEnv: "production"
   internalApiUrl: "http://portfolio-backend:3001"
+  nextPublicTurnstileSiteKey: "1x00000000000000000000AA"
 
 ingress:
   host: "staging.luumac.io.vn"

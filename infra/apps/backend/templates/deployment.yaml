@@ -80,6 +80,8 @@ spec:
           value: {{ .Values.env.port | quote }}
         - name: VERSION
           value: {{ .Values.image.tag | quote }}
+        - name: BYPASS_TURNSTILE
+          value: {{ .Values.env.bypassTurnstile | default "false" | quote }}
         {{- if .Values.redis.enabled }}
         - name: REDIS_PASSWORD
           valueFrom:
