@@ -88,10 +88,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Tách path sạch để test regex, giữ url đầy đủ để log
     const requestPath = (request as any).path || '';
     const requestUrl = (request as any).url || '';
-    const clientIp = (request as any).ip || (request as any).headers?.['x-original-client-ip'] || (request as any).headers?.['x-forwarded-for'] || '';
+    const clientIp =
+      (request as any).ip ||
+      (request as any).headers?.['x-original-client-ip'] ||
+      (request as any).headers?.['x-forwarded-for'] ||
+      '';
 
-    const isBotScan = status === HttpStatus.NOT_FOUND && 
-      BOT_SCAN_PATTERNS.some(regex => regex.test(requestPath));
+    const isBotScan =
+      status === HttpStatus.NOT_FOUND &&
+      BOT_SCAN_PATTERNS.some((regex) => regex.test(requestPath));
 
     const context = requestContextStorage.getStore();
     const requestId = context?.requestId || 'N/A';
@@ -111,9 +116,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const now = Date.now();
       const lastLogged = logDampeningCache.get(cacheKey);
 
-      if (!lastLogged || (now - lastLogged > DAMPENING_PERIOD_MS)) {
+      if (!lastLogged || now - lastLogged > DAMPENING_PERIOD_MS) {
         this.logger.log(
-          `[ReqID: ${requestId}] [CF-Ray: ${cfRay}] [BotScan] ${(request as any).method} ${requestUrl} ${status} - Ignored (Rate-limited)`
+          `[ReqID: ${requestId}] [CF-Ray: ${cfRay}] [BotScan] ${(request as any).method} ${requestUrl} ${status} - Ignored (Rate-limited)`,
         );
         logDampeningCache.set(cacheKey, now);
 

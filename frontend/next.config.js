@@ -10,6 +10,10 @@ const securityHeaders = [
     value: 'SAMEORIGIN',
   },
   {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'self'",
+  },
+  {
     key: 'X-Content-Type-Options',
     value: 'nosniff',
   },
@@ -25,6 +29,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+    poweredByHeader: false,
     output: 'standalone',
     images: {
         unoptimized: true,
@@ -48,6 +53,60 @@ const nextConfig = {
             {
                 source: '/:path*',
                 headers: securityHeaders,
+            },
+            {
+                source: '/portal-dashboard/:path*',
+                headers: [
+                    {
+                        key: 'X-Robots-Tag',
+                        value: 'noindex, nofollow',
+                    },
+                ],
+            },
+            {
+                source: '/login',
+                headers: [
+                    {
+                        key: 'X-Robots-Tag',
+                        value: 'noindex, nofollow',
+                    },
+                ],
+            },
+            {
+                source: '/register',
+                headers: [
+                    {
+                        key: 'X-Robots-Tag',
+                        value: 'noindex, nofollow',
+                    },
+                ],
+            },
+            {
+                source: '/profile',
+                headers: [
+                    {
+                        key: 'X-Robots-Tag',
+                        value: 'noindex, nofollow',
+                    },
+                ],
+            },
+            {
+                source: '/write',
+                headers: [
+                    {
+                        key: 'X-Robots-Tag',
+                        value: 'noindex, nofollow',
+                    },
+                ],
+            },
+            {
+                source: '/settings',
+                headers: [
+                    {
+                        key: 'X-Robots-Tag',
+                        value: 'noindex, nofollow',
+                    },
+                ],
             },
         ];
     },

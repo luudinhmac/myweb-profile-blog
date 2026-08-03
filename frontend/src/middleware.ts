@@ -22,11 +22,26 @@ export async function middleware(request: NextRequest) {
   // Generate dynamic CSP nonce
   const nonce = btoa(crypto.randomUUID());
   const isDev = process.env.NODE_ENV === 'development';
+  
   const scriptSrc = isDev 
-    ? `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com;`
-    : `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://static.cloudflareinsights.com;`;
+    ? `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://challenges.cloudflare.com;`
+    : `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://static.cloudflareinsights.com https://challenges.cloudflare.com;`;
 
-  const cspHeader = `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http://localhost:3001 http://portfolio-backend-staging:3001; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://staging.luumac.io.vn https://cloudflareinsights.com http://localhost:3001 http://portfolio-backend-staging:3001; frame-ancestors 'self';`;
+  const styleSrc = "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;";
+  const fontSrc = "font-src 'self' data: https://fonts.gstatic.com;";
+  
+  // Restrict HTTP protocols to localhost in dev environment only
+  const imgSrc = isDev
+    ? "img-src 'self' data: blob: https: http://localhost:3001;"
+    : "img-src 'self' data: blob: https:;";
+    
+  const connectSrc = isDev
+    ? "connect-src 'self' https://cloudflareinsights.com http://localhost:3001 https://challenges.cloudflare.com;"
+    : "connect-src 'self' https://cloudflareinsights.com https://challenges.cloudflare.com;";
+
+  const frameSrc = "frame-src 'self' https://challenges.cloudflare.com;";
+
+  const cspHeader = `default-src 'self'; ${scriptSrc} ${styleSrc} ${imgSrc} ${fontSrc} ${connectSrc} ${frameSrc} base-uri 'self'; object-src 'none'; frame-ancestors 'self';`;
 
   // Capture client IP
   const rawIp = 
@@ -72,6 +87,12 @@ export async function middleware(request: NextRequest) {
       res.headers.set('Content-Security-Policy', cspHeader);
     }
 
+    // Fail-safe X-Robots-Tag injection for sensitive directories
+    const sensitivePaths = ['/portal-dashboard', '/login', '/register', '/profile', '/write', '/settings'];
+    if (sensitivePaths.some(p => pathname.startsWith(p))) {
+      res.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    }
+
     console.log(
       `[Middleware] [ReqID: ${requestId}] [CF-Ray: ${cfRay || 'N/A'}] ${method} ${sanitizedPath} - Status: ${res.status} (${duration}ms) from IP: ${clientIp}`
     );
@@ -80,7 +101,7 @@ export async function middleware(request: NextRequest) {
 
   // Dynamic Runtime Proxy for API and Uploads
   if (isApiOrUpload) {
-    let fetchUrl = process.env.INTERNAL_API_URL;
+    const fetchUrl = process.env.INTERNAL_API_URL;
     if (!fetchUrl) {
       console.warn(`[Middleware] [ReqID: ${requestId}] [CF-Ray: ${cfRay || 'N/A'}] INTERNAL_API_URL is not defined. Passing request through.`);
       return logAndReturn(NextResponse.next({

@@ -63,7 +63,9 @@ export class HealthService implements OnModuleInit {
 
   private async runHealthCheck() {
     if (this.isChecking) {
-      this.logger.warn('Previous health check is still running. Skipping this cycle to prevent overlap.');
+      this.logger.warn(
+        'Previous health check is still running. Skipping this cycle to prevent overlap.',
+      );
       return;
     }
 
@@ -71,12 +73,18 @@ export class HealthService implements OnModuleInit {
     const startTime = Date.now();
 
     // Timeout helper function
-    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> => {
+    const withTimeout = <T>(
+      promise: Promise<T>,
+      timeoutMs: number,
+      errorMessage: string,
+    ): Promise<T> => {
       let timer: NodeJS.Timeout;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
       });
-      return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
+      return Promise.race([promise, timeoutPromise]).finally(() =>
+        clearTimeout(timer),
+      );
     };
 
     // Prepare dependency checks running in parallel with 5s timeout
@@ -90,7 +98,8 @@ export class HealthService implements OnModuleInit {
       (async () => {
         await this.cache.set('healthcheck_ping', 'pong', 1000);
         const val = await this.cache.get('healthcheck_ping');
-        if (val !== 'pong') throw new Error(`Expected pong, got ${String(val)}`);
+        if (val !== 'pong')
+          throw new Error(`Expected pong, got ${String(val)}`);
         return 'connected' as const;
       })(),
       5000,
@@ -142,14 +151,19 @@ export class HealthService implements OnModuleInit {
     }
 
     const durationMs = Date.now() - startTime;
-    const isHealthy = database === 'connected' && redis === 'connected' && storage !== 'disconnected';
+    const isHealthy =
+      database === 'connected' &&
+      redis === 'connected' &&
+      storage !== 'disconnected';
     const nextStatus = isHealthy ? 'ok' : 'degraded';
     const checkedAt = new Date().toISOString();
 
     // Log health status transitions
     const prevStatus = this.state.status;
     if (prevStatus !== 'starting' && prevStatus !== nextStatus) {
-      this.logger.warn(`Health status changed from [${prevStatus.toUpperCase()}] to [${nextStatus.toUpperCase()}]`);
+      this.logger.warn(
+        `Health status changed from [${prevStatus.toUpperCase()}] to [${nextStatus.toUpperCase()}]`,
+      );
     }
 
     // Update global cached state

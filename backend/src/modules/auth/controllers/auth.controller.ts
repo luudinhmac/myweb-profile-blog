@@ -14,6 +14,8 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { LoginDto, RegisterDto } from '@portfolio/contracts';
+import { Throttle } from '@nestjs/throttler';
+import { TurnstileGuard } from '../../../common/guards/turnstile.guard';
 
 // Use Cases
 import { LoginUseCase } from '../services/login.use-case';
@@ -30,6 +32,8 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @UseGuards(TurnstileGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // Limit to 10 requests per minute
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-transform')
   @ApiOperation({ summary: 'Login user and return JWT token' })
@@ -81,6 +85,8 @@ export class AuthController {
   }
 
   @Post('register')
+  @UseGuards(TurnstileGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Limit to 5 requests per minute
   @Header('Cache-Control', 'no-transform')
   @ApiOperation({ summary: 'Register new user' })
   async register(@Body() registerDto: RegisterDto) {

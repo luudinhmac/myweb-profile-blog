@@ -8,12 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       disallow: [
-        '/portal-dashboard/',
-        '/login/',
-        '/register/',
-        '/profile/',
-        '/write/',
-        '/settings/',
         '/api/',
       ],
     },

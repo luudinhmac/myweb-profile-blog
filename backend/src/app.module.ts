@@ -59,6 +59,7 @@ import { AccessLogMiddleware } from './common/middleware/access-log.middleware';
     StatsModule,
     ThrottlerModule.forRoot([
       {
+        name: 'default',
         ttl: 60000,
         limit: 60, // 60 requests per minute
       },

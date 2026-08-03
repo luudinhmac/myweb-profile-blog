@@ -36,6 +36,7 @@ persistence:
 env:
   tz: "Asia/Ho_Chi_Minh"
   port: "3001"
+  bypassTurnstile: "false"
 
 ingress:
   host: "staging.luumac.io.vn"
