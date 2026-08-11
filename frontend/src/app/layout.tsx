@@ -3,6 +3,7 @@ import { Inter, Outfit } from 'next/font/google';
 import './globals.css';
 import ConditionalLayout from '../components/layout/ConditionalLayout';
 import { AuthProvider } from '../context/AuthContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import { ThemeProvider } from '../components/providers/ThemeProvider';
 import { SetupRedirectCheck } from '@/components/layout/SetupRedirectCheck';
 import { redirect } from 'next/navigation';
@@ -154,10 +155,12 @@ export default async function RootLayout({
       <body suppressHydrationWarning className={`${inter.variable} ${outfit.variable} font-sans antialiased min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300`}>
         <ThemeProvider nonce={nonce} attribute="class" defaultTheme="system" enableSystem enableColorScheme>
           <AuthProvider>
-            <SetupRedirectCheck />
-            <ConditionalLayout>
-              {children}
-            </ConditionalLayout>
+            <NotificationProvider>
+              <SetupRedirectCheck />
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+            </NotificationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -3,48 +3,44 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Trash2, MessageCircle, Reply, ShieldAlert, UserCheck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { notificationService } from '@/features/notifications/services/notificationService';
 import { Notification } from '@/types';
-import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import UserAvatar from '@/features/users/components/UserAvatar';
 import ConfirmationDialog from '@/shared/components/ui/ConfirmationDialog';
+import { useNotifications } from '@/context/NotificationContext';
 
 const NotificationBell = () => {
-  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const fetchNotifications = async () => {
-    if (!user) return;
-    try {
-      const data = await notificationService.getAll();
-      setNotifications(data);
-      const countData = await notificationService.getUnreadCount();
-      setUnreadCount(countData.count);
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
-    }
-  };
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteAll,
+    deleteNotification,
+    pausePolling,
+    resumePolling
+  } = useNotifications();
 
+  // Control polling pause/resume based on dropdown open state
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      // Simple polling every 60 seconds
-      const interval = setInterval(fetchNotifications, 60000);
-      return () => clearInterval(interval);
+    if (isOpen) {
+      pausePolling();
     } else {
-      setNotifications([]);
-      setUnreadCount(0);
+      resumePolling();
     }
-  }, [user]);
+    return () => {
+      if (isOpen) {
+        resumePolling();
+      }
+    };
+  }, [isOpen, pausePolling, resumePolling]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,9 +54,7 @@ const NotificationBell = () => {
 
   const handleMarkAsRead = async (id: number) => {
     try {
-      await notificationService.markAsRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      await markAsRead(id);
     } catch (err) {
       console.error('Error marking as read:', err);
     }
@@ -68,9 +62,7 @@ const NotificationBell = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationService.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setUnreadCount(0);
+      await markAllAsRead();
     } catch (err) {
       console.error('Error marking all as read:', err);
     }
@@ -79,9 +71,7 @@ const NotificationBell = () => {
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
     try {
-      await notificationService.deleteAll();
-      setNotifications([]);
-      setUnreadCount(0);
+      await deleteAll();
       setShowConfirmDelete(false);
     } catch (err) {
       console.error('Error deleting all notifications:', err);
@@ -230,7 +220,7 @@ const NotificationBell = () => {
                            <button 
                              onClick={(e) => { 
                                e.stopPropagation(); 
-                               notificationService.delete(n.id).then(() => setNotifications(prev => prev.filter(item => item.id !== n.id)));
+                               deleteNotification(n.id);
                              }}
                              className="text-[10px] font-bold text-red-500/70 hover:text-red-500 uppercase tracking-widest ml-auto"
                            >
