@@ -6,26 +6,26 @@ RUN apk add --no-cache libc6-compat openssl
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
-# Copy các file cấu hình dependencies trước
+# Copy dependency configuration files first
 COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 
-# [TỐI ƯU] Sử dụng Docker Cache Mount để cache lại pnpm store giữa các lần build (Có chỉ định rõ --store-dir)
+# [OPTIMIZATION] Use Docker Cache Mount to cache pnpm store across builds (explicit store-dir)
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --store-dir /pnpm/store
 
-# Sinh Prisma Client TRƯỚC KHI copy code để tối ưu hóa Docker Layer Caching
+# Generate Prisma Client BEFORE copying source code to optimize Docker layer caching
 RUN npx prisma generate
 
-# Copy toàn bộ mã nguồn vào (Phải làm trước khi inline shared code)
+# Copy all source code (must be done before inlining shared package code)
 COPY . .
 
-# [SỬA LỖI] Tạo và inline shared code SAU KHI COPY . . để tránh bị đè dữ liệu cũ từ máy local
+# [BUGFIX] Create and inline shared package code AFTER copying source to prevent overwriting with old local data
 RUN mkdir -p src/_shared/contracts src/_shared/types && \
     cp -r shared/packages/contracts/src/* src/_shared/contracts/ && \
     cp -r shared/packages/types/src/* src/_shared/types/
 
-# Build ứng dụng NestJS (kết quả xuất ra thư mục dist/)
+# Build NestJS application (compiles to dist/ directory)
 RUN rm -rf dist && pnpm run build
 
 
@@ -37,15 +37,15 @@ RUN apk add --no-cache libc6-compat openssl
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
-# Stage này chỉ cần các file config để cài đặt node_modules cho prod
+# Only copy files needed to install production node_modules
 COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 
-# [TỐI ƯU] Tiếp tục dùng cache mount cho pnpm tại đây (Có chỉ định rõ --store-dir)
+# [OPTIMIZATION] Continue using pnpm cache mount here (explicit store-dir)
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --prod --frozen-lockfile --store-dir /pnpm/store
 
-# Sinh Prisma Client bản production (chỉ chứa các file sinh ra trong node_modules)
+# Generate production-ready Prisma Client (only outputs inside node_modules)
 RUN npx prisma generate
 
 
@@ -60,13 +60,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Tạo nhóm và user hệ thống bảo mật (non-root)
+# Create secure system user and group (non-root)
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs && \
     mkdir -p /app/uploads && \
     chown -R nestjs:nodejs /app
 
-# Copy toàn bộ tài nguyên từ các stage trước sang với quyền user nestjs
+# Copy all resources from previous stages with proper ownership (nestjs user)
 COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=prod-deps --chown=nestjs:nodejs /app/package.json ./package.json
 COPY --from=prod-deps --chown=nestjs:nodejs /app/prisma ./prisma
