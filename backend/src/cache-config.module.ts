@@ -12,6 +12,15 @@ import { InfrastructureConfigService } from './infrastructure/config/config.serv
       useFactory: async (configService: InfrastructureConfigService) => {
         try {
           const redisHost = configService.redisHost;
+          if (!redisHost) {
+            console.log(
+              'Redis host not configured. Falling back to in-memory cache.',
+            );
+            return {
+              ttl: 600000,
+            };
+          }
+
           const redisPort = configService.redisPort;
           const redisPassword = configService.redisPassword || undefined;
 

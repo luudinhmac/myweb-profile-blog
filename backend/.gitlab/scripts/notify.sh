@@ -73,8 +73,14 @@ fi
 if { [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; } && ( [ -z "$LOG_FILE" ] || [ ! -f "$LOG_FILE" ] ); then
     if [ ! -z "$CI_JOB_TOKEN" ] && [ ! -z "$CI_JOB_ID" ]; then
         echo "Job failed/canceled. Fetching job log from GitLab API..."
-        curl -s --header "JOB-TOKEN: ${CI_JOB_TOKEN}" "${CI_API_V4_URL:-https://gitlab.com/api/v4}/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/trace" -o job.log
-        LOG_FILE="job.log"
+        HTTP_CODE=$(curl -s -o job.log -w "%{http_code}" --header "JOB-TOKEN: ${CI_JOB_TOKEN}" "${CI_API_V4_URL:-https://gitlab.com/api/v4}/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/trace" || echo "000")
+        if [ "$HTTP_CODE" -eq 200 ] && [ -f job.log ] && ! grep -q "{\"message\":" job.log; then
+            LOG_FILE="job.log"
+        else
+            echo "GitLab API returned status $HTTP_CODE or unauthorized JSON payload. Discarding fake job log."
+            rm -f job.log
+            LOG_FILE=""
+        fi
     fi
 fi
 

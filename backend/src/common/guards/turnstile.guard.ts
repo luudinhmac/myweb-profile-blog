@@ -18,8 +18,7 @@ export class TurnstileGuard implements CanActivate {
 
     // Fallback to Cloudflare testing key in development if not configured
     const secretKey =
-      process.env.TURNSTILE_SECRET_KEY ||
-      '1x00000000000000000000000000000000UNSAVED';
+      process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
 
     if (!token) {
       throw new BadRequestException('Cloudflare Turnstile token is missing.');

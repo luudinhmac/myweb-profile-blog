@@ -1,44 +1,39 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Bell, Check, Trash2, MessageCircle, Reply, ShieldAlert, UserCheck, ChevronLeft, Search, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { notificationService } from '@/features/notifications/services/notificationService';
 import { Notification } from '@/types';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import UserAvatar from '@/features/users/components/UserAvatar';
 import Button from '@/shared/components/ui/Button';
 import ConfirmationDialog from '@/shared/components/ui/ConfirmationDialog';
+import { useNotifications } from '@/context/NotificationContext';
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const router = useRouter();
 
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      const data = await notificationService.getAll(filter === 'unread');
-      setNotifications(data);
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    notifications,
+    loading,
+    markAsRead,
+    markAllAsRead,
+    deleteAll,
+    deleteNotification
+  } = useNotifications();
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [filter]);
+  // Filter local state using useMemo (derived state) to prevent redundant network calls
+  const filteredNotifications = useMemo(() => {
+    return filter === 'unread' ? notifications.filter(n => !n.is_read) : notifications;
+  }, [notifications, filter]);
 
   const handleMarkAsRead = async (id: number) => {
     try {
-      await notificationService.markAsRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      await markAsRead(id);
     } catch (err) {
       console.error('Error marking as read:', err);
     }
@@ -46,8 +41,7 @@ export default function NotificationsPage() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationService.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      await markAllAsRead();
     } catch (err) {
       console.error('Error marking all as read:', err);
     }
@@ -56,8 +50,7 @@ export default function NotificationsPage() {
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
     try {
-      await notificationService.deleteAll();
-      setNotifications([]);
+      await deleteAll();
       setIsDeleteAllOpen(false);
     } catch (err) {
       console.error('Error deleting all notifications:', err);
@@ -68,8 +61,7 @@ export default function NotificationsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await notificationService.delete(id);
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      await deleteNotification(id);
     } catch (err) {
       console.error('Error deleting notification:', err);
     }
@@ -110,7 +102,7 @@ export default function NotificationsPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
               Thông báo
               <span className="text-sm font-normal text-slate-400 bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-full">
-                {notifications.length}
+                {filteredNotifications.length}
               </span>
             </h1>
           </div>
@@ -170,7 +162,7 @@ export default function NotificationsPage() {
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
               <p className="text-slate-400 text-sm">Đang tải thông báo...</p>
             </div>
-          ) : notifications.length === 0 ? (
+          ) : filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-slate-400">
               <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-full mb-6">
                 <Bell size={48} className="opacity-20" />
@@ -180,7 +172,7 @@ export default function NotificationsPage() {
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {notifications.map((n) => (
+              {filteredNotifications.map((n) => (
                 <div
                   key={n.id}
                   onClick={() => handleNotificationClick(n)}

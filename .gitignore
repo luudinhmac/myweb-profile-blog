@@ -61,3 +61,15 @@ docs/archive/infra_implementation_plan.md
 secrets.txt
 secrets.text
 krr/
+temp_cert.pem
+ssh-k8s-prod.ps1
+permission_support.md
+gitleaks-report.json
+scratch_sync.sh
+test_redis.js
+resolver.yaml
+trivy-config.json
+trivy-fs.json
+trivy-image.json
+get_tags.py
+
