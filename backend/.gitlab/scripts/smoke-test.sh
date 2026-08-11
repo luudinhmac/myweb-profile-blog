@@ -67,7 +67,7 @@ READY=0
 
 while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
     echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Fetching health status..."
-    HEALTH_RESP=$(curl -s $CURL_TIMEOUTS "${URL}/api/v1/health" || true)
+    HEALTH_RESP=$(curl -s $CURL_TIMEOUTS -H "X-CI-Verify: true" "${URL}/api/v1/health" || true)
     
     if [ -n "$HEALTH_RESP" ]; then
         STATUS=$(echo "$HEALTH_RESP" | jq -r '.status' 2>/dev/null | tr -d '\r' || true)
