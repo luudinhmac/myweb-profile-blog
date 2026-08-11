@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Search, LayoutGrid, Bookmark, Sparkles, ChevronRight, X } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
@@ -35,27 +35,46 @@ interface Series {
   slug: string;
 }
 
-export default function BlogContent() {
+interface BlogContentProps {
+  initialPosts?: Post[];
+  initialMeta?: { total: number; limit: number; page: number };
+  initialCategories?: Category[];
+  initialSeries?: Series[];
+  initialSettings?: Record<string, string>;
+}
+
+export default function BlogContent({
+  initialPosts = [],
+  initialMeta = { total: 0, limit: 12, page: 1 },
+  initialCategories = [],
+  initialSeries = [],
+  initialSettings = {},
+}: BlogContentProps) {
   const { isBackendOffline } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [recentSeries, setRecentSeries] = useState<Series[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [recentSeries, setRecentSeries] = useState<Series[]>(initialSeries);
+  const [loading, setLoading] = useState(false); // Default to false since we already have initial data
   const [hasError, setHasError] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const page = parseInt(searchParams.get('page') || '1');
-  const [meta, setMeta] = useState({ total: 0, limit: 12, page: 1 });
+  const [meta, setMeta] = useState(initialMeta);
   const q = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';
   const [searchTerm, setSearchTerm] = useState(q);
-  const [displaySettings, setDisplaySettings] = useState<Record<string, string>>({});
+  const [displaySettings, setDisplaySettings] = useState<Record<string, string>>(initialSettings);
+  
+  const isFirstMount = useRef(true);
 
   useEffect(() => {
+    if (Object.keys(initialSettings).length > 0) {
+      return;
+    }
     settingService.getPublicSettings()
       .then(data => setDisplaySettings(data))
       .catch(err => console.error('Failed to fetch public settings in BlogContent:', err));
-  }, []);
+  }, [initialSettings]);
 
   useEffect(() => {
     setSearchTerm(q);
@@ -96,6 +115,10 @@ export default function BlogContent() {
   }, [q, category, page, isBackendOffline]);
 
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
     fetchData();
   }, [fetchData]);
 
