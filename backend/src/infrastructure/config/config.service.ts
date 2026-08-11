@@ -38,10 +38,8 @@ export class InfrastructureConfigService {
     return process.env.MINIO_CDN_URL || '';
   }
 
-  get redisHost(): string {
-    return (
-      process.env.REDIS_HOST || 'redis-master.production.svc.cluster.local'
-    );
+  get redisHost(): string | undefined {
+    return process.env.REDIS_HOST;
   }
 
   get redisPort(): number {

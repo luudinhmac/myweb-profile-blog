@@ -5,6 +5,8 @@ import {
   forwardRef,
   Logger,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { TeamsService } from '../teams/teams.service';
@@ -38,6 +40,7 @@ export class SettingsService {
     private mailService: MailService,
     @Inject(forwardRef(() => AdminAlertService))
     private adminAlertService: AdminAlertService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   private coerceToString(value: any): string {
@@ -383,6 +386,7 @@ export class SettingsService {
   }
 
   async flushCache() {
+    await this.cacheManager.clear();
     return { message: 'Cache flushed successfully' };
   }
 

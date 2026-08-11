@@ -11,8 +11,10 @@ import {
   Query,
   ParseIntPipe,
   UseInterceptors,
+  Inject,
 } from '@nestjs/common';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../auth/permissions.guard';
 import { Permissions } from '../../auth/permissions.decorator';
@@ -46,6 +48,7 @@ export class PostsController {
     private readonly togglePublishPostUseCase: TogglePublishPostUseCase,
     private readonly toggleLikePostUseCase: ToggleLikePostUseCase,
     private readonly getLikeStatusUseCase: GetLikeStatusUseCase,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   @Get()
@@ -142,48 +145,66 @@ export class PostsController {
   @ApiOperation({ summary: 'Create new post' })
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('posts:create')
-  create(@Req() req: any, @Body() data: CreatePostDto) {
-    return this.createPostUseCase.execute(req.user, data);
+  async create(@Req() req: any, @Body() data: CreatePostDto) {
+    const result = await this.createPostUseCase.execute(req.user, data);
+    await this.cacheManager.clear();
+    return result;
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update post' })
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('posts:create')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: any,
     @Body() data: UpdatePostDto,
   ) {
-    return this.updatePostUseCase.execute(id, req.user, data);
+    const result = await this.updatePostUseCase.execute(id, req.user, data);
+    await this.cacheManager.clear();
+    return result;
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete post' })
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('posts:create')
-  remove(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    return this.deletePostUseCase.execute(id, req.user, getClientIp(req));
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const result = await this.deletePostUseCase.execute(
+      id,
+      req.user,
+      getClientIp(req),
+    );
+    await this.cacheManager.clear();
+    return result;
   }
 
   @Post(':id/pin')
   @ApiOperation({ summary: 'Toggle pin post' })
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('posts:create')
-  togglePin(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    return this.togglePinPostUseCase.execute(id, req.user);
+  async togglePin(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const result = await this.togglePinPostUseCase.execute(id, req.user);
+    await this.cacheManager.clear();
+    return result;
   }
 
   @Post(':id/publish')
   @ApiOperation({ summary: 'Toggle publish status' })
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions('posts:create')
-  togglePublish(
+  async togglePublish(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: any,
     @Body('reason') reason?: string,
   ) {
-    return this.togglePublishPostUseCase.execute(id, req.user, reason);
+    const result = await this.togglePublishPostUseCase.execute(
+      id,
+      req.user,
+      reason,
+    );
+    await this.cacheManager.clear();
+    return result;
   }
 
   @Get(':id/like-status')
@@ -196,7 +217,9 @@ export class PostsController {
   @Post(':id/like')
   @ApiOperation({ summary: 'Toggle like post' })
   @UseGuards(AuthGuard('jwt'))
-  toggleLike(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    return this.toggleLikePostUseCase.execute(id, req.user.id);
+  async toggleLike(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const result = await this.toggleLikePostUseCase.execute(id, req.user.id);
+    await this.cacheManager.clear();
+    return result;
   }
 }
