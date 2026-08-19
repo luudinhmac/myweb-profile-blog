@@ -82,6 +82,22 @@ spec:
           value: {{ .Values.image.tag | quote }}
         - name: BYPASS_TURNSTILE
           value: {{ .Values.env.bypassTurnstile | default "false" | quote }}
+        - name: STORAGE_TYPE
+          value: {{ .Values.env.storageType | default "local" | quote }}
+        - name: UPLOAD_DIR
+          value: {{ .Values.env.uploadDir | default "uploads" | quote }}
+        - name: ALLOWED_ORIGINS
+          value: {{ .Values.env.allowedOrigins | quote }}
+        - name: MINIO_ENDPOINT
+          value: {{ .Values.env.minioEndpoint | quote }}
+        - name: MINIO_PORT
+          value: {{ .Values.env.minioPort | default "443" | quote }}
+        - name: MINIO_BUCKET
+          value: {{ .Values.env.minioBucket | quote }}
+        - name: MINIO_USE_SSL
+          value: {{ .Values.env.minioUseSsl | default "true" | quote }}
+        - name: MINIO_CDN_URL
+          value: {{ .Values.env.minioCdnUrl | quote }}
         {{- if .Values.redis.enabled }}
         - name: REDIS_PASSWORD
           valueFrom:

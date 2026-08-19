@@ -40,6 +40,14 @@ env:
   tz: "Asia/Ho_Chi_Minh"
   port: "3001"
   bypassTurnstile: "true"
+  storageType: "minio"
+  uploadDir: "uploads"
+  allowedOrigins: "http://localhost:3000,http://staging.local,https://staging.luumac.io.vn"
+  minioEndpoint: "a8823974263cfbb734616640f1b9dd55.r2.cloudflarestorage.com"
+  minioPort: "443"
+  minioBucket: "blog-upload-staging"
+  minioUseSsl: "true"
+  minioCdnUrl: "https://media-staging.luumac.io.vn"
 sealedSecret:
   enabled: true
   encryptedData:
@@ -71,3 +79,8 @@ readinessProbe:
   periodSeconds: 10
   timeoutSeconds: 3
   failureThreshold: 3
+
+doppler:
+  tokenSecretName: "doppler-token-secret"
+  encryptedToken: "AgBsjaBw4vxAZdR4olAkLwG5tssdCZ4XMZy9Cufc1eJJHcj8xoGx6o5R0FKTBsTpgEj/M3HgORrh1tPtwNvdNjmEvxdZDd1tTz6q7PVfhKZKwToh7RIuUfGdlLmo3cNYa/4UeGZw0GmPgW8uu73W02VJsoBJXLW7+8OOnB5pO8ju48quQk9E7ZAjRv3fdjUDqEyeMScrZ1vh4edKjDgPka2BUniIxFwTG+MOl+JPfD0F6/slVyTpzlDcSBVQr99IRSWAHfShBAwozoPgj7FZylkEs5C2T3tbqTG+D8b5+WmTxE7B/KH3zRWmbM89e17xhauHfhxK/Hw3Tjc09sMZlKl7TlC7oF2C9sxqVx8S96iAnUvM49J4Ih7eYtPBaHDOwuM/xEDJw+s4ad+5iooTfz8ZEp0HK0Dczc+PCadIF7Cesr5kj7zVqUCil90bizFFiSKk2QFWtJ+dsUfAOOY93HLcOsrPJFQXggq14u19mNNbZaRjz9qmmZ597Gty4Ob6sFMY8Oqs8hbdyeIyagxW5ggtx51ypamLEg38QO3iW/MTfvATC/3SgbB1RU2ud9qpwgCQNTzv97i/leDzsnfJASnbNjhngHLQQE9Zf5il4h1D5O33zK+LZpG3LIhx1HmmI64XWDa9B27IGDLe6gY9ixBKkCiQIkJ6HwoyQRWZGp8nw0N6o7Kn2x1bjrfnQA4iCo+HZj2CK0W5ns63QHM7POlyjZXGihnmh5bYYFuVv1cPl9pscyw+ByhS/mSDN/9VWrWIlFRD3g=="
+

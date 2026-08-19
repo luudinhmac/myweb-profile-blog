@@ -20,6 +20,10 @@ spec:
     server: https://kubernetes.default.svc
   - namespace: longhorn-system
     server: https://kubernetes.default.svc
+  - namespace: doppler-operator
+    server: https://kubernetes.default.svc
+  - namespace: doppler-operator-system
+    server: https://kubernetes.default.svc
   clusterResourceWhitelist:
   - group: '*'
     kind: '*'
