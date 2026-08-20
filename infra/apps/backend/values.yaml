@@ -37,6 +37,14 @@ env:
   tz: "Asia/Ho_Chi_Minh"
   port: "3001"
   bypassTurnstile: "false"
+  storageType: "local"
+  uploadDir: "uploads"
+  allowedOrigins: "http://localhost:3000,http://127.0.0.1:3000"
+  minioEndpoint: ""
+  minioPort: "443"
+  minioBucket: ""
+  minioUseSsl: "true"
+  minioCdnUrl: ""
 
 ingress:
   host: "staging.luumac.io.vn"
@@ -48,6 +56,12 @@ ingress:
 
 namespace: portfolio
 
+secretsProvider: "doppler" # options: "doppler" | "sealed-secrets"
+
+doppler:
+  tokenSecretName: "doppler-token-secret"
+  encryptedToken: ""
+
 sealedSecret:
   enabled: false
   encryptedData:
@@ -57,3 +71,4 @@ sealedSecret:
 redis:
   enabled: false
   encryptedPassword: ""
+

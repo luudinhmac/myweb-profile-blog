@@ -35,6 +35,19 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
 persistence:
   storageClassName: "longhorn"
+env:
+  tz: "Asia/Ho_Chi_Minh"
+  port: "3001"
+  bypassTurnstile: "false"
+  storageType: "minio"
+  uploadDir: "uploads"
+  allowedOrigins: "https://blog.luumac.io.vn"
+  minioEndpoint: "a8823974263cfbb734616640f1b9dd55.r2.cloudflarestorage.com"
+  minioPort: "443"
+  minioBucket: "blog-upload-prod"
+  minioUseSsl: "true"
+  minioCdnUrl: "https://media.luumac.io.vn"
+
 sealedSecret:
   enabled: true
   encryptedData:
@@ -68,3 +81,7 @@ readinessProbe:
   failureThreshold: 3
 nodeSelector:
   kubernetes.io/hostname: k8s-prod
+
+doppler:
+  tokenSecretName: "doppler-token-secret"
+  encryptedToken: "AgCP1yT4DnhcXkgDTD3pymBEm+33n+eS7p0y5H73ulgn0BYx3/VI5s5NHZIA205nl2F0bqdmP5ACRjbc7SjuuuOQ4mweTsuj3azO0RhlreQ4GJx4L3o7SxAGPb/ady3oCzplr/hPiCbNHdBbLV5B711mhpHllTeh7tJyafOY+cboDM0WSKio5u6Y57dNNvtWnCfyLGRbulhX1phdKS7H+b+PJO0rMudpBlrBp2fKRqVDQIVnEIvaV9b1L92s8Ps9E2/Ss2M8BD8X3sWXAwxp06d8iqUify+NQNeXBCLGUcZk63PSTA7D8VJqQVDfbPKvFUG8oBIhFFaG9R0G6PP2S51vrsC6BCU2ivCziPbHIsR3k1tJc7C5y8imhi0leTFWmmQIg3dA715i7Lu4Um3F8ZEj84nj5KkaMwBOV8AuRIvr7ofOF3jiWbMqVNjq0lHw860OrG7+vpkWm+LryUNkuoUQj0PgD+0SYUVCyN1pKOp7dj5z/ULesA7fq3MCkVqjKwsA6lQlo8ntylTsqHUpw+Hni0XhIgNcmJaZNN1NHLYKqBGZ1CdlZKwejcuZ2Shza1FekM8XRYTPX3n6Bm3PKWR4WhSXD1GE9KhscaRJl0f5bdigyqD+N1LYqVFsYK86BPxJiKoCR0qYgoTdOEHtiEXhF6NawG/tQKgHzoLsUCPL3Cje1KD/+c+ForTH8QyUZ5qctj4paNIn1ZKYPI17/o4cnFVrzg8R7pELOsxr+zNegpR53jpfufjZtx1LKNF0Ip9V6GibPA=="

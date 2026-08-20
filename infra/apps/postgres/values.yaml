@@ -27,10 +27,16 @@ auth:
 
 namespace: database
 
+secretsProvider: "doppler" # options: "doppler" | "sealed-secrets" | "helm"
+
+doppler:
+  tokenSecretName: "doppler-token-secret"
+
 sealedSecret:
   enabled: false
   encryptedData:
     POSTGRES_USER: ""
     POSTGRES_PASSWORD: ""
     POSTGRES_DB: ""
+
 
