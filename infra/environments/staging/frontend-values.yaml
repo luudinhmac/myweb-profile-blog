@@ -26,4 +26,4 @@ env:
   tz: "Asia/Ho_Chi_Minh"
   nodeEnv: "production"
   internalApiUrl: "http://portfolio-backend-staging:3001/api/v1"
-  nextPublicTurnstileSiteKey: "0x4AAAAAAEE7aDdQIdRp6_w4"
+  nextPublicTurnstileSiteKey: "0x4AAAAAAEXqSVuhKfYIMszj"

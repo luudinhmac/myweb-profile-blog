@@ -190,9 +190,38 @@ kubectl rollout restart deployment/sealed-secrets-controller -n kube-system
         kubectl get restores.velero.io -n velero
         ```
 
-> [!TIP]
-> **Khôi phục thủ công database PostgreSQL qua pg_dump**:
-> Nếu chỉ muốn khôi phục riêng lẻ cơ sở dữ liệu PostgreSQL từ một tệp SQL backup thủ công mà không muốn chạy Velero:
-> ```bash
-> cat production_backup.sql | kubectl exec -i postgres-0 -n blog-prod -- psql -U <db_user> -d <db_name>
+> [!WARNING]
+> **Lưu ý quan trọng về Font tiếng Việt khi Sao lưu & Khôi phục thủ công trên Windows (PowerShell):**
+> 
+> Nếu chạy lệnh backup/restore trực tiếp trên Windows PowerShell, mặc định PowerShell sẽ tự chuyển hướng luồng dữ liệu sang mã hóa `UTF-16LE` hoặc mã hóa đường ống (pipeline) sang `ASCII/CP437`. Điều này sẽ **phá hủy hoàn toàn các ký tự tiếng Việt có dấu và biến chúng thành dấu hỏi chấm `?`**.
+>
+> **1. Quy trình Sao lưu (Backup) thủ công chuẩn:**
+> Tránh sử dụng toán tử `>` của PowerShell. Nên chạy trực tiếp bên trong container và copy ra ngoài, hoặc dùng `cmd.exe`:
+> ```powershell
+> # Cách 1 (Khuyên dùng): Ghi file trong container rồi copy ra ngoài
+> kubectl exec -it postgres-production-0 -n blog-prod -- pg_dump -U portfolio_user -d portfolio_production -F p -f /tmp/backup.sql
+> kubectl cp postgres-production-0:/tmp/backup.sql .\portfolio_backup.sql -n blog-prod
+> kubectl exec -it postgres-production-0 -n blog-prod -- rm /tmp/backup.sql
+> 
+> # Cách 2: Sử dụng cmd.exe để điều hướng file (tránh PowerShell tự mã hóa UTF-16LE)
+> cmd.exe /c "kubectl exec -i postgres-production-0 -n blog-prod -- pg_dump -U portfolio_user -d portfolio_production > .\portfolio_backup.sql"
 > ```
+> 
+> **2. Quy trình Khôi phục (Restore) thủ công chuẩn:**
+> *   **Bước A:** Kiểm tra tệp tin backup. Nếu tệp tin bị lưu ở mã hóa `UTF-16LE`, cần chuyển đổi về `UTF-8` (không BOM) trước:
+>     ```powershell
+>     $content = Get-Content -Path .\portfolio_backup.sql -Encoding Unicode
+>     [System.IO.File]::WriteAllLines(".\portfolio_backup_utf8.sql", $content, (New-Object System.Text.UTF8Encoding($false)))
+>     ```
+> *   **Bước B:** Khôi phục vào cơ sở dữ liệu (Tránh sử dụng pipeline `cat ... | kubectl` trên PowerShell):
+>     ```powershell
+>     # Copy file UTF-8 vào pod trước (Dùng đường dẫn tương đối để tránh lỗi phân tách ổ đĩa Windows ':')
+>     kubectl cp .\portfolio_backup_utf8.sql postgres-production-0:/tmp/portfolio_backup_utf8.sql -n blog-prod
+>     
+>     # Vào pod chạy lệnh import trực tiếp (nên DROP và CREATE lại schema public để làm sạch dữ liệu cũ)
+>     kubectl exec -it postgres-production-0 -n blog-prod -- psql -U portfolio_user -d portfolio_production -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+>     kubectl exec -it postgres-production-0 -n blog-prod -- psql -U portfolio_user -d portfolio_production -f /tmp/portfolio_backup_utf8.sql
+>     
+>     # Xóa file tạm
+>     kubectl exec -it postgres-production-0 -n blog-prod -- rm /tmp/portfolio_backup_utf8.sql
+>     ```

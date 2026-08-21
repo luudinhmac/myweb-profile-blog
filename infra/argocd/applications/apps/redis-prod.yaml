@@ -31,7 +31,7 @@ spec:
               memory: 64Mi
           persistence:
             enabled: true
-            storageClass: longhorn
+            storageClass: local-path
             size: 2Gi
   destination:
     server: https://kubernetes.default.svc

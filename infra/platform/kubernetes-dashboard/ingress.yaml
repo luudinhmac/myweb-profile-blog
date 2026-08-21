@@ -14,7 +14,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: infra-admin-allowlist@kubernetescrd,infra-infra-compress@kubernetescrd
     traefik.ingress.kubernetes.io/service.serversscheme: https
     traefik.ingress.kubernetes.io/service.serverstransport: infra-insecure-transport@kubernetescrd
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   tls:
