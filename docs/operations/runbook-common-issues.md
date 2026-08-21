@@ -204,3 +204,50 @@ kubectl create secret generic <secret_name> -n <namespace> \
   --from-literal=DATABASE_URL="postgresql://<db_user>:<db_password>@<db_host>:<db_port>/<db_name>" \
   --from-literal=JWT_SECRET="<jwt_secret_key>"
 ```
+
+---
+
+## 8. Lỗi Font Tiếng Việt (Ký Tự `?`) Khi Sao Lưu/Khôi Phục Thủ Công Trên Windows (PowerShell)
+
+### Triệu chứng:
+Sau khi restore dữ liệu thủ công từ file SQL backup, toàn bộ các bài viết hoặc trường dữ liệu có dấu tiếng Việt bị lỗi hiển thị thành dấu hỏi chấm `?` (Ví dụ: `Cấu hình` -> `C?u h?nh`, `Hướng dẫn` -> `H??ng d?n`).
+
+### Phân tích nguyên nhân:
+1.  **Khi Backup:** Chạy lệnh điều hướng `kubectl exec ... -- pg_dump ... > backup.sql` trên Windows PowerShell 5.1 khiến tệp đầu ra tự động bị mã hóa thành **`UTF-16LE` (UTF-16 Little Endian)**.
+2.  **Khi Restore:** Sử dụng đường ống dẫn (pipeline) dạng `cat backup.sql | kubectl exec -i ...` trên PowerShell khiến luồng dữ liệu truyền đi bị ép về bảng mã console mặc định (**ASCII/CP437**). Toàn bộ ký tự Unicode có dấu tiếng Việt bị cắt mất bit cao và vĩnh viễn biến thành ký tự `?` trước khi đến được cơ sở dữ liệu.
+
+### Hướng dẫn khắc phục và phòng ngừa:
+
+#### 1. Quy trình Sao lưu (Backup) thủ công chuẩn trên Windows:
+Tránh dùng toán tử `>` của PowerShell. Hãy tạo file bên trong container rồi sao chép ra ngoài:
+```powershell
+# Chạy pg_dump và ghi file tạm trực tiếp trong Pod
+kubectl exec -it postgres-production-0 -n blog-prod -- pg_dump -U portfolio_user -d portfolio_production -F p -f /tmp/backup.sql
+
+# Sao chép file backup từ Pod ra máy local (Dùng relative path để tránh xung đột ký tự ổ đĩa ':')
+kubectl cp postgres-production-0:/tmp/backup.sql .\portfolio_backup.sql -n blog-prod
+
+# Xóa file tạm trong Pod
+kubectl exec -it postgres-production-0 -n blog-prod -- rm /tmp/backup.sql
+```
+
+#### 2. Quy trình Khôi phục (Restore) thủ công chuẩn trên Windows:
+*   **Bước A:** Kiểm tra tệp tin backup. Nếu định dạng tệp tin bị lưu ở mã hóa `UTF-16LE`, chạy script PowerShell sau để chuyển đổi về `UTF-8` (không BOM) trước khi làm việc:
+    ```powershell
+    $content = Get-Content -Path .\portfolio_backup.sql -Encoding Unicode
+    [System.IO.File]::WriteAllLines(".\portfolio_backup_utf8.sql", $content, (New-Object System.Text.UTF8Encoding($false)))
+    ```
+*   **Bước B:** Khôi phục vào cơ sở dữ liệu (Tránh sử dụng pipeline `cat ... | kubectl` trên PowerShell):
+    ```powershell
+    # 1. Copy file UTF-8 vào pod trước
+    kubectl cp .\portfolio_backup_utf8.sql postgres-production-0:/tmp/portfolio_backup_utf8.sql -n blog-prod
+    
+    # 2. Xóa và tạo mới schema public trong database để làm sạch dữ liệu cũ
+    kubectl exec -it postgres-production-0 -n blog-prod -- psql -U portfolio_user -d portfolio_production -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+    
+    # 3. Thực hiện khôi phục trực tiếp từ file nội bộ trong Pod
+    kubectl exec -it postgres-production-0 -n blog-prod -- psql -U portfolio_user -d portfolio_production -f /tmp/portfolio_backup_utf8.sql
+    
+    # 4. Xóa file tạm trong Pod
+    kubectl exec -it postgres-production-0 -n blog-prod -- rm /tmp/portfolio_backup_utf8.sql
+    ```
