@@ -23,17 +23,17 @@ spec:
           valueFrom:
             secretKeyRef:
               name: postgres-production-secret
-              key: POSTGRES_USER
+              key: DB_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-production-secret
-              key: POSTGRES_PASSWORD
+              key: DB_PASSWORD
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
               name: postgres-production-secret
-              key: POSTGRES_DB
+              key: DB_NAME
         - name: DATA_SOURCE_NAME
           value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-production.blog-prod:5432/$(POSTGRES_DB)?sslmode=disable"
         ports:

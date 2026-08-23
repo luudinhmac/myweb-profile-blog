@@ -10,12 +10,12 @@ ingress:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  host: blog.luumac.io.vn
+  host: luumac.io.vn
   secretName: portfolio-frontend-tls
   issuer: letsencrypt-prod
 env:
   internalApiUrl: "http://portfolio-backend-production:3001/api/v1"
-  nextPublicTurnstileSiteKey: "0x4AAAAAAEE7aDdQIdRp6_w4"
+  nextPublicTurnstileSiteKey: "0x4AAAAAAEXqSVuhKfYIMszj"
 autoscaling:
   enabled: true
   minReplicas: 1

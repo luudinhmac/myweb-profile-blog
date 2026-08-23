@@ -1,0 +1,17 @@
+# Description: Ansible playbook to set up GitLab Runner and Docker locally on WSL2.
+# Last Updated: 2026-08-23
+
+---
+- name: Setup GitLab Runner on WSL2 (Locally)
+  hosts: build
+  connection: local
+  become: yes
+  vars_files:
+    - "../vars/secrets.yml"
+  vars:
+    ansible_user: "{{ lookup('env', 'USER') }}"
+  roles:
+    - role: ../roles/docker
+      tags: [docker]
+    - role: ../roles/gitlab-runner
+      tags: [runner]

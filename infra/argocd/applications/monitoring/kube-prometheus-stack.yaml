@@ -12,6 +12,8 @@ spec:
     helm:
       releaseName: monitoring
       values: |
+        fullnameOverride: "monitoring-kube"
+
         grafana:
           replicas: 0
           serviceMonitor:
@@ -31,7 +33,7 @@ spec:
           persistence:
             enabled: true
             size: 2Gi
-            storageClassName: longhorn
+            storageClassName: local-path
           initChownData:
             enabled: false
           resources:
@@ -76,8 +78,10 @@ spec:
             retention: 2d
             storageSpec:
               volumeClaimTemplate:
+                metadata:
+                  name: prometheus-db
                 spec:
-                  storageClassName: longhorn
+                  storageClassName: local-path
                   accessModes:
                     - ReadWriteOnce
                   resources:

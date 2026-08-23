@@ -2,12 +2,19 @@
 
 import { useState, useEffect, use, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Calendar, User as UserIcon, Mail, Eye, ArrowLeft, Sparkles, Briefcase, Heart, MessageSquare, Layers } from 'lucide-react';
 import AnimateList from '@/shared/components/ui/AnimateList';
 import Button from '@/shared/components/ui/Button';
 import Skeleton from '@/shared/components/ui/Skeleton';
 import FormattedDate from '@/shared/components/common/FormattedDate';
 import Badge from '@/shared/components/common/Badge';
+import { useAuth } from '@/context/AuthContext';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+
+const ConfirmationDialog = dynamic(() => import('@/shared/components/ui/ConfirmationDialog'), { ssr: false });
+const MessageDialog = dynamic(() => import('@/shared/components/ui/MessageDialog'), { ssr: false });
 
 // Modular Services
 import { userService } from '@/features/users/services/userService';
@@ -18,10 +25,62 @@ import { Post, User as Author } from '@/types';
 
 export default function AuthorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  
   const [author, setAuthor] = useState<Author | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [series, setSeries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // State for Login Confirmation Dialog
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [loginPromptMsg, setLoginPromptMsg] = useState({ title: '', message: '' });
+
+  // State for Info Message Dialog
+  const [infoMsg, setInfoMsg] = useState<{ isOpen: boolean; title: string; message: string; variant: 'info' | 'success' | 'warning' | 'error' }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    variant: 'info'
+  });
+
+  const requireLogin = (actionName: string): boolean => {
+    if (!isAuthenticated) {
+      setLoginPromptMsg({
+        title: 'Yêu cầu đăng nhập',
+        message: `Bạn cần đăng nhập để ${actionName}.`
+      });
+      setShowLoginPrompt(true);
+      return false;
+    }
+    return true;
+  };
+
+  const handleFollow = () => {
+    if (!requireLogin('theo dõi tác giả')) return;
+    setInfoMsg({
+      isOpen: true,
+      title: 'Thông báo',
+      message: 'Tính năng theo dõi tác giả đang được phát triển.',
+      variant: 'info'
+    });
+  };
+
+  const handleMessage = () => {
+    if (!requireLogin('nhắn tin với tác giả')) return;
+    setInfoMsg({
+      isOpen: true,
+      title: 'Thông báo',
+      message: 'Tính năng nhắn tin với tác giả đang được phát triển.',
+      variant: 'info'
+    });
+  };
+
+  const handleConfirmLogin = () => {
+    setShowLoginPrompt(false);
+    router.push(`/login?redirect=/author/${id}`);
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -103,10 +162,11 @@ export default function AuthorPage({ params }: { params: Promise<{ id: string }>
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] bg-gradient-to-tr from-primary to-blue-500 p-1 relative z-10 shadow-2xl">
                 <div className="w-full h-full rounded-[1.8rem] bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
                   {author.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img 
+                    <Image 
                       src={author.avatar} 
                       alt={author.fullname || author.username} 
+                      width={160}
+                      height={160}
                       className="w-full h-full object-cover" 
                     />
                   ) : (
@@ -146,11 +206,11 @@ export default function AuthorPage({ params }: { params: Promise<{ id: string }>
               </div>
 
               <div className="flex items-center justify-center gap-4">
-                <Button size="lg" className="px-10 rounded-2xl shadow-xl shadow-primary/20 group">
+                <Button size="lg" onClick={handleFollow} className="px-10 rounded-2xl shadow-xl shadow-primary/20 group">
                   <Heart size={18} className="mr-2 group-hover:fill-current transition-all" />
                   Theo dõi tác giả
                 </Button>
-                <Button variant="outline" size="lg" className="px-6 rounded-2xl">
+                <Button variant="outline" size="lg" onClick={handleMessage} className="px-6 rounded-2xl">
                   <MessageSquare size={18} />
                 </Button>
               </div>
@@ -207,6 +267,26 @@ export default function AuthorPage({ params }: { params: Promise<{ id: string }>
           </div>
         </div>
       </div>
+
+      <ConfirmationDialog
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        onConfirm={handleConfirmLogin}
+        title={loginPromptMsg.title}
+        message={loginPromptMsg.message}
+        confirmLabel="Đăng nhập"
+        cancelLabel="Hủy"
+        variant="warning"
+      />
+
+      <MessageDialog
+        isOpen={infoMsg.isOpen}
+        onClose={() => setInfoMsg(prev => ({ ...prev, isOpen: false }))}
+        title={infoMsg.title}
+        message={infoMsg.message}
+        variant={infoMsg.variant}
+        buttonLabel="Đồng ý"
+      />
     </div>
   );
 }

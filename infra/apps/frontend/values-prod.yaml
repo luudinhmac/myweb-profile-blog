@@ -32,7 +32,7 @@ env:
   internalApiUrl: "http://portfolio-backend:3001"
 
 ingress:
-  host: "blog.luumac.io.vn"
+  host: "luumac.io.vn"
   issuer: "letsencrypt-prod"
   secretName: "luumac-tls-prod"
 

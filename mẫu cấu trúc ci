@@ -1,0 +1,148 @@
+
+project/
+├── .gitlab-ci.yml                      # Entry point — chỉ include + stages, KHÔNG chứa job logic
+│
+└── .gitlab/
+    ├── ci/
+    │   ├── config/
+    │   │   ├── variables.yml           # Biến global (REGISTRY, IMAGE_NAME, IMAGE_TAG...)
+    │   │   ├── workflow.yml            # workflow:rules — quyết định pipeline có chạy không
+    │   │   └── templates.yml           # .base-job, .rules-mr, .rules-main, .rules-tag (extends dùng chung)
+    │   │
+    │   ├── build/
+    │   │   ├── build.yml               # Build image (build-once)
+    │   │   └── test.yml                # Unit test / integration test
+    │   │
+    │   ├── quality/
+    │   │   ├── lint.yml                # ESLint/golangci-lint...
+    │   │   └── sonarqube.yml           # Code coverage gate (nếu có)
+    │   │
+    │   ├── security/
+    │   │   ├── trivy.yml               # Trivy scan + parse_trivy.py (fail-closed)
+    │   │   ├── sbom.yml                # CycloneDX SBOM generation
+    │   │   └── sign.yml                # Cosign OIDC sign + verify
+    │   │
+    │   ├── package/
+    │   │   └── package.yml             # Tag & push image lên registry (promote step chuẩn bị)
+    │   │
+    │   ├── deploy/
+    │   │   ├── deploy-dev.yml
+    │   │   ├── deploy-staging.yml
+    │   │   ├── deploy-prod.yml
+    │   │   └── rollback.yml            # Manual trigger job, gọi rollback.sh
+    │   │
+    │   ├── verify/
+    │   │   ├── smoke-test.yml          # Check /health, version/SHA match
+    │   │   └── e2e-test.yml            # optional, chạy sau deploy-staging
+    │   │
+    │   └── notify/
+    │       └── notify.yml              # Slack/Telegram khi deploy fail hoặc rollback
+    │
+    └── scripts/
+        ├── build.sh
+        ├── test.sh
+        ├── parse_trivy.py              # Đã fix fail-open trước đó
+        ├── deploy.sh
+        ├── rollback.sh
+        ├── smoke-test.sh
+        └── notify.sh
+.gitlab-ci.yml gốc — chỉ làm nhiệm vụ orchestrate
+yaml
+stages:
+  - build
+  - test
+  - quality
+  - security
+  - sign
+  - package
+  - deploy-dev
+  - smoke-test-dev
+  - deploy-staging
+  - smoke-test-staging
+  - deploy-prod
+  - verify-prod
+
+include:
+  # Config — load trước tiên
+  - local: '.gitlab/ci/config/variables.yml'
+  - local: '.gitlab/ci/config/workflow.yml'
+  - local: '.gitlab/ci/config/templates.yml'
+
+  # Build & Test
+  - local: '.gitlab/ci/build/build.yml'
+  - local: '.gitlab/ci/build/test.yml'
+
+  # Quality
+  - local: '.gitlab/ci/quality/lint.yml'
+
+  # Security — build-once trước khi promote
+  - local: '.gitlab/ci/security/trivy.yml'
+  - local: '.gitlab/ci/security/sbom.yml'
+  - local: '.gitlab/ci/security/sign.yml'
+
+  # Package (promote-many bắt đầu từ đây)
+  - local: '.gitlab/ci/package/package.yml'
+
+  # Deploy theo môi trường
+  - local: '.gitlab/ci/deploy/deploy-dev.yml'
+  - local: '.gitlab/ci/verify/smoke-test.yml'
+  - local: '.gitlab/ci/deploy/deploy-staging.yml'
+  - local: '.gitlab/ci/deploy/deploy-prod.yml'
+  - local: '.gitlab/ci/deploy/rollback.yml'
+
+  - local: '.gitlab/ci/notify/notify.yml'
+
+default:
+  interruptible: true
+  tags:
+    - k8s-runner
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+Nguyên tắc thiết kế đứng sau cấu trúc này
+
+1. Phân nhóm theo domain, không phải theo stage
+Thay vì để phẳng 10 file .yml cùng cấp, nhóm theo build/, security/, deploy/... — dễ tìm, dễ code review theo chức năng khi PR chỉ động vào 1 mảng (VD: chỉ sửa security thì reviewer security review đúng thư mục).
+
+2. config/ tách biệt hoàn toàn với job logic
+variables.yml, workflow.yml, templates.yml là "hạ tầng" của CI — thay đổi ít, cần review kỹ hơn job thường. Tách riêng giúp git blame/history sạch.
+
+3. Security tách 3 file, không gộp 1
+trivy.yml / sbom.yml / sign.yml tách riêng vì:
+
+Mỗi cái có exit-code semantics khác nhau (Trivy có thể fail pipeline, SBOM chỉ archive artifact, Cosign fail = block deploy tuyệt đối)
+Dễ tắt/bật riêng lẻ qua rules: mà không đụng file khác
+
+4. deploy/rollback.yml là job riêng, when: manual
+
+yaml
+rollback-prod:
+  stage: deploy-prod
+  extends: .base-job
+  script:
+    - bash .gitlab/scripts/rollback.sh
+  when: manual
+  environment:
+    name: production
+    action: stop
+
+5. verify/ tách khỏi deploy/
+Smoke test và e2e test không phải "deploy" — chúng là gate sau deploy quyết định có promote tiếp không. Tách để logic rollback tự động (nếu có) chỉ cần trigger từ verify/, không lẫn với deploy script.
+
+6. Naming file = danh từ số ít, mô tả đúng 1 trách nhiệm
+trivy.yml chứ không phải security-scan.yml — khi pipeline có thêm tool scan khác (Grype, Snyk...) chỉ cần thêm file mới, không sửa file cũ.
+
+Điểm cần lưu ý riêng cho case của Mac
+
+Vì Mac đã có sẵn parse_trivy.py với issue fail-open đã fix — nhớ đảm bảo trivy.yml set:
+
+yaml
+trivy-scan:
+  script:
+    - trivy image ... --output trivy-report.json
+    - python3 .gitlab/scripts/parse_trivy.py trivy-report.json
+  allow_failure: false   # tường minh, không dựa vào default
+
+Và vì pipeline theo build-once/promote-many, package.yml chỉ nên re-tag image đã build (không rebuild) khi promote qua staging/prod — tránh drift giữa image đã scan/sign và image thực sự deploy.

@@ -13,6 +13,7 @@ import {
 import { CreateUserDto, UpdateUserDto, User } from '@portfolio/contracts';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../auth/permissions.guard';
+import { OptionalJwtAuthGuard } from '../../auth/guards/optional-jwt-auth.guard';
 import { Permissions } from '../../auth/permissions.decorator';
 import {
   ApiTags,
@@ -58,7 +59,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiBearerAuth()
   @Header('Cache-Control', 'no-transform')
   @ApiOperation({ summary: 'Get user by id' })
