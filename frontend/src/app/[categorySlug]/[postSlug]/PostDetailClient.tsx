@@ -22,7 +22,9 @@ import Button from '@/shared/components/ui/Button';
 import Skeleton from '@/shared/components/ui/Skeleton';
 import IconBadge from '@/shared/components/ui/IconBadge';
 import AnimateList from '@/shared/components/ui/AnimateList';
-import MessageDialog from '@/shared/components/ui/MessageDialog';
+import dynamic from 'next/dynamic';
+
+const MessageDialog = dynamic(() => import('@/shared/components/ui/MessageDialog'), { ssr: false });
 
 // Modular Services
 import { postService } from '@/features/posts/services/postService';
@@ -401,9 +403,12 @@ export default function PostDetailClient({ params }: { params: { categorySlug: s
               {post.cover_image && (
                 <div className="w-full border-b border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden bg-slate-900/5 dark:bg-slate-950/20">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none z-10" />
-                  <img
+                  <Image
                     src={`${post.cover_image}`}
                     alt={post.title}
+                    width={1200}
+                    height={630}
+                    priority
                     className="w-full h-auto max-h-[600px] object-cover transform hover:scale-[1.01] transition-transform duration-700 relative z-0"
                   />
                 </div>
@@ -534,9 +539,11 @@ export default function PostDetailClient({ params }: { params: { categorySlug: s
                             <div className="flex space-x-3 relative z-10">
                               <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs uppercase overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700">
                                 {comment.User?.avatar ? (
-                                  <img
+                                  <Image
                                     src={comment.User.avatar}
                                     alt={comment.User?.fullname || comment.User?.username || comment.author_name || 'User'}
+                                    width={32}
+                                    height={32}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                       const target = e.currentTarget;
