@@ -56,6 +56,28 @@
         hour: "3"
         job: "docker system prune -af --volumes"
 
+    - name: Configure concurrent jobs in GitLab Runner
+      lineinfile:
+        path: /etc/gitlab-runner/config.toml
+        regexp: '^concurrent\s*=.*'
+        line: 'concurrent = 4'
+      register: concurrent_updated
+
+    - name: Configure request_concurrency in GitLab Runner
+      lineinfile:
+        path: /etc/gitlab-runner/config.toml
+        insertafter: '^\[\[runners\]\]'
+        regexp: '^\s*request_concurrency\s*=.*'
+        line: '  request_concurrency = 4'
+      register: concurrency_updated
+
+    - name: Restart GitLab Runner if configuration updated
+      service:
+        name: gitlab-runner
+        state: restarted
+      when: concurrent_updated.changed or concurrency_updated.changed
+
+
 - name: Install Helm on K8s Nodes
   when: "'staging_k8s' in group_names or 'production' in group_names"
   block:
