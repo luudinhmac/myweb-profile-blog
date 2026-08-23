@@ -46,8 +46,7 @@
         --docker-image "docker:latest" \
         --docker-volumes "/var/run/docker.sock:/var/run/docker.sock,/etc/localtime:/etc/localtime:ro" \
         --env "TZ=Asia/Ho_Chi_Minh" \
-        --description "Agent 1 - Build VM" \
-        --maintenance-note "Managed by Ansible"
+        --description "Agent 1 - Build VM"
       when: runner_check.rc != 0
 
     - name: Schedule daily Docker cleanup
