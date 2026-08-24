@@ -1,6 +1,6 @@
 # Description: Main tasks for the 'gitlab-runner' role.
 # Installs and registers GitLab Runner for CI/CD jobs.
-# Last Updated: 2026-05-12
+# Last Updated: 2026-08-23
 
 ---
 - name: Install GitLab Runner binary on Build Agent
@@ -44,7 +44,8 @@
         --token "{{ RUNNER_TOKEN_STAGING }}" \
         --executor "docker" \
         --docker-image "docker:latest" \
-        --docker-volumes "/var/run/docker.sock:/var/run/docker.sock,/etc/localtime:/etc/localtime:ro" \
+        --docker-volumes "/var/run/docker.sock:/var/run/docker.sock" \
+        --docker-volumes "/etc/localtime:/etc/localtime:ro" \
         --env "TZ=Asia/Ho_Chi_Minh" \
         --description "Agent 1 - Build VM"
       when: runner_check.rc != 0
@@ -60,7 +61,7 @@
       lineinfile:
         path: /etc/gitlab-runner/config.toml
         regexp: '^concurrent\s*=.*'
-        line: 'concurrent = 4'
+        line: 'concurrent = 8'
       register: concurrent_updated
 
     - name: Configure request_concurrency in GitLab Runner
@@ -68,7 +69,7 @@
         path: /etc/gitlab-runner/config.toml
         insertafter: '^\[\[runners\]\]'
         regexp: '^\s*request_concurrency\s*=.*'
-        line: '  request_concurrency = 4'
+        line: '  request_concurrency = 8'
       register: concurrency_updated
 
     - name: Restart GitLab Runner if configuration updated
